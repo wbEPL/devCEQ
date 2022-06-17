@@ -20,7 +20,7 @@ CEQ_run <- function(
   uiPattern = "/",
   inputs_str,
   presim,
-  choice_max = 2,
+  choice_max = 3,
   choice_type = "slider",
   ...
 ) {

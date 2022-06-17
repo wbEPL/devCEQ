@@ -13,6 +13,7 @@
 mod_inputs_btns_ui <- function(id = NULL, choice_type = "slider", choice_max = 2) {
   ns <- NS(id)
 
+  nsim <- taglist()
   if (choice_type == "slider") {
     nsim <- sliderInput(
       ns("n_choices"),
@@ -33,8 +34,18 @@ mod_inputs_btns_ui <- function(id = NULL, choice_type = "slider", choice_max = 2
         max = choice_max,
         step = 1
       )
+  } else if (choice_type == "none") {
+    nsim <- taglist()
   } else {
-    nsim <- tagList()
+    nsim <-
+      numericInput(
+        ns("n_choices"),
+        "Number of policy choices",
+        value = 2,
+        min = 1,
+        max = choice_max,
+        step = 1
+      )
   }
 
   run_button <-

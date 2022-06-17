@@ -2,6 +2,8 @@
 #'
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
+#' @inheritParams mod_inputs_ui_wrapper
+#'
 #' @import shiny
 #' @importFrom purrr map
 #' @importFrom bsplus use_bs_popover
@@ -14,12 +16,10 @@
 CEQ_ui <- function(
     request,
     theme_fn = function() {
-      bslib::bs_theme(
-        version = 4,
-        bootswatch = "flatly",
-        "enable-rounded" = TRUE
-      )
-      }
+      bslib::bs_theme(version = 4, bootswatch = "flatly", "enable-rounded" = TRUE)
+      },
+    choice_type = "slider",
+    choice_max = 2
     ) {
 
   spinner <- tagList(#
@@ -34,7 +34,7 @@ CEQ_ui <- function(
       title =
         div(
           div(id = "img-logo-navbar",
-              style = "right: 70px; top:15px;",
+              style = "right: 80px; top:5px; z-index: 1;",
               img(src = "www/WBG_Horizontal-white_gradient-web.png",
                   style = "width: auto; height: 40px;")
               ),
@@ -49,7 +49,11 @@ CEQ_ui <- function(
         "Policy Choices",
         value = "pc2019",
         shiny::fluidPage(
-          mod_inputs_ui_wrapper('generic_inputs')
+          mod_inputs_ui_wrapper(
+            'generic_inputs',
+            choice_type = choice_type,
+            choice_max = choice_max
+            )
         )
       ),
       tabPanel("Results",

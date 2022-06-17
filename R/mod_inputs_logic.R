@@ -3,12 +3,12 @@
 #' @description A shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
-#'
+#' @inheritParams mod_inputs_btns_ui
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
 #' @export
-mod_inputs_ui_wrapper <- function(id) {
+mod_inputs_ui_wrapper <- function(id, choice_type = "slider", choice_max = 2) {
   ns <- NS(id)
   text_field <-
     if (getOption("ceq_dev", FALSE)) {
@@ -17,10 +17,11 @@ mod_inputs_ui_wrapper <- function(id) {
       NULL
     }
   left_col <-
-    wellPanel(mod_inputs_btns_ui(id)) %>%
+    wellPanel(mod_inputs_btns_ui(id, choice_type = choice_type, choice_max = choice_max)) %>%
     div(id = "well1") %>%
     column(width = 3)
-  right_col <- mod_dyn_inp_ui(id) %>%
+  right_col <-
+    mod_dyn_inp_ui(id) %>%
     # shinydashboard::box(width = 10, id = "well2")
     div(style = "min-height:665px") %>%
     div(id = "well2") %>%
@@ -47,6 +48,7 @@ mod_inputs_server <-
            inp_raw_str,
            inp_str_fn,
            ui_gen_fn,
+           choice_max = 3,
            run_guide = function() NULL,
            active_tab = function() NULL,
            id_result = NULL,
@@ -63,7 +65,7 @@ mod_inputs_server <-
       cur_inps <- mod_dyn_inp_srv(
         id = NULL,
         inp_raw_str = inp_raw_str,
-        n_choices = reactive(1), #reactive(inp_btns$n_choices),
+        n_choices = reactive(inp_btns$n_choices),
         upd_inp = reactive(inp_btns$upload_sim) %>% debounce(750),
         reseter = reactive(if(!isTruthy(inp_btns$reset)) {0} else {inp_btns$reset}),
         inp_str_fn = inp_str_fn,
@@ -165,7 +167,9 @@ mod_dyn_inp_ui <- function(id) {
     id = ns("input_tabs"),
     shiny::tabPanel(title = "Policy choices",
                     id = ns("policy_choice"),
-                    if(getOption("ceq_inmodule_dev", FALSE)) {actionButton(ns("browser"), "browser")},
+                    if (getOption("ceq_inmodule_dev", FALSE)) {
+                      actionButton(ns("browser"), "browser")
+                    },
                     shiny::uiOutput(ns("dynamic_inputs_ui"))),
     shiny::tabPanel("Summary table",
                     id = ns("summary_table"),
@@ -192,6 +196,7 @@ mod_dyn_inp_srv <-
   function(id,
            inp_raw_str,
            n_choices = reactive(1),
+           choice_range = c(1,2),
            upd_inp = reactive(NULL),
            reseter = reactive(NULL),
            inp_str_fn,
@@ -285,8 +290,7 @@ mod_build_inp_srv <-
            inp_raw_str,
            inp_str_fn,
            ui_gen_fn,
-           n_choices = function()
-             1,
+           n_choices = function() {1},
            ncols = 12,
            nmax = 4,
            reseter = function() {0}) {
@@ -342,7 +346,8 @@ mod_build_inp_srv <-
               ),
               need(
                 nrow(new_str) > 0,
-                "Check the UI-structure preparation function. It does not produce any output."
+                "Check the UI-structure preparation function. It does not
+                produce any output."
               ))
             list(inp_str = new_str,
                  #if ("try-error" %in% class(new_str)) NULL else new_str,
@@ -378,7 +383,8 @@ mod_build_inp_srv <-
           shiny::validate(
             shiny::need(
               !is.null(out_ui$ui),
-              "Check the UI-generation function. It does not produce a single `ui` component that could be build"
+              "Check the UI-generation function. It does not produce a single
+              `ui` component that could be build"
             )
           )
           return(out_ui$ui)
@@ -662,7 +668,8 @@ mod_check_inp_srv <-
               checked_inps() %>%
               dplyr::mutate(current_value = ifelse(less, list(min), list(current_value)),
                             current_value = ifelse(greater, list(max), list(current_value)),
-                            current_value = ifelse(na_val & type == "textInput" , list("Specify a name"), list(current_value)),
+                            current_value = ifelse(na_val & type == "textInput" ,
+                                                   list("Specify a name"), list(current_value)),
                             previous_value = current_value) %>%
               dplyr::select(-less, -greater, -na_val) %>%
               ungroup()

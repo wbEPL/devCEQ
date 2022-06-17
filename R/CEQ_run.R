@@ -7,6 +7,7 @@
 #'   to the analysis
 #' @param ... arguments to pass to golem_opts.
 #' See `?golem::get_golem_options` for more details.
+#' @inheritParams CEQ_ui
 #' @inheritParams shiny::shinyApp
 #' @noRd
 #' @export
@@ -19,11 +20,16 @@ CEQ_run <- function(
   uiPattern = "/",
   inputs_str,
   presim,
+  choice_max = 2,
+  choice_type = "slider",
   ...
 ) {
+
+  if (max(choice_max) == 1) choice_type <- 'none'
+
   golem::with_golem_options(
     app = shinyApp(
-      ui = CEQ_ui,
+      ui = CEQ_ui(choice_type = choice_type, choice_max = choice_max),
       server =
         function(input, output, session, ...) {
           CEQ_server(inputs_str = inputs_str,

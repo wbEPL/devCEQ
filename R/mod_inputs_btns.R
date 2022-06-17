@@ -3,21 +3,40 @@
 #' @description A shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
+#' @param choice_type type of the input UI for number of choices. One of
+#' slider, numeric and none.
 #'
-#' @noRd 
+#' @noRd
 #'
-#' @importFrom shiny NS tagList 
+#' @importFrom shiny NS tagList
 #' @export
-mod_inputs_btns_ui <- function(id = NULL) {
+mod_inputs_btns_ui <- function(id = NULL, choice_type = "slider", choice_max = 2) {
   ns <- NS(id)
-  # nsim <- 
-  #   numericInput(ns("n_choices"), 
-  #                "Number of policy choices", 
-  #                value = 2, min = 1, max = 6, step = 1, round = TRUE)
-  nsim <- 
-    sliderInput(ns("n_choices"), 
-                 "Number of policies", 
-                 value = 2, min = 1, max = 4, step = 1, round = TRUE)
+
+  if (choice_type == "slider") {
+    nsim <- sliderInput(
+      ns("n_choices"),
+      "Number of policies",
+      value = 2,
+      min = 1,
+      max = choice_max,
+      step = 1,
+      round = TRUE
+    )
+  } else if (choice_type == "numeric") {
+    nsim <-
+      numericInput(
+        ns("n_choices"),
+        "Number of policy choices",
+        value = 2,
+        min = 1,
+        max = choice_max,
+        step = 1
+      )
+  } else {
+    nsim <- tagList()
+  }
+
   run_button <-
     actionButton(ns("run_sim"),
                  "Run",
@@ -35,7 +54,7 @@ mod_inputs_btns_ui <- function(id = NULL) {
       class = "btn-info btn-sm",
       style = "width:100%;"
     )
-  
+
   upload_sim_file <-
     fileInput(
       ns("upload_sim"),
@@ -46,19 +65,19 @@ mod_inputs_btns_ui <- function(id = NULL) {
     )
   upload_sim_file[["children"]][[2]][["children"]][[1]][["children"]][[1]][["attribs"]][["class"]] <-
     "btn btn-primary btn-file"
-  
-  upload_sim_file <- 
-    upload_sim_file %>% 
+
+  upload_sim_file <-
+    upload_sim_file %>%
     div(id = ns("upload_sim_holder"))
-  
+
   list(
-    # nsim,
-    (run_button),
-    tags$hr(),
-    (reset_button),
+    nsim,
+    run_button,
     # tags$hr(),
-    (download_sim),
-    (upload_sim_file),
+    reset_button,
+    # tags$hr(),
+    download_sim,
+    upload_sim_file,
     # tags$hr(),
     if (getOption("ceq_dev", FALSE))
       actionButton(ns("run_guide"), "Run guide", class = "btn-info btn-sm")
@@ -70,73 +89,74 @@ mod_inputs_btns_devout_ui <- function(id = NULL) {
   ns <- NS(id)
   shiny::verbatimTextOutput(ns("inputs_btns_devout"))
 }
-    
+
 #' inputs_btns Server Functions
 #'
 #' @import purrr
-#' @noRd 
+#' @noRd
 #' @export
-mod_inputs_btns_server <- function(id = NULL, sim_export_dta){
+mod_inputs_btns_server <- function(id = NULL, sim_export_dta, choice_max = 2){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-    
+
     inp_btns_inp <- reactiveValues(run = NULL,
-                                   reset = NULL, 
+                                   reset = NULL,
                                    upload_sim = NULL,
                                    n_choices = 2)
-    
+
     # Data download module
     output$download_sim <- downloadHandler(
         filename = function() {
           paste("Policy-choices-", format(Sys.time(),'%Y%m%d%H%M%S'), ".ceqsim", sep="")
         },
         content = function(file) {
-          req(sim_export_dta()) 
+          req(sim_export_dta())
           readr::write_rds(sim_export_dta(), file, compress = "gz")
         }
       )
-    
+
     # Buttons
     observeEvent(#
       input$reset_sim,
       {
         inp_btns_inp$reset <- input$reset_sim
       })
-    
+
     observeEvent(#
       input$run_sim,
       {
         inp_btns_inp$run <- input$run_sim
       })
-    
+
     observeEvent(#
       input$run_guide,
       {
         inp_btns_inp$run_guide <- input$run_guide
       })
-    
+
     # Number of policies validation
-    # n_choices_react <- reactive(input$n_choices) 
+    # n_choices_react <- reactive(input$n_choices)
     observeEvent(#
       input$n_choices, {
         if (isTruthy(input$n_choices))
-          inp_btns_inp$n_choices <- input$n_choices %>%  ceiling %>% as.integer()
+          inp_btns_inp$n_choices <- input$n_choices %>% ceiling %>% as.integer()
         else
-          inp_btns_inp$n_choices <- 2
+          inp_btns_inp$n_choices <- 1
       },
       ignoreNULL = FALSE,
       ignoreInit = FALSE)
-        
+
     observeEvent(#
       inp_btns_inp$upload_sim,
       {
         req(inp_btns_inp$upload_sim$inp)
         new_n_choices <- inp_btns_inp$upload_sim$inp %>% distinct(policy_choice) %>% nrow()
         updateSliderInput(session, "n_choices", value = new_n_choices)
+        updateNumericInput(session, "n_choices", value = new_n_choices)
       },
       ignoreNULL = TRUE,
       ignoreInit = TRUE)
-    
+
     observeEvent(#
       input$upload_sim,
       {
@@ -145,8 +165,8 @@ mod_inputs_btns_server <- function(id = NULL, sim_export_dta){
         req(file)
         if (ext != "ceqsim") {
           shinyFeedback::feedbackDanger(
-            "upload_sim", 
-            show = TRUE, 
+            "upload_sim",
+            show = TRUE,
             text = "Please upload a '.ceqsim' file."
             )
         }
@@ -158,41 +178,41 @@ mod_inputs_btns_server <- function(id = NULL, sim_export_dta){
         )
         if (ext == "ceqsim") shinyFeedback::hideFeedback("upload_sim")
         inp_btns_inp$upload_sim <- file$datapath %>% readr::read_rds()
-      }, 
-      ignoreInit = TRUE, 
+      },
+      ignoreInit = TRUE,
       ignoreNULL = TRUE)
-    
-    
+
+
     # output$inputs_btns_devout <- shiny::renderPrint({
     #   # browser()
-    #   c("run_sim", "reset_sim", "download_sim", "upload_sim") %>% 
+    #   c("run_sim", "reset_sim", "download_sim", "upload_sim") %>%
     #     map(~{
     #       set_names(x = list(input[[.x]]), .x)
-    #     }) %>% 
+    #     }) %>%
     #     unlist(recursive = F)
     # })
-    
+
     inp_btns_inp
-    
+
   })
 }
-    
+
 ## To be copied in the UI
 # mod_inputs_btns_ui("inputs_btns_ui_1")
-    
+
 ## To be copied in the server
 # mod_inputs_btns_server("inputs_btns_ui_1")
 
 
-#' @noRd 
+#' @noRd
 #' @importFrom rlang dots_list
 #' @importFrom magrittr extract
 #' @importFrom shiny numericInput
 make_num_inpt_ui <- function(...) {
   rlang::dots_list(...) %>%
-    unlist(recursive = T) %>% 
-    as.list() %>% 
-    magrittr::extract(names(.) %in% 
+    unlist(recursive = T) %>%
+    as.list() %>%
+    magrittr::extract(names(.) %in%
                         c("inputId", "label", "value", "min", "max", "step", "width")) %>%
     magrittr::extract(!is.na(.)) %>%
     do.call(what = shiny::numericInput, args = .)

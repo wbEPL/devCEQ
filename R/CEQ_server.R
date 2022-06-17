@@ -13,6 +13,7 @@ CEQ_server <- function(input, output, session,
                        presim_dta = leactive(list(NULL)),
                        inp_str_fn = gen_inp_str,
                        ui_gen_fn = gen_inp_ui,
+                       choice_max = 2,
                        ...) {
 
   # # Loading underlining data for 2022 simulation
@@ -39,6 +40,7 @@ CEQ_server <- function(input, output, session,
     inp_raw_str = inputs_str_ui,
     inp_str_fn = inp_str_fn,
     ui_gen_fn = ui_gen_fn,
+    choice_max = choice_max,
     active_tab = active_tab,
     target_tab = "pc2019",
     source_tab = "howto"

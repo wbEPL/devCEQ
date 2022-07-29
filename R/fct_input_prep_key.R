@@ -1,4 +1,16 @@
-#' prep_key_inp 
+
+#' add inputs that are missing to the CEQ inputs list.
+#'
+#' @noRd
+#' @export
+add_missing_inp_generic <-
+  function(inps, all_inps) {
+    all_inps %>%
+      `[`(!names(.) %in% names(inps)) %>%
+      prepend(inps)
+  }
+
+#' prep_key_inp
 #'
 #' @description Prepares inputs to a specific key inputs structure.
 #'
@@ -6,35 +18,35 @@
 #'
 #' @noRd
 fct_prep_key_inp <- function(dta) {
-  
-  dta_list <- 
+
+  dta_list <-
     dta %>%
     group_by(policy_choice) %>%
     tidyr::nest()
-  
-  current_values <- 
+
+  current_values <-
     dta_list %>%
     purrr::pmap( ~ {
       dts <- rlang::dots_list(...)
       fct_compare_key_inp(dts$data, dts$policy_choice)
     }) %>%
-    unlist(recursive = F) 
-  
-  base_values <- 
-    dta_list %>% 
-    ungroup() %>% 
-    slice(1) %>% 
-    pull(data) %>% 
-    `[[`(1) %>% 
+    unlist(recursive = F)
+
+  base_values <-
+    dta_list %>%
+    ungroup() %>%
+    slice(1) %>%
+    pull(data) %>%
+    `[[`(1) %>%
     fct_base_key_inp("policy0")
-  
-  current_values %>% 
-    prepend(base_values) 
-  
+
+  current_values %>%
+    prepend(base_values)
+
 }
 
 #' Compare key inputs
-#' 
+#'
 #' @importFrom dplyr near filter mutate select pull
 #' @noRd
 fct_compare_key_inp <- function(data, policy_choice) {
@@ -42,9 +54,9 @@ fct_compare_key_inp <- function(data, policy_choice) {
   for_list <-
     data %>%
     dplyr::filter(type != "textInput") %>%
-    dplyr::select(id, current_value, base_value, factor) %>% 
+    dplyr::select(id, current_value, base_value, factor) %>%
     dplyr::mutate(current_value = as.numeric(current_value)) %>%
-    mutate(across(c(current_value, base_value), ~ (.) * factor)) %>% 
+    mutate(across(c(current_value, base_value), ~ (.) * factor)) %>%
     select(-factor)
   policy_choices = setNames(for_list$current_value, for_list$id)
   policy_base_choices = setNames(for_list$base_value , for_list$id)
@@ -65,25 +77,25 @@ fct_compare_key_inp <- function(data, policy_choice) {
     ) %>%
     list() %>%
     set_names(policy_choice)
-  
+
   comparison_results
 }
 
 
 fct_base_key_inp <- function(data, policy_choice = "policy0") {
-  
+
   for_list <-
     data %>%
     filter(type != "textInput") %>%
-    dplyr::select(id, current_value, base_value, factor) %>% 
+    dplyr::select(id, current_value, base_value, factor) %>%
     dplyr::mutate(current_value = as.numeric(current_value)) %>%
     mutate(across(c(current_value, base_value), ~ (.) * factor)) %>%
-    mutate(current_value = base_value) %>% 
+    mutate(current_value = base_value) %>%
     select(-factor)
-  
+
   policy_choices = setNames(for_list$current_value, for_list$id)
   policy_base_choices = setNames(for_list$base_value , for_list$id)
-  
+
   comparison_results <-
     list(
       policy_name = "Baseline",
@@ -93,6 +105,6 @@ fct_base_key_inp <- function(data, policy_choice = "policy0") {
     ) %>%
     list() %>%
     set_names(policy_choice)
-  
+
   comparison_results
 }

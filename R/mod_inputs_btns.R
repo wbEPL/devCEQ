@@ -13,7 +13,7 @@
 mod_inputs_btns_ui <- function(id = NULL, choice_type = "slider", choice_max = 2) {
   ns <- NS(id)
 
-  nsim <- taglist()
+  nsim <- tagList()
   if (choice_type == "slider") {
     nsim <- sliderInput(
       ns("n_choices"),
@@ -35,7 +35,7 @@ mod_inputs_btns_ui <- function(id = NULL, choice_type = "slider", choice_max = 2
         step = 1
       )
   } else if (choice_type == "none") {
-    nsim <- taglist()
+    nsim <- tagList()
   } else {
     nsim <-
       numericInput(

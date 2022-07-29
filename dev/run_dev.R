@@ -6,7 +6,6 @@ options(shiny.reactlog=TRUE)
 # golem::document_and_reload()
 
 # Dev paras
-options(current.app.name = "Benin CEQ")
 options(scipen = 16)
 options(ceq_dev = FALSE)
 options(ceq_run_dev = TRUE)
@@ -26,8 +25,15 @@ presim <- reactive({
   out
 })
 
+
+# App related parameters
+
+# Title of the App
+options(current.app.name = "Benin CEQ")
+
 devCEQ::CEQ_run(
   inputs_str = inputs_str,
   presim = presim,
-  choice_max = 2, choice_type = "slider"
+  choice_max = 2, choice_type = "slider",
+  ui_fn = CEQ_ui
 )

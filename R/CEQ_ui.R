@@ -72,6 +72,7 @@ CEQ_ui <- function(
 #' Return app name from options:
 #'
 #' @noRd
+#' @export
 get_app_name <- function() {
   app_name <- options("current.app.name")
   if (is.null(app_name[[1]])) app_name <- ""
@@ -82,6 +83,7 @@ get_app_name <- function() {
 #'
 #' @import shiny
 #' @noRd
+#' @export
 app_title <-
   function(x) {
     span(tags$span(tags$b(x), class = "text-primary"), "")
@@ -103,6 +105,7 @@ app_title <-
 #' @importFrom bsplus use_bs_popover
 #' @importFrom shinyFeedback useShinyFeedback
 #' @noRd
+#' @export
 golem_add_external_resources <- function(){
 
   add_resource_path(

@@ -4,6 +4,7 @@
 #' @noRd
 #' @import shiny
 #' @importFrom htmltools HTML
+#' @export
 
 mod_info_page_server <-
   function(id = NULL,
@@ -11,17 +12,17 @@ mod_info_page_server <-
            navbar_id = "main_sidebar",
            how_to_tab = "howto",
            ...) {
-    moduleServer(# 
+    moduleServer(#
       id,
       function(input, output, session) {
         ns <- session$ns
         active_tab <- reactiveValues(current = NULL, previous = first_tab)
-        
+
         # guide <- compile_guides()$init(session = session)
         run_guid_click <- reactiveVal(0)
         help_tab_click <- reactiveVal(0)
         guid_from_step <- reactiveVal(1)
-        
+
         # Get back to the valid tab observer from info ----------------------
         observeEvent(#
           input$main_sidebar, #
@@ -32,7 +33,7 @@ mod_info_page_server <-
                 inputId = navbar_id,
                 selected =  active_tab$previous
               )
-              
+
               showModal(modalDialog(
                 # title = as.character(getOption("current.app.name", "CEQ")),
                 tagList(shiny::markdown(
@@ -51,7 +52,7 @@ mod_info_page_server <-
                   )
                 )
               ))
-              
+
             } else if (input$main_sidebar == how_to_tab) {
               updateNavbarPage(
                 session = session,
@@ -63,10 +64,10 @@ mod_info_page_server <-
             } else {
               active_tab$previous <- input$main_sidebar
             }
-            
+
           })
-        
-        
+
+
         # Start from info buton ---------------------
         observeEvent(input$tour, {
           removeModal(session = getDefaultReactiveDomain())
@@ -74,7 +75,7 @@ mod_info_page_server <-
                            inputId = navbar_id,
                            selected =  how_to_tab)
         })
-        
+
         # Next click -------------------------------
         # observeEvent(input$apps_guide_cicerone_next,
         #              {
@@ -105,13 +106,13 @@ mod_info_page_server <-
         #                  run_guid_click(new_val)
         #                }
         #              })
-        
+
         # Start from Get help -------------------------
         # get_help <- reactive({
         #   list(help_tab_click(), run_guid_click())
         # }) %>%
         #   debounce(150)
-        
+
         # # Universal restart guide ------------------------
         # observeEvent(get_help(), {
         #   req(any(unlist(get_help()) != 0))
@@ -120,11 +121,11 @@ mod_info_page_server <-
         #   guide$start(session = session, step = guid_from_step())
         #
         # })
-        
+
         # Current tab to pass on with previous
         previous_tab <- reactiveVal(NULL)
         current_tab <- reactiveVal(NULL)
-        
+
         observe({
           req(input[[navbar_id]])
           isolate({
@@ -132,16 +133,16 @@ mod_info_page_server <-
             current_tab(input[[navbar_id]])
           })
         })
-        
+
         reactive({
           list(current = current_tab(),
                previous = previous_tab())
         })
-        
+
       })
-    
-    
-    
+
+
+
   }
 
 

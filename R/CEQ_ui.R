@@ -48,16 +48,14 @@ CEQ_ui <- function(
       tabPanel(
         "Policy Choices",
         value = "pc2019",
-        shiny::fluidPage(
-          mod_inputs_ui_wrapper(
-            'generic_inputs',
-            choice_type = choice_type,
-            choice_max = choice_max
-            )
-        )
+        mod_inputs_ui_wrapper(
+          'generic_inputs',
+          choice_type = choice_type,
+          choice_max = choice_max
+          )
       ),
       tabPanel("Results",
-               shiny::fluidPage("Results page")
+               shiny::h1("Results page")
                # mod_ceq2019_results_ui("ceq2019")
                ),
       tabPanel("How it works?", value = "howto")

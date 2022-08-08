@@ -16,7 +16,7 @@ library(shiny)
 devtools::load_all()
 # library(devCEQ)
 
-inputs_str <- devCEQ::load_input_xlsx("./data-raw/ben-inputs-structure.xlsx")
+inputs_str <- devCEQ::load_input_xlsx("./data-raw/complex-inputs-structure.xlsx")
 
 presim <- reactive({
   out <- list() #read_rds("./data-app/presim-2022.rds")

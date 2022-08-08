@@ -162,21 +162,36 @@ mod_inputs_server <-
 mod_dyn_inp_ui <- function(id) {
   ns <- NS(id)
 
-  shiny::tabsetPanel(
-    type = "tabs",
-    id = ns("input_tabs"),
-    shiny::tabPanel(title = "Policy choices",
-                    id = ns("policy_choice"),
-                    if (getOption("ceq_inmodule_dev", FALSE)) {
-                      actionButton(ns("browser"), "browser")
-                    },
-                    shiny::uiOutput(ns("dynamic_inputs_ui"))),
-    shiny::tabPanel("Summary table",
-                    id = ns("summary_table"),
-                    DT::DTOutput(ns("inputs_ui_values")))
-  ) %>%
+  # # # Old view.
+  # shiny::tabsetPanel(
+  #   type = "tabs",
+  #   id = ns("input_tabs"),
+  #   shiny::tabPanel(title = "Policy choices",
+  #                   id = ns("policy_choice"),
+  #                   if (getOption("ceq_inmodule_dev", FALSE)) {
+  #                     actionButton(ns("browser"), "browser")
+  #                   },
+  #                   shiny::uiOutput(ns("dynamic_inputs_ui"))),
+  #   shiny::tabPanel("Summary table",
+  #                   id = ns("summary_table"),
+  #                   DT::DTOutput(ns("inputs_ui_values")))
+  # )
+
+  # # # New look
     tagList(
-      .,
+      tabsetPanel(
+        id = ns("policy_tabs"),
+        type = "hidden",
+
+        # shiny::uiOutput(ns("dynamic_inputs_ui")),
+        shiny::tabPanelBody(
+          value = "summary",
+
+          DT::DTOutput(ns("inputs_ui_values"))
+        )
+      )
+
+      ,
       if (getOption("ceq_inmodule_dev", FALSE)) {
         shiny::verbatimTextOutput(ns("dynamic_inputs_ui_info"))
       }
@@ -204,6 +219,7 @@ mod_dyn_inp_srv <-
     shiny::moduleServer(#
       id,
       function(input, output, session) {
+        ns <- session$ns
         # Reactive values with inputs
         cur_clean_inp <- reactiveValues(inp = NULL)
         cur_clean_inp$n_ch <- reactive(n_choices())
@@ -217,6 +233,13 @@ mod_dyn_inp_srv <-
                             n_choices = cur_clean_inp$n_ch,
                             ncols = 12,
                             reseter = reseter)
+
+        ## ## ## Switch input tabs
+        observe({
+          req(input$selected_input_tab)
+          shiny::updateTabsetPanel(session, "policy_tabs", selected = input$selected_input_tab)
+          # browser()
+        })
 
         ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
         ## ## ## Update new inputs UI with previous values (if n changes)
@@ -336,7 +359,7 @@ mod_build_inp_srv <-
           list(n_choices_checked(), reseter()),
           {
             shinyjs::disable(("run_sim"))
-            shinyjs::disable(selector = "#main_sidebar li:nth-child(3) a")
+            # shinyjs::disable(selector = "#main_sidebar li:nth-child(3) a")
 
             new_str <- try({all_structures()[[n_choices_checked()]]}, silent = T)
             validate(#
@@ -364,37 +387,84 @@ mod_build_inp_srv <-
         color = waiter::transparent(.5)
       )
 
-      output$dynamic_inputs_ui <-
+      output$dynamic_tabs_ui <-
         shiny::renderUI({
-          # w$show()
-          n_choices_here <-
-            inp_str()$inp_str %>%
-            pull(policy_choice ) %>%
-            unique() %>%
-            length()
-
-          out_ui <- try({all_uis()[[n_choices_here]]}, silent = T)
+          n_choices_here <- inp_str()$inp_str %>% pull(policy_choice ) %>%
+            unique() %>% length()
+          out_ui <- try({all_uis()[[n_choices_here]][["switches"]]}, silent = T)
+          # browser()
           shiny::validate(#
             shiny::need(
               !"try-error" %in% class(out_ui),
               "Check the UI-generation function. It fails with an error."
             ))
           req(out_ui$ui)
-          shiny::validate(
-            shiny::need(
-              !is.null(out_ui$ui),
-              "Check the UI-generation function. It does not produce a single
-              `ui` component that could be build"
-            )
-          )
           return(out_ui$ui)
         })
 
-
-      output$dynamic_inputs_ui_info <-
-        shiny::renderPrint({
-          inp_str()
+      n_choices_here <-
+        reactive({
+          inp_str()$inp_str %>% pull(policy_choice) %>%
+            unique() %>% length()
         })
+
+      observeEvent(
+        all_uis()[[n_choices_here()]][["tabs"]], {
+          # n_choices_here <- inp_str()$inp_str %>% pull(policy_choice ) %>%
+          #   unique() %>% length()
+          out_ui <- try({all_uis()[[n_choices_here()]][["tabs"]]}, silent = T)
+          shiny::validate(#
+            shiny::need(
+              !"try-error" %in% class(out_ui),
+              "Check the UI-generation function. It fails with an error."
+            ))
+          req(out_ui$ui)
+          # browser()
+          out_ui$ui %>%
+            walk2(seq_along(.), ~{
+              # browser()
+              select_tab <- .y == 1
+              if (.x$attribs$class == "tab-pane") {
+                insertTab(
+                  inputId = "policy_tabs",
+                  tab = .x,
+                  target = "summary",
+                  select = select_tab,
+                  position = "before",
+                  session = session
+                  )
+              }
+
+            })
+        }
+      )
+      # output$dynamic_inputs_ui <-
+      #   shiny::renderUI({
+      #     n_choices_here <- inp_str()$inp_str %>% pull(policy_choice ) %>%
+      #       unique() %>% length()
+      #
+      #     out_ui <- try({all_uis()[[n_choices_here]][["tabs"]]}, silent = T)
+      #     shiny::validate(#
+      #       shiny::need(
+      #         !"try-error" %in% class(out_ui),
+      #         "Check the UI-generation function. It fails with an error."
+      #       ))
+      #
+      #     req(out_ui$ui)
+      #     shiny::validate(
+      #       shiny::need(
+      #         !is.null(out_ui$ui),
+      #         "Check the UI-generation function. It does not produce a single
+      #         `ui` component that could be build"
+      #       )
+      #     )
+      #
+      #     return(out_ui$ui)
+      #   })
+
+
+
+      output$dynamic_inputs_ui_info <- shiny::renderPrint({inp_str()})
       #
       # observe({
       #   req(inp_str())

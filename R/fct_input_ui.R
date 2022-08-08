@@ -33,6 +33,43 @@ load_input_xlsx <- function(path) {
 
 
 
+#' Test if RAW inputs structure generate a set of UIs
+#'
+#' @noRd
+#'
+#' @export
+#' @importFrom readxl read_excel
+#' @importFrom purrr transpose
+inp_str_test <-
+  function(inp_raw_str,
+           fn_inp_str = gen_inp_str,
+           fn_inp_ui = gen_inp_ui,
+           ns = NS(NULL)) {
+    all_structures <-
+      c(1:3) %>%
+      map( ~ {
+        do.call(fn_inp_str,
+                list(inp_raw_str = inp_raw_str,
+                     n_choices = .x,
+                     ns = ns)
+                ) %>%
+          list() %>%
+          set_names(.x)
+      }) %>%
+      unlist(recursive = F)
+
+    all_uis <-
+      all_structures %>%
+      imap( ~ {
+        do.call(fn_inp_ui, list(.x, add_rest_btn = TRUE, ns = ns))
+      })
+
+    list(all_structures = all_structures,
+         all_uis = all_uis) %>%
+      purrr::transpose()
+  }
+
+
 
 #' Generate numeric input from the list of arguments
 #'
@@ -54,23 +91,22 @@ gen_num_inpt_ui <- function(...) {
                         c("inputId", "label", "value", "min", "max", "step", "width")) %>%
     magrittr::extract(!is.na(.)) %>%
     do.call(what = shiny::numericInput, args = .)
-  if (!is.na(inputs$tooltip__body)) {
-
-    out_ui <-
-      out_ui %>%
-      bsplus::shinyInput_label_embed(
-        tippy::tippy(
-          '<i class="fa fa-info-circle"></i>',
-          tooltip = shiny::markdown(inputs$tooltip__body),
-          placement = "left",
-          theme = "light-border",
-          arrow = "round",
-          animation = "shift-away",
-          interactive = TRUE,
-          allowHTML = T
-        )
-      )
-  }
+  # if (!is.na(inputs$tooltip__body)) {
+  #   out_ui <-
+  #     out_ui %>%
+  #     bsplus::shinyInput_label_embed(
+  #       tippy::tippy(
+  #         '<i class="fa fa-info-circle"></i>',
+  #         tooltip = shiny::markdown(inputs$tooltip__body),
+  #         placement = "left",
+  #         theme = "light-border",
+  #         arrow = "round",
+  #         animation = "shift-away",
+  #         interactive = TRUE,
+  #         allowHTML = T
+  #       )
+  #     )
+  # }
   out_ui %>%
     div(class = inputs$class)
 }
@@ -314,8 +350,42 @@ gen_inp_ui <- function(inp_ui_str, type = "fixed",
               rowwing_fn(style = "max-height: calc(70vh); overflow-y: scroll;" ,
                          id = ns("policy-options-inputs"))
             ) %>%
-    shiny::column(sum(input_cols_spec$width), .)
+    shiny::column(sum(input_cols_spec$width), .) %>%
+    shiny::tabPanelBody(value = "panel1", .) %>%
+    list()
 
-  out
+  # out$ui #<-
+    # tabsetPanel(
+    #   id = ns("policy_tabs"),
+    #   type = "hidden",
+    #   out$ui,
+    #   shiny::tabPanelBody(
+    #     value = "summary",
+    #     DT::DTOutput(ns("inputs_ui_values"))
+    #     )
+    # )
+
+
+  # out$ui <-
+  #   list(
+  #     # id = "hidden_tabs",
+  #     # type = "hidden",
+  #     out$ui,
+  #     shiny::tabPanelBody(value = "summary",
+  #                         DT::DTOutput(ns("inputs_ui_values")))
+  #   )
+
+  switches_out <- list()
+  switches_out$ui <-
+    shinyWidgets::radioGroupButtons(
+      inputId = ns("selected_input_tab"),
+      label = NULL,
+      choices = c("Policy choices" = "panel1",
+                  "Summary Table" = "summary"),
+      direction = "vertical",
+      justified = TRUE
+      )
+
+  list(tabs = out, switches = switches_out)
 }
 

@@ -81,8 +81,14 @@ mod_inputs_btns_ui <- function(id = NULL, choice_type = "slider", choice_max = 2
     upload_sim_file %>%
     div(id = ns("upload_sim_holder"))
 
+  input_tabs <-
+    shiny::uiOutput(ns("dynamic_tabs_ui")) %>%
+    div(id = ns("input_tabs"))
+
   list(
     nsim,
+    input_tabs,
+    tags$hr(),
     run_button,
     # tags$hr(),
     reset_button,

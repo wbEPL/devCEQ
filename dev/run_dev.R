@@ -34,6 +34,8 @@ options(current.app.name = "Benin CEQ")
 devCEQ::CEQ_run(
   inputs_str = inputs_str,
   presim = presim,
-  choice_max = 2, choice_type = "slider",
-  ui_fn = CEQ_ui
+  ui_fn = CEQ_ui,
+
+  n_policy = c(1,3,2),
+  n_policy_type = "slider", #c("numericInline", "numeric", "slider", "none"),
 )

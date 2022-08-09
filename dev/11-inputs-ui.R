@@ -8,7 +8,7 @@ pkgload::load_all(export_all = FALSE,helpers = FALSE,attach_testthat = FALSE)
 
 
 
-# 
+#
 # Setups ---------------------------------------------------------------------
 library(readxl)
 library(dplyr)
@@ -25,7 +25,7 @@ library(htmltools)
 
 
 # UI template
-path <- "data-app/ben-inputs-structure.xlsx"
+path <- "data-raw/ben-inputs-structure.xlsx"
 inp_raw_str <- path %>% load_input_xlsx()
 
 
@@ -36,6 +36,10 @@ inp_raw_str <- path %>% load_input_xlsx()
 # testrun_input_ui_generation(path)
 # testrun_input_ui_page(path)
 
+## Key generator functions
+gen_inp_str(inp_raw_str, 2) %>%
+  gen_inp_ui(type = "fluid") %>%
+  str(max.level = 1)
 
 
 ## === === === === === === === === === === === === === === === === === === ===
@@ -46,15 +50,15 @@ inp_raw_str <- path %>% load_input_xlsx()
 # options(scipen = 16)
 # options(shiny.reactlog = TRUE)
 # options(shiny.fullstacktrace = TRUE)
-# 
+#
 # server <- function(input, output, session) {
 #   mod_dyn_inp_srv(
-#     NULL, 
-#     inp_raw_str, 
-#     inp_str_fn = gen_inp_str, 
+#     NULL,
+#     inp_raw_str,
+#     inp_str_fn = gen_inp_str,
 #     ui_gen_fn = gen_inp_ui)
 # }
-# 
+#
 # fluidPage(
 #   shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
 #   column(2, wellPanel(mod_inputs_btns_ui(NULL))),
@@ -81,7 +85,7 @@ server <- function(input, output, session) {
       inp_str_fn = gen_inp_str,
       ui_gen_fn = gen_inp_ui
       )
-  
+
   observe({
     list(
       key = run_inputs$key(),
@@ -111,7 +115,7 @@ fluidPage(
 # fluidPage(column(2, wellPanel(numericInput("111", "exmpl", 1))),
 #           column(10, out_ui$ui)) %>%
 #   shinyApp(., server)
-# 
+#
 # ## Profiling
 # # profvis::profvis({gen_inp_str(inp_raw_str, 4) %>% gen_inp_ui() })
 # # test_opt <- gen_inp_str(inp_raw_str, 4)
@@ -137,15 +141,15 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 
 # #  # Same but with modules names
 # options(ceq_dev = TRUE)
-# 
+#
 # server <- function(input, output, session) {
 #   n_ch <- reactive(input$n_choices_inp)
 #   mod_build_inp_srv("nod_1", inp_raw_str,
 #                     inp_str_fn = gen_inp_str,
-#                     ui_gen_fn = gen_inp_ui, 
+#                     ui_gen_fn = gen_inp_ui,
 #                     n_choices = n_ch)
 # }
-# 
+#
 # fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 #           column(10, mod_dyn_inp_ui("nod_1"))
 #           ) %>%
@@ -169,12 +173,12 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 #   current_inp <- mod_coll_inp_srv(NULL, inp_str = inp_str)
 #   output$test_out <- renderPrint({str(current_inp())})
 # }
-# 
+#
 # fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 #           column(10, mod_dyn_inp_ui(NULL), shiny::verbatimTextOutput("test_out"))
 # ) %>%
 #   shinyApp(., server)
-# 
+#
 # # mod_check_inp_srv
 
 
@@ -193,7 +197,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 #   mod_reset_scenarios("NULL", inp_str = inp_str)
 #   output$test_out <- renderPrint({glimpse(current_inp()$inp)})
 # }
-# 
+#
 # fluidPage(
 #   shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
 #   column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
@@ -211,9 +215,9 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # 2. Update all inputs according to a template.
 # 3. Reset all input to default.
 # 7. Download all input in a file.
-# ---- 5. Implement shinyFeedback::hideFeedback() on exit. 
+# ---- 5. Implement shinyFeedback::hideFeedback() on exit.
 # 6. Add info tooltips to each input
-# 7. 
+# 7.
 
 
 
@@ -222,13 +226,13 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 
 # options(ceq_dev = TRUE)
 # options(shiny.fullstacktrace = TRUE)
-# 
+#
 # # Local server function
 # server <- function(input, output, session) {
-# 
+#
 #   n_ch <- reactive(input$n_choices_inp)
 #   cur_clean_inp <- reactiveValues(inp = NULL)
-# 
+#
 #   ## ## ## Gen inputs UI
 #   cur_clean_inp$inp_str <- mod_build_inp_srv(
 #     NULL,
@@ -237,32 +241,32 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 #     ui_gen_fn = gen_inp_ui,
 #     n_choices = n_ch
 #   )
-#   
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   ## ## ## reset scenarios to the baseline after scenario-specific button click
 #   mod_reset_scenarios(NULL, cur_clean_inp$inp_str)
-# 
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   # ## ## ## Collecting and validating inputs
 #   cur_unvalidated_inp <- mod_coll_inp_srv(NULL, cur_clean_inp$inp_str)
 #   cur_clean_inp$inp <- mod_check_inp_srv(NULL, cur_unvalidated_inp)
-# 
+#
 #   # In case we need to by-pass the `mod_check_inp_srv`
 #   # cur_clean_inp$inp <- mod_coll_inp_srv(NULL, cur_clean_inp$inp_str)
-#   
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   ## ## ## Update new inputs UI with previous values (if n changes)
 #   mod_upd_old_vals_to_exist_inp(NULL, cur_clean_inp)
-# 
-# 
+#
+#
 #   observeEvent(input$browser,{
 #     browser()
 #   })
-# 
+#
 #   output$inputs_out <- renderPrint({str(cur_clean_inp$inp())})
 # }
-# 
-# 
+#
+#
 # fluidPage(
 #   shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
 #   column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1),
@@ -282,13 +286,13 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 
 # options(ceq_dev = TRUE)
 # options(shiny.fullstacktrace = TRUE)
-# 
+#
 # # Local server function
 # server <- function(input, output, session) {
-# 
+#
 #   n_ch <- reactive(input$n_choices_inp)
 #   cur_clean_inp <- reactiveValues(inp = NULL)
-# 
+#
 #   ## ## ## Gen inputs UI
 #   cur_clean_inp$inp_str <- mod_build_inp_srv(
 #     NULL,
@@ -297,28 +301,28 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 #     ui_gen_fn = gen_inp_ui,
 #     n_choices = n_ch
 #   )
-# 
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   # ## ## ## Collecting and validating inputs
 #   cur_unvalidated_inp <- mod_coll_inp_srv(NULL, cur_clean_inp$inp_str)
 #   cur_clean_inp$inp <- mod_check_inp_srv(NULL, cur_unvalidated_inp)
-# 
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   ## ## ## Update new inputs UI with previous values (if n changes)
 #   mod_upd_old_vals_to_exist_inp(NULL, cur_clean_inp)
-# 
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   ## ## ## reset scenarios to the baseline after scenario-specific button click
 #   mod_reset_scenarios(NULL, cur_clean_inp$inp_str)
-# 
+#
 #   observeEvent(input$browser,{
 #     browser()
 #   })
-# 
+#
 #   output$inputs_out <- renderPrint({str(cur_clean_inp$inp())})
 # }
-# 
-# 
+#
+#
 # fluidPage(
 #   shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
 #   column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1),
@@ -337,13 +341,13 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # options(ceq_dev = TRUE)
 # options(ceq_inmodule_dev = FALSE)
 # options(scipen = 16)
-# 
+#
 # server <- function(input, output, session) {
-# 
+#
 #   # Reactive values with inputs
 #   cur_clean_inp <- reactiveValues(inp = NULL)
 #   cur_clean_inp$n_ch <- reactive(input$n_choices_inp)
-# 
+#
 #   ## ## ## Gen inputs UI
 #   cur_clean_inp$inp_str <- mod_build_inp_srv(
 #     NULL,
@@ -352,28 +356,28 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 #     ui_gen_fn = gen_inp_ui,
 #     n_choices = cur_clean_inp$n_ch
 #   )
-# 
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   ## ## ## Update new inputs UI with previous values (if n changes)
 #   mod_upd_old_vals_to_exist_inp(NULL, cur_clean_inp)
-# 
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   ## ## ## reset scenarios to the baseline after scenario-specific button click
 #   mod_reset_scenarios(NULL, cur_clean_inp$inp_str)
-# 
-# 
+#
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   # ## ## ## Collecting and validating inputs
 #   cur_unvalidated_inp <- mod_coll_inp_srv(NULL, cur_clean_inp$inp_str)
 #   cur_clean_inp$inp <- mod_check_inp_srv(NULL, cur_unvalidated_inp)
-# 
+#
 #   clean_inp_values <- reactive(cur_clean_inp$inp()$inp)
 #   ## ## ## Exportable inputs table
 #   cur_clean_inp$export <- mod_export_inp_srv(NULL, clean_inp_values)
-# 
+#
 #   ## ## ## Extracting key inputs
 #   cur_clean_inp$key <- mod_key_inp_srv(NULL, clean_inp_values)
-# 
+#
 #   ## ## ## Rendering the data table
 #   output$inputs_ui_values <-
 #     DT::renderDT({
@@ -381,29 +385,29 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 #         fct_config_gen_dt("Policy scenarios summary")
 #     },
 #     server = FALSE)
-# 
+#
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   # ## ## ## Testing
 #   ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 #   observeEvent(input$browser,{
 #     browser()
-# 
+#
 #   })
-# 
+#
 #   output$inputs_out <- renderPrint({
 #     cur_clean_inp$key() %>%
 #       str()
 #   })
 # }
-# 
-# 
+#
+#
 # fluidPage(
 #   shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
 #   column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1),
 #                       if(getOption("ceq_dev", FALSE)) {actionButton("browser", "browser")}
 #                       )),
-#   column(10, 
-#          mod_dyn_inp_ui(NULL), 
+#   column(10,
+#          mod_dyn_inp_ui(NULL),
 #          hr(),
 #          shiny::verbatimTextOutput("inputs_out")
 #          )
@@ -416,11 +420,11 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # # # Option with modules names
 # options(ceq_dev = TRUE)
 # options(scipen = 16)
-# 
+#
 # server <- function(input, output, session) {
 #   mod_dyn_inp_srv(NULL, inp_raw_str, inp_str_fn = gen_inp_str, ui_gen_fn = gen_inp_ui)
 # }
-# 
+#
 # fluidPage(
 #   shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
 #   column(2, wellPanel(h3("Numbers placeholder"))),
@@ -434,11 +438,11 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # # Option with modules names
 # options(ceq_dev = TRUE)
 # options(scipen = 16)
-# 
+#
 # server <- function(input, output, session) {
 #   mod_dyn_inp_srv("Nodule1", inp_raw_str, inp_str_fn = gen_inp_str, ui_gen_fn = gen_inp_ui)
 # }
-# 
+#
 # fluidPage(
 #   shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
 #   column(2, wellPanel(h3("Numbers placeholder"))),
@@ -454,11 +458,11 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # options(scipen = 16)
 # options(shiny.reactlog=TRUE)
 # options(shiny.fullstacktrace = TRUE)
-# 
+#
 # server <- function(input, output, session) {
 #   mod_dyn_inp_srv("NULL", inp_raw_str, inp_str_fn = gen_inp_str, ui_gen_fn = gen_inp_ui)
 # }
-# 
+#
 # fluidPage(
 #   shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
 #   column(2, wellPanel(mod_inputs_btns_ui(NULL))),
@@ -470,29 +474,29 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # # Full module on inputs with UI and server logic in buckets.
 # options(ceq_dev = TRUE)
 # options(scipen = 16)
-# 
+#
 # options(shiny.reactlog=TRUE)
 # options(shiny.fullstacktrace = TRUE)
-# 
+#
 # server <- function(input, output, session) {
 #   run_inputs <-
 #     mod_inputs_server(NULL,
 #                       inp_raw_str,
 #                       inp_str_fn = gen_inp_str,
 #                       ui_gen_fn = gen_inp_ui)
-# 
-# 
+#
+#
 #   observe({
 #     list(
 #       key = run_inputs$key(),
 #       run = run_inputs$run()
-#     ) #%>% 
+#     ) #%>%
 #       # readr::write_rds("data-raw/input-module-output.rds", compress = "gz")
 #     # run_inputs$run_guide
 #     # browser()
 #   })
 # }
-# 
+#
 # fluidPage(
 #   # header = list(cicerone::use_cicerone()),
 #   shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
@@ -504,7 +508,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 
 
 # Current clean input check ------------------------------------------------
-# # We make sure here that 
+# # We make sure here that
 library(readr)
 curr_inp <-
   read_rds("data-raw/cur_clean_inp.rds")
@@ -515,17 +519,17 @@ curr_inp4 <-
 curr_inp %>% fct_prep_key_inp()
 
 curr_inp4 %>% fct_prep_key_inp() %>% map("policy_as_base")
-# 
-# 
-# 
-# 
-# 
-# curr_inp4 %>% 
-#   filter(policy_choice  == "policy2") %>% 
+#
+#
+#
+#
+#
+# curr_inp4 %>%
+#   filter(policy_choice  == "policy2") %>%
 #   fct_base_key_inp
 #   fct_compare_key_inp(., "policy0")
-#   
-#   
+#
+#
 #   filter(type != "textInput") %>%
 #   select(id, current_value, base_value) %>%
 #   mutate(current_value = as.numeric(current_value))

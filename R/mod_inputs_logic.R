@@ -8,23 +8,28 @@
 #'
 #' @importFrom shiny NS tagList
 #' @export
-mod_inputs_ui_wrapper <- function(id, choice_type = "slider", choice_max = 2) {
+mod_inputs_ui_wrapper <- function(id, ...) {
   ns <- NS(id)
+
   text_field <-
     if (getOption("ceq_dev", FALSE)) {
       shiny::verbatimTextOutput(ns("inputs_out"))
     } else {
       NULL
     }
+
   left_col <-
-    wellPanel(mod_inputs_btns_ui(id, choice_type = choice_type, choice_max = choice_max)) %>%
+    wellPanel(
+      mod_inputs_btns_ui(id#, choice_type = choice_type, choice_max = choice_max
+                         )) %>%
     div(id = "well1") %>%
     column(width = 3)
+
   right_col <-
     mod_dyn_inp_ui(id) %>%
-    # shinydashboard::box(width = 10, id = "well2")
-    div(style = "min-height:665px") %>%
+    div(style = "min-height:600px") %>%
     div(id = "well2") %>%
+    div(id = "well2a") %>%
     div(id = "well2b") %>%
     tagList(text_field) %>%
     tagList(verbatimTextOutput(ns("highlighted"))) %>%
@@ -35,12 +40,14 @@ mod_inputs_ui_wrapper <- function(id, choice_type = "slider", choice_max = 2) {
       else
         NULL
     )
+
   fluidRow(left_col, right_col)
 }
 
 
 #' inputs Server Functions
 #'
+#' @inheritParams mod_inputs_btns_server
 #' @noRd
 #' @export
 mod_inputs_server <-
@@ -48,12 +55,13 @@ mod_inputs_server <-
            inp_raw_str,
            inp_str_fn,
            ui_gen_fn,
-           choice_max = 3,
            run_guide = function() NULL,
            active_tab = function() NULL,
            id_result = NULL,
            target_tab = NULL,
            source_tab = NULL,
+           n_policy = c(1, 2, 1),
+           n_policy_type = c("numericInline", "numeric", "slider", "none"),
            ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns
@@ -69,14 +77,20 @@ mod_inputs_server <-
         upd_inp = reactive(inp_btns$upload_sim) %>% debounce(750),
         reseter = reactive(if(!isTruthy(inp_btns$reset)) {0} else {inp_btns$reset}),
         inp_str_fn = inp_str_fn,
-        ui_gen_fn = ui_gen_fn
+        ui_gen_fn = ui_gen_fn,
+        n_policy = n_policy
       )
 
       # sidepanel-related logic
       cur_inps_export <- reactive({req(cur_inps$inp())})
 
       # Upload-donwload-resetall module
-      inp_btns <- mod_inputs_btns_server(NULL, sim_export_dta = cur_inps$inp)
+      inp_btns <- mod_inputs_btns_server(
+        NULL,
+        sim_export_dta = cur_inps$inp,
+        n_policy = n_policy,
+        n_policy_type = n_policy_type
+      )
 
       # Run btn click
       cur_inps$run <- reactive({
@@ -211,18 +225,18 @@ mod_dyn_inp_srv <-
   function(id,
            inp_raw_str,
            n_choices = reactive(1),
-           choice_range = c(1,2),
            upd_inp = reactive(NULL),
            reseter = reactive(NULL),
            inp_str_fn,
-           ui_gen_fn) {
+           ui_gen_fn,
+           n_policy = c(1,3,1)) {
     shiny::moduleServer(#
       id,
       function(input, output, session) {
         ns <- session$ns
         # Reactive values with inputs
         cur_clean_inp <- reactiveValues(inp = NULL)
-        cur_clean_inp$n_ch <- reactive(n_choices())
+        cur_clean_inp$n_ch <- n_choices
 
         ## ## ## Gen inputs UI
         cur_clean_inp$inp_str <-
@@ -231,14 +245,12 @@ mod_dyn_inp_srv <-
                             inp_str_fn = inp_str_fn,
                             ui_gen_fn = ui_gen_fn,
                             n_choices = cur_clean_inp$n_ch,
-                            ncols = 12,
                             reseter = reseter)
 
         ## ## ## Switch input tabs
         observe({
           req(input$selected_input_tab)
           shiny::updateTabsetPanel(session, "policy_tabs", selected = input$selected_input_tab)
-          # browser()
         })
 
         ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
@@ -313,30 +325,21 @@ mod_build_inp_srv <-
            inp_raw_str,
            inp_str_fn,
            ui_gen_fn,
-           n_choices = function() {1},
-           ncols = 12,
-           nmax = 4,
-           reseter = function() {0}) {
+           n_choices = reactive(1),
+           reseter = reactive(0)) {
+
     shiny::moduleServer(id, function(input, output, session) {
       ns <- session$ns
-      n_choices_checked <- reactiveVal(2)
+      n_choices_checked <- reactiveVal(1)
 
-      # UI generator
-      # n_choices_checked <-
+      # Checking that the number of choices is not more than it should be.
       shiny::observe({
-          if (n_choices() > nmax)
-            shiny::showNotification(
-              stringr::str_c("Maximum number of policy choices is ", nmax),
-              duration = 10,
-              type = "warning"
-            )
-          new_nchoice <- min(nmax, n_choices())
-          if (new_nchoice != n_choices_checked()) n_choices_checked(new_nchoice)
+          if (n_choices() != n_choices_checked()) n_choices_checked(n_choices())
         })
 
       all_structures <- reactive({
         out <-
-          c(1:nmax) %>%
+          c(1:6) %>%
           map(~{
             do.call(inp_str_fn,
                       list(inp_raw_str = inp_raw_str, n_choices = .x, ns = ns)) %>%
@@ -408,8 +411,14 @@ mod_build_inp_srv <-
             unique() %>% length()
         })
 
+
+      ### Rendering tabs with content.
+      old_tabs_to_remove <- reactive(NULL)
+
       observeEvent(
         all_uis()[[n_choices_here()]][["tabs"]], {
+
+
           # n_choices_here <- inp_str()$inp_str %>% pull(policy_choice ) %>%
           #   unique() %>% length()
           out_ui <- try({all_uis()[[n_choices_here()]][["tabs"]]}, silent = T)

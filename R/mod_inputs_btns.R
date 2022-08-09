@@ -10,43 +10,10 @@
 #'
 #' @importFrom shiny NS tagList
 #' @export
-mod_inputs_btns_ui <- function(id = NULL, choice_type = "slider", choice_max = 2) {
+mod_inputs_btns_ui <- function(id = NULL, ...) {
   ns <- NS(id)
 
-  nsim <- tagList()
-  if (choice_type == "slider") {
-    nsim <- sliderInput(
-      ns("n_choices"),
-      "Number of policies",
-      value = 2,
-      min = 1,
-      max = choice_max,
-      step = 1,
-      round = TRUE
-    )
-  } else if (choice_type == "numeric") {
-    nsim <-
-      numericInput(
-        ns("n_choices"),
-        "Number of policy choices",
-        value = 2,
-        min = 1,
-        max = choice_max,
-        step = 1
-      )
-  } else if (choice_type == "none") {
-    nsim <- tagList()
-  } else {
-    nsim <-
-      numericInput(
-        ns("n_choices"),
-        "Number of policy choices",
-        value = 2,
-        min = 1,
-        max = choice_max,
-        step = 1
-      )
-  }
+  nsim <- shiny::uiOutput(ns("n_policy_ui"))
 
   run_button <-
     actionButton(ns("run_sim"),
@@ -109,19 +76,44 @@ mod_inputs_btns_devout_ui <- function(id = NULL) {
 
 #' inputs_btns Server Functions
 #'
+#' @param n_policy vector of 3 numeric. First and second are min and max
+#' number of choices. The last is the initialized number of choices.
+#'
+#' @param n_policy_type character, one of c("numericInline", "numeric", "slider", "none")
 #' @import purrr
 #' @noRd
 #' @export
-mod_inputs_btns_server <- function(id = NULL, sim_export_dta, choice_max = 2){
+mod_inputs_btns_server <-
+  function(id = NULL,
+           sim_export_dta,
+           n_policy = c(1, 2, 1),
+           n_policy_type = c("numericInline", "numeric", "slider", "none"),
+           ... ){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    inp_btns_inp <- reactiveValues(run = NULL,
-                                   reset = NULL,
-                                   upload_sim = NULL,
-                                   n_choices = 2)
+    if (!isTruthy(n_policy_type)) {n_policy_type <- "slider"}
 
+    if (!isTruthy(n_policy)) {
+      n_policy <- c(1, 1, 1)
+      n_policy_type <- "none"
+    }
+
+    if (length(n_policy) == 1) {
+      n_policy <- rep(n_policy, 3)
+      n_policy_type <- "none"
+    }
+
+    inp_btns_inp <- reactiveValues(
+      run = NULL,
+      reset = NULL,
+      upload_sim = NULL,
+      n_choices = n_policy[[length(n_policy)]]
+    )
+
+    ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     # Data download module
+    ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     output$download_sim <- downloadHandler(
         filename = function() {
           paste("Policy-choices-", format(Sys.time(),'%Y%m%d%H%M%S'), ".ceqsim", sep="")
@@ -132,37 +124,65 @@ mod_inputs_btns_server <- function(id = NULL, sim_export_dta, choice_max = 2){
         }
       )
 
-    # Buttons
-    observeEvent(#
-      input$reset_sim,
-      {
-        inp_btns_inp$reset <- input$reset_sim
-      })
+    ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+    # Butons
+    ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+    observeEvent(input$reset_sim, {inp_btns_inp$reset <- input$reset_sim})
+    observeEvent(input$run_sim, {inp_btns_inp$run <- input$run_sim})
+    observeEvent(input$run_guide, {inp_btns_inp$run_guide <- input$run_guide})
 
-    observeEvent(#
-      input$run_sim,
-      {
-        inp_btns_inp$run <- input$run_sim
-      })
+    ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+    # Number of policy choices
+    ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
-    observeEvent(#
-      input$run_guide,
-      {
-        inp_btns_inp$run_guide <- input$run_guide
-      })
+    # Generating the UI
+    output$n_policy_ui <-
+      renderUI({
+        make_n_choice_ui(value = n_policy[[length(n_policy)]],
+                         min = n_policy[[1]],
+                         max = n_policy[[2]],
+                         choice_type = n_policy_type[[1]],
+                         ns = ns)
+        })
 
-    # Number of policies validation
-    # n_choices_react <- reactive(input$n_choices)
+    # Observing and checking that number of policies do not exceed maximum
+    n_choices_react <- reactive(input$n_choices) %>% debounce(100)
     observeEvent(#
-      input$n_choices, {
-        if (isTruthy(input$n_choices))
-          inp_btns_inp$n_choices <- input$n_choices %>% ceiling %>% as.integer()
-        else
-          inp_btns_inp$n_choices <- 1
+      n_choices_react(), {
+        if (isTruthy(n_choices_react())) {
+
+          if (n_choices_react() > n_policy[[2]]) {
+            shiny::showNotification(
+              stringr::str_c("Maximum number of policy choices is ", n_policy[[2]]),
+              duration = 10,
+              type = "warning"
+            )
+            updateSliderInput(session, "n_choices", value = min(n_policy[[2]], n_choices_react()))
+            updateNumericInput(session, "n_choices", value = min(n_policy[[2]], n_choices_react()))
+          }
+
+          if (n_choices_react() < n_policy[[1]]) {
+            shiny::showNotification(
+              stringr::str_c("Minimum number of policy choices is ", n_policy[[1]]),
+              duration = 10,
+              type = "warning"
+            )
+            updateSliderInput(session, "n_choices", value = max(n_policy[[1]], n_choices_react()))
+            updateNumericInput(session, "n_choices", value = max(n_policy[[1]], n_choices_react()))
+          }
+
+          inp_btns_inp$n_choices <- n_choices_react() %>% ceiling %>% as.integer()
+
+        } else{
+          inp_btns_inp$n_choices <-  n_policy[[length(n_policy)]]
+        }
       },
       ignoreNULL = FALSE,
       ignoreInit = FALSE)
 
+    ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+    # Simulation upload
+    ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     observeEvent(#
       inp_btns_inp$upload_sim,
       {
@@ -214,12 +234,6 @@ mod_inputs_btns_server <- function(id = NULL, sim_export_dta, choice_max = 2){
   })
 }
 
-## To be copied in the UI
-# mod_inputs_btns_ui("inputs_btns_ui_1")
-
-## To be copied in the server
-# mod_inputs_btns_server("inputs_btns_ui_1")
-
 
 #' @noRd
 #' @importFrom rlang dots_list
@@ -235,3 +249,130 @@ make_num_inpt_ui <- function(...) {
     do.call(what = shiny::numericInput, args = .)
 }
 
+
+
+#' @noRd
+#' @importFrom rlang dots_list
+#' @importFrom magrittr extract
+#' @importFrom shiny numericInput
+#' @export
+make_n_choice_ui <-
+  function(value = 1,
+           min = 1,
+           max = 2,
+           choice_type = "slider",
+           ns = NS(NULL)) {
+
+    nsim <- tagList()
+    if (choice_type == "slider") {
+      nsim <- sliderInput(
+        ns("n_choices"),
+        "Number of policies",
+        value = value,
+        min = min,
+        max = max,
+        step = 1,
+        round = TRUE
+      )
+
+    } else if (choice_type == "numeric") {
+      nsim <-
+        numericInput(
+          ns("n_choices"),
+          "Number of policy choices",
+          value = value,
+          min = min,
+          max = max,
+          step = 1
+        )
+
+    } else if (choice_type == "numericInline") {
+      nsim <-
+        tags$div(
+          id = "inline2",
+          class = "inline",
+          numericInput(
+            ns("n_choices"),
+            label = "Number of policy choices:  ",
+            value = value,
+            min = min,
+            max = max,
+            step = 1,
+            width = "100%"
+          )
+        ) %>%
+        tagList(., tags$hr())
+
+    } else if (choice_type == "none") {
+      nsim <- tagList()
+
+    } else {
+      nsim <-
+        numericInput(
+          ns("n_choices"),
+          "Number of policy choices",
+          value = value,
+          min = min,
+          max = max,
+          step = 1
+        )
+    }
+
+    nsim
+  }
+
+#' @describeIn make_n_choice_ui
+update_n_choice_ui <-
+  function(value = 1,
+           min = 1,
+           max = 2,
+           choice_type = "slider",
+           ns = NS(NULL)) {
+
+    nsim <- tagList()
+    if (choice_type == "slider") {
+      nsim <- updateSliderInput(
+        ("n_choices"),
+        value = value,
+        min = min,
+        max = max
+      )
+
+    } else if (choice_type == "numeric") {
+      nsim <-
+        updateNumericInput(
+          ("n_choices"),
+          value = value,
+          min = min,
+          max = max
+        )
+
+    } else if (choice_type == "numericInline") {
+      nsim <-
+        tags$div(
+          id = "inline2",
+          class = "inline",
+          updateNumericInput(
+            ("n_choices"),
+            value = value,
+            min = min,
+            max = max
+          )
+        ) %>%
+        tagList(., tags$hr())
+
+    } else if (choice_type == "none") {
+      nsim <- tagList()
+
+    } else {
+      nsim <-
+        updateNumericInput(
+          ("n_choices"),
+          value = value,
+          min = min,
+          max = max
+        )
+    }
+
+    nsim
+  }

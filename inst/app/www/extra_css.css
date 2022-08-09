@@ -2,8 +2,17 @@
   position: fixed;
   right: 10px;
   top: 5px;
-} 
+}
 
 .pull-right {
     float: right !important;
 }
+
+.inline label{
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+
+}
+
+.inline .form-group { display: table-row;}

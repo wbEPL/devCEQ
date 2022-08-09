@@ -2,6 +2,8 @@
 #'
 #' @param input,output,session Internal parameters for {shiny}.
 #'     DO NOT REMOVE.
+#'
+#' @inheritParams mod_inputs_btns_server
 #' @import shiny
 #' @importFrom profvis profvis_server
 #' @importFrom dplyr tibble
@@ -13,7 +15,8 @@ CEQ_server <- function(input, output, session,
                        presim_dta = reactive(list(NULL)),
                        inp_str_fn = gen_inp_str,
                        ui_gen_fn = gen_inp_ui,
-                       choice_max = 2,
+                       n_policy = c(1, 2, 1),
+                       n_policy_type = c("numericInline", "numeric", "slider", "none"),
                        ...) {
 
   # # Loading underlining data for 2022 simulation
@@ -43,7 +46,9 @@ CEQ_server <- function(input, output, session,
     choice_max = choice_max,
     active_tab = active_tab,
     target_tab = "pc2019",
-    source_tab = "howto"
+    source_tab = "howto",
+    n_policy = n_policy,
+    n_policy_type = n_policy_type,
   )
 
   # observeEvent(ceq_inputs$run(), {

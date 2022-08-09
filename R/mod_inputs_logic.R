@@ -19,9 +19,7 @@ mod_inputs_ui_wrapper <- function(id, ...) {
     }
 
   left_col <-
-    wellPanel(
-      mod_inputs_btns_ui(id#, choice_type = choice_type, choice_max = choice_max
-                         )) %>%
+    wellPanel(mod_inputs_btns_ui(id)) %>%
     div(id = "well1") %>%
     column(width = 3)
 
@@ -74,11 +72,11 @@ mod_inputs_server <-
         id = NULL,
         inp_raw_str = inp_raw_str,
         n_choices = reactive(inp_btns$n_choices),
+        n_max_choices = reactive(inp_btns$n_max_choices),
         upd_inp = reactive(inp_btns$upload_sim) %>% debounce(750),
         reseter = reactive(if(!isTruthy(inp_btns$reset)) {0} else {inp_btns$reset}),
         inp_str_fn = inp_str_fn,
-        ui_gen_fn = ui_gen_fn,
-        n_policy = n_policy
+        ui_gen_fn = ui_gen_fn
       )
 
       # sidepanel-related logic
@@ -225,11 +223,12 @@ mod_dyn_inp_srv <-
   function(id,
            inp_raw_str,
            n_choices = reactive(1),
+           n_max_choices = reactive(3),
            upd_inp = reactive(NULL),
            reseter = reactive(NULL),
            inp_str_fn,
            ui_gen_fn,
-           n_policy = c(1,3,1)) {
+           ...) {
     shiny::moduleServer(#
       id,
       function(input, output, session) {
@@ -245,6 +244,7 @@ mod_dyn_inp_srv <-
                             inp_str_fn = inp_str_fn,
                             ui_gen_fn = ui_gen_fn,
                             n_choices = cur_clean_inp$n_ch,
+                            n_max_choices = n_max_choices,
                             reseter = reseter)
 
         ## ## ## Switch input tabs
@@ -285,12 +285,16 @@ mod_dyn_inp_srv <-
         ## ## ## Rendering the data table
         output$inputs_ui_values <-
           DT::renderDT({
-            # req(cur_clean_inp$export())
+            shiny::validate(
+              shiny::need(cur_clean_inp$export(),
+                          "An error occured when creating tabe with dat afor export."
+              ))
+            req(cur_clean_inp$export())
             cur_clean_inp$export() %>%
               select(-1) %>%
               fct_config_gen_dt("Policy scenarios summary", group_row = 1)
           },
-          server = FALSE)
+          server = TRUE)
 
         ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
         # ## ## ## Testing
@@ -326,6 +330,7 @@ mod_build_inp_srv <-
            inp_str_fn,
            ui_gen_fn,
            n_choices = reactive(1),
+           n_max_choices = reactive(2),
            reseter = reactive(0)) {
 
     shiny::moduleServer(id, function(input, output, session) {
@@ -334,12 +339,22 @@ mod_build_inp_srv <-
 
       # Checking that the number of choices is not more than it should be.
       shiny::observe({
-          if (n_choices() != n_choices_checked()) n_choices_checked(n_choices())
+        n_choices()
+        isolate({
+          if (n_choices() > n_max_choices())
+            n_choices_checked(n_max_choices())
+          else if (n_choices() < 1)
+            n_choices_checked(1)
+          else if (n_choices() >= 1 &&
+              n_choices() <= n_max_choices() &&
+              n_choices() != n_choices_checked())
+            n_choices_checked(n_choices())
         })
+      })
 
       all_structures <- reactive({
         out <-
-          c(1:6) %>%
+          c(1:n_max_choices()) %>%
           map(~{
             do.call(inp_str_fn,
                       list(inp_raw_str = inp_raw_str, n_choices = .x, ns = ns)) %>%
@@ -413,25 +428,29 @@ mod_build_inp_srv <-
 
 
       ### Rendering tabs with content.
-      old_tabs_to_remove <- reactive(NULL)
+      old_tabs_to_remove <- reactiveVal(NULL)
 
-      observeEvent(
+
+      observeEvent(#
         all_uis()[[n_choices_here()]][["tabs"]], {
-
-
           # n_choices_here <- inp_str()$inp_str %>% pull(policy_choice ) %>%
           #   unique() %>% length()
           out_ui <- try({all_uis()[[n_choices_here()]][["tabs"]]}, silent = T)
-          shiny::validate(#
-            shiny::need(
-              !"try-error" %in% class(out_ui),
-              "Check the UI-generation function. It fails with an error."
-            ))
+          shiny::validate(
+            shiny::need(!"try-error" %in% class(out_ui),
+                        "Check the UI-generation function. It fails with an error."
+                        ))
           req(out_ui$ui)
-          # browser()
+
+          if (isTruthy(old_tabs_to_remove())) {
+            old_tabs_to_remove() %>%
+              walk(~{
+                removeTab(inputId = "policy_tabs", target = .x, session = session)
+              })
+          }
+
           out_ui$ui %>%
-            walk2(seq_along(.), ~{
-              # browser()
+            walk2(seq_along(.), ~ {
               select_tab <- .y == 1
               if (.x$attribs$class == "tab-pane") {
                 insertTab(
@@ -441,12 +460,13 @@ mod_build_inp_srv <-
                   select = select_tab,
                   position = "before",
                   session = session
-                  )
+                )
               }
 
             })
-        }
-      )
+
+          out_ui$ui %>% map_chr(~{.x$attribs$`data-value`}) %>% old_tabs_to_remove()
+        })
       # output$dynamic_inputs_ui <-
       #   shiny::renderUI({
       #     n_choices_here <- inp_str()$inp_str %>% pull(policy_choice ) %>%
@@ -660,13 +680,21 @@ mod_check_inp_srv <-
               unlist() %>%
               as.integer() %>%
               sum()
-            req(n_nulls < 3)
+            # req(length(current_inp()$inp$current_value) - n_nulls > 10)
             current_inp()$inp %>%
+              filter(map_lgl(current_value, ~ !is.null(.x))) %>%
+              mutate(
+                max = ifelse(is.na(max), Inf, max),
+                min = ifelse(is.na(min), Inf, min)) %>%
               dplyr::rowwise() %>%
-              dplyr::mutate(greater = map_lgl(current_value, ~ .x > max)) %>%
+              dplyr::mutate(greater = map_lgl(current_value, ~ .x > max )) %>%
               dplyr::mutate(less = map_lgl(current_value, ~ .x < min)) %>%
               dplyr::mutate(na_val = map_lgl(current_value, ~ is.na(.x) | .x == "")) %>%
-              tidyr::replace_na(list(less = FALSE, greater = FALSE, na_val = FALSE))
+              tidyr::replace_na(list(less = FALSE, greater = FALSE, na_val = FALSE)) %>%
+              dplyr::mutate(greater = ifelse(type == "textInput", FALSE, greater)) %>%
+              dplyr::mutate(less = ifelse(type == "textInput", FALSE, less)) #%>%
+
+              # dplyr::filter(less | greater | na_val)
               # dplyr::mutate(current_value = ifelse(less, list(min), list(current_value)),
               #               current_value = ifelse(greater, list(max), list(current_value)))
           }) %>%
@@ -692,7 +720,7 @@ mod_check_inp_srv <-
               )
 
               if (dts$na_val) {
-                msg <- "Missing values are not allowed. It was corrected to the baseline."
+                msg <- "Missing values are not allowed. They were corrected to the baseline."
               }
 
               # Alerts

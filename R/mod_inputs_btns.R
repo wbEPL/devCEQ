@@ -108,7 +108,8 @@ mod_inputs_btns_server <-
       run = NULL,
       reset = NULL,
       upload_sim = NULL,
-      n_choices = n_policy[[length(n_policy)]]
+      n_choices = n_policy[[length(n_policy)]],
+      n_max_choices = n_policy[[2]]
     )
 
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
@@ -146,7 +147,7 @@ mod_inputs_btns_server <-
         })
 
     # Observing and checking that number of policies do not exceed maximum
-    n_choices_react <- reactive(input$n_choices) %>% debounce(100)
+    n_choices_react <- reactive(input$n_choices)# %>% debounce(100)
     observeEvent(#
       n_choices_react(), {
         if (isTruthy(n_choices_react())) {
@@ -157,8 +158,8 @@ mod_inputs_btns_server <-
               duration = 10,
               type = "warning"
             )
-            updateSliderInput(session, "n_choices", value = min(n_policy[[2]], n_choices_react()))
-            updateNumericInput(session, "n_choices", value = min(n_policy[[2]], n_choices_react()))
+            # updateNumericInput(session, "n_choices", value = min(n_policy[[2]], n_choices_react()))
+            # updateSliderInput(session, "n_choices", value = min(n_policy[[2]], n_choices_react()))
           }
 
           if (n_choices_react() < n_policy[[1]]) {
@@ -167,8 +168,8 @@ mod_inputs_btns_server <-
               duration = 10,
               type = "warning"
             )
-            updateSliderInput(session, "n_choices", value = max(n_policy[[1]], n_choices_react()))
-            updateNumericInput(session, "n_choices", value = max(n_policy[[1]], n_choices_react()))
+            # updateNumericInput(session, "n_choices", value = max(n_policy[[1]], n_choices_react()))
+            # updateSliderInput(session, "n_choices", value = max(n_policy[[1]], n_choices_react()))
           }
 
           inp_btns_inp$n_choices <- n_choices_react() %>% ceiling %>% as.integer()
@@ -322,6 +323,7 @@ make_n_choice_ui <-
   }
 
 #' @describeIn make_n_choice_ui
+#' @noRd
 update_n_choice_ui <-
   function(value = 1,
            min = 1,

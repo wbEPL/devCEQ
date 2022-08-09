@@ -84,6 +84,32 @@ inp_raw_str <- path %>% load_input_xlsx()
 inp_str <- inp_str_test(inp_raw_str)
 # profvis::profvis(inp_str <- inp_str_test(inp_raw_str))
 
+
+pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+
+server <- function(input, output, session) {
+  mod_inputs_server("test", inp_raw_str = inp_raw_str,
+                    inp_str_fn = gen_inp_str, ui_gen_fn = gen_inp_ui)
+
+  callModule(profvis::profvis_server, "prof1")
+}
+
+navbarPage(
+  id = "main_sidebar",
+  title = "Navbar title",
+  theme =  bslib::bs_theme(version = 4, bootswatch = "flatly", "enable-rounded" = TRUE),
+  windowTitle = "windowTitle",
+  collapsible = TRUE,
+  tabPanel(
+    title = "Policy",
+    # shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
+    mod_inputs_ui_wrapper("test"),
+    profvis::profvis_ui(id = "prof1")
+  )
+) %>%
+  shinyApp(., server)
+
+
 # Developing tabs and wells grouping ------------------------------------
 
 pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
@@ -117,29 +143,6 @@ fluidPage(
 # Running input module alone ----------------------------------------------
 
 
-
-pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
-server <- function(input, output, session) {
-  mod_inputs_server("test", inp_raw_str = inp_raw_str,
-                    inp_str_fn = gen_inp_str, ui_gen_fn = gen_inp_ui)
-
-  callModule(profvis::profvis_server, "prof1")
-}
-
-navbarPage(
-  id = "main_sidebar",
-  title = "Navbar title",
-  theme =  bslib::bs_theme(version = 4, bootswatch = "flatly", "enable-rounded" = TRUE),
-  windowTitle = "windowTitle",
-  collapsible = TRUE,
-  tabPanel(
-    title = "Policy",
-    # shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
-    mod_inputs_ui_wrapper("test", choice_max = 2),
-    profvis::profvis_ui(id = "prof1")
-  )
-) %>%
-  shinyApp(., server)
 
 
 

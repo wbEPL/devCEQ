@@ -261,11 +261,11 @@ gen_inp_ui <- function(inp_ui_str, type = "fixed",
                        "fluid" = shiny::fluidRow
   )
 
-  out <- NULL
+  # out <- NULL
 
   # browser()
   # Panel structure with columns in rows.
-  # out$panel <-
+  # panel <-
   #   inp_ui_str %>%
   #   # dplyr::filter(row > 0) %>%
   #   dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
@@ -282,7 +282,7 @@ gen_inp_ui <- function(inp_ui_str, type = "fixed",
 
   # Panel structure with rows in columns
   # browser()
-  out$panel <-
+  panel <-
     inp_ui_str %>%
     dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
     dplyr::arrange(group_order, order, row) %>%
@@ -299,15 +299,15 @@ gen_inp_ui <- function(inp_ui_str, type = "fixed",
     ungroup() %>%
     arrange(group_order)
 
-  out$head <-
-    out$panel %>%
+  head <-
+    panel %>%
     filter(is.na(group_name)) %>%
     pull(single_well) %>%
     shiny::column(sum(input_cols_spec$width), .) %>%
     rowwing_fn()
 
   if (add_rest_btn) {
-    out$reset_btns <-
+    reset_btns <-
       inp_ui_str %>%
       dplyr::distinct(policy_choice) %>%
       mutate(single_ui = map(policy_choice, ~ {
@@ -325,11 +325,11 @@ gen_inp_ui <- function(inp_ui_str, type = "fixed",
       dplyr::mutate(single_well = purrr::map(single_well, ~rowwing_fn(.x)))  %>%
       ungroup()
   } else {
-    out$reset_btns  <- NULL
+    reset_btns  <- NULL
   }
 
-  out$panel <-
-    out$panel %>%
+  panel <-
+    panel %>%
     filter(!is.na(group_name)) %>%
     purrr::pmap( ~ {
       dts <- rlang::dots_list(...)
@@ -341,51 +341,34 @@ gen_inp_ui <- function(inp_ui_str, type = "fixed",
     }) %>%
     shiny::tagList()
 
-  out$ui <-
-    tagList(out$head, out$reset_btns, tags$hr()) %>%
+  all_tabs <-
+    tagList(head, reset_btns, tags$hr()) %>%
     shiny::column(sum(input_cols_spec$width), .) %>%
     rowwing_fn(style = "overflow-y: auto; padding-right: 19px;") %>%
-    tagList(out$panel %>%
+    tagList(panel %>%
               shiny::column(sum(input_cols_spec$width), .) %>%
               rowwing_fn(style = "max-height: calc(70vh); overflow-y: scroll;" ,
                          id = ns("policy-options-inputs"))
             ) %>%
     shiny::column(sum(input_cols_spec$width), .) %>%
-    shiny::tabPanelBody(value = "panel1", .) %>%
-    list()
+    list() %>%
+    setNames("panel1")
 
-  # out$ui #<-
-    # tabsetPanel(
-    #   id = ns("policy_tabs"),
-    #   type = "hidden",
-    #   out$ui,
-    #   shiny::tabPanelBody(
-    #     value = "summary",
-    #     DT::DTOutput(ns("inputs_ui_values"))
-    #     )
-    # )
+  # browser()
 
-
-  # out$ui <-
-  #   list(
-  #     # id = "hidden_tabs",
-  #     # type = "hidden",
-  #     out$ui,
-  #     shiny::tabPanelBody(value = "summary",
-  #                         DT::DTOutput(ns("inputs_ui_values")))
-  #   )
-
-  switches_out <- list()
-  switches_out$ui <-
-    shinyWidgets::radioGroupButtons(
-      inputId = ns("selected_input_tab"),
-      label = NULL,
-      choices = c("Policy choices" = "panel1",
-                  "Summary Table" = "summary"),
-      direction = "vertical",
-      justified = TRUE
-      )
-
-  list(tabs = out, switches = switches_out)
+  # Switches ----------------------------------------------------------------
+  switches <- list()
+  switches$choices <- c("Policy choices" = "panel1",
+                           "Summary Table" = "summary")
+  # switches$ui <-
+  #   shinyWidgets::radioGroupButtons(
+  #     inputId = ns("selected_input_tab"),
+  #     label = NULL,
+  #     choices = c("Policy choices" = "panel1",
+  #                 "Summary Table" = "summary"),
+  #     direction = "vertical",
+  #     justified = TRUE
+  #     )
+  list(tabs = all_tabs, switches = switches)
 }
 

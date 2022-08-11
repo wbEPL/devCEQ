@@ -59,7 +59,7 @@ mod_inputs_server <-
            target_tab = NULL,
            source_tab = NULL,
            n_policy = c(1, 2, 1),
-           n_policy_type = c("numericInline", "numeric", "slider", "none"),
+           n_policy_type = c("slider", "numericInline", "numeric","none"),
            ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns
@@ -173,27 +173,14 @@ mod_inputs_server <-
 #' @export
 mod_dyn_inp_ui <- function(id) {
   ns <- NS(id)
-
-  # # # Old view.
-  # shiny::tabsetPanel(
-  #   type = "tabs",
-  #   id = ns("input_tabs"),
-  #   shiny::tabPanel(title = "Policy choices",
-  #                   id = ns("policy_choice"),
-  #                   if (getOption("ceq_inmodule_dev", FALSE)) {
-  #                     actionButton(ns("browser"), "browser")
-  #                   },
-  #                   shiny::uiOutput(ns("dynamic_inputs_ui"))),
-  #   shiny::tabPanel("Summary table",
-  #                   id = ns("summary_table"),
-  #                   DT::DTOutput(ns("inputs_ui_values")))
-  # )
-
-  # # # New look
+ # New look
     tagList(
+      mod_inp_tab_header_ui(id),
+      mod_inp_tabs_ui(id),
       tabsetPanel(
         id = ns("policy_tabs"),
         type = "hidden",
+        header = mod_inp_tab_header_intab_ui(id),
 
         # shiny::uiOutput(ns("dynamic_inputs_ui")),
         shiny::tabPanelBody(
@@ -201,9 +188,8 @@ mod_dyn_inp_ui <- function(id) {
 
           DT::DTOutput(ns("inputs_ui_values"))
         )
-      )
-
-      ,
+      ),
+      mod_inp_tab_footer_ui(id),
       if (getOption("ceq_inmodule_dev", FALSE)) {
         shiny::verbatimTextOutput(ns("dynamic_inputs_ui_info"))
       }
@@ -247,11 +233,8 @@ mod_dyn_inp_srv <-
                             n_max_choices = n_max_choices,
                             reseter = reseter)
 
-        ## ## ## Switch input tabs
-        observe({
-          req(input$selected_input_tab)
-          shiny::updateTabsetPanel(session, "policy_tabs", selected = input$selected_input_tab)
-        })
+        ## ## ## Rendering the Inputs UI
+        mod_render_inp_ui_srv(NULL, cur_clean_inp$inp_str)
 
         ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
         ## ## ## Update new inputs UI with previous values (if n changes)
@@ -296,20 +279,6 @@ mod_dyn_inp_srv <-
           },
           server = TRUE)
 
-        ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
-        # ## ## ## Testing
-        ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
-        observeEvent(input$browser, {
-          # browser()
-        })
-
-        output$dynamic_inputs_ui_info <- renderPrint({
-          list(
-            cur_clean_inp$export() %>% str(),
-            cur_clean_inp$key() %>% str()
-          )
-        })
-
         cur_clean_inp
       })
   }
@@ -317,7 +286,7 @@ mod_dyn_inp_srv <-
 
 
 
-#' Module for generating and re-generating inputs on the server
+#' Module for generating and re-generating inputs UI on the server
 #'
 #' @noRd
 #' @import shiny
@@ -330,180 +299,242 @@ mod_build_inp_srv <-
            inp_str_fn,
            ui_gen_fn,
            n_choices = reactive(1),
-           n_max_choices = reactive(2),
+           n_max_choices = reactive(4),
            reseter = reactive(0)) {
 
     shiny::moduleServer(id, function(input, output, session) {
       ns <- session$ns
-      n_choices_checked <- reactiveVal(1)
+
+      # This number of policy choices that is compared with restrictions.
+      n_poly <- reactiveVal(NULL)
 
       # Checking that the number of choices is not more than it should be.
-      shiny::observe({
-        n_choices()
-        isolate({
-          if (n_choices() > n_max_choices())
-            n_choices_checked(n_max_choices())
-          else if (n_choices() < 1)
-            n_choices_checked(1)
-          else if (n_choices() >= 1 &&
-              n_choices() <= n_max_choices() &&
-              n_choices() != n_choices_checked())
-            n_choices_checked(n_choices())
-        })
-      })
+      shiny::observeEvent(#
+        n_choices(),{
+          if (n_choices() > n_max_choices()) n_poly(n_max_choices())
+          else if (n_choices() < 1) n_poly(1)
+          else if (n_choices() >= 1 && n_choices() <= n_max_choices() &&
+                   !isTRUE(n_choices() == n_poly()))
+            n_poly(n_choices())
+      },
+      ignoreInit = FALSE,
+      ignoreNULL = TRUE)
 
-      all_structures <- reactive({
-        out <-
-          c(1:n_max_choices()) %>%
-          map(~{
-            do.call(inp_str_fn,
-                      list(inp_raw_str = inp_raw_str, n_choices = .x, ns = ns)) %>%
-              list() %>%
-              set_names(.x)
-          }) %>%
-          unlist(recursive = F)
-      })
+      update_ui <- reactive({
+        # shinyjs::disable(("run_sim"))
+        req(n_poly())
+        req(inp_raw_str)
+        list(inp_raw_str, n_poly(), reseter())
+      }) %>%
+        debounce(250)
 
-      all_uis <- reactive({
-        out2 <-
-          all_structures() %>%
-          imap(~{
-            do.call(ui_gen_fn, list(.x, add_rest_btn = TRUE, ns = ns))
-          })
-      })
 
-      inp_str <-
+      ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+      ### Gen table with UI elements
+      all_ui_str <-
         shiny::eventReactive(#
-          list(n_choices_checked(), reseter()),
+          update_ui(),
           {
-            shinyjs::disable(("run_sim"))
-            # shinyjs::disable(selector = "#main_sidebar li:nth-child(3) a")
+            # Generating UI table  ### ### ### ### ### ### ### ### ### ### ###
+            out <- try({inp_str_fn(inp_raw_str = inp_raw_str,
+                                   n_choices = n_poly(),
+                                   ns = ns)
+            }, silent = T)
 
-            new_str <- try({all_structures()[[n_choices_checked()]]}, silent = T)
+            # Gen UI switches and tabs.  ### ### ### ### ### ### ### ### ### ###
+            all_uis <-  try({ui_gen_fn(out, ns = ns)}, silent = T)
+
+            # Validating it  ### ### ### ### ### ### ### ### ### ### ### ###
             validate(#
-              need(
-                !"try-error" %in% class(new_str),
-                "Check the UI-structure preparation function. It fails with an error."
-              ),
-              need(
-                nrow(new_str) > 0,
-                "Check the UI-structure preparation function. It does not
-                produce any output."
-              ))
-            list(inp_str = new_str,
-                 #if ("try-error" %in% class(new_str)) NULL else new_str,
-                 # inp_str = gen_inp_str(inp_raw_str, n_choices_checked(), ns = ns)
-                 timestamp = Sys.time(),
-                 reseter = reseter())
+              need(!"try-error" %in% class(out),
+                   "`mod_build_inp_srv`: check `inp_str_fn`. It fails"),
+              need(nrow(out) > 0,
+                   "`mod_build_inp_srv`: check `inp_str_fn`. It does not produce rows"),
+              need(!"try-error" %in% class(all_uis),
+                   "`mod_build_inp_srv`: check `ui_gen_fn`. It failed.")
+            )
+
+            list(inp_str = out, timestamp = Sys.time(), reseter = reseter(), all_uis = all_uis)
           },
           ignoreInit = FALSE,
-          ignoreNULL = TRUE)
+          ignoreNULL = TRUE
+        )
 
-      w <- waiter::Waiter$new(
-        id = ns(c("dynamic_inputs_ui", "dynamic_inputs_ui_info")),
-        html = waiter::spin_loader(),
-        color = waiter::transparent(.5)
-      )
+      # # Waiter.
+      # w <- waiter::Waiter$new(
+      #   id = ns(c("dynamic_inputs_ui", "dynamic_inputs_ui_info")),
+      #   html = waiter::spin_loader(),
+      #   color = waiter::transparent(.5)
+      # )
 
-      output$dynamic_tabs_ui <-
-        shiny::renderUI({
-          n_choices_here <- inp_str()$inp_str %>% pull(policy_choice ) %>%
-            unique() %>% length()
-          out_ui <- try({all_uis()[[n_choices_here]][["switches"]]}, silent = T)
-          # browser()
-          shiny::validate(#
-            shiny::need(
-              !"try-error" %in% class(out_ui),
-              "Check the UI-generation function. It fails with an error."
-            ))
-          req(out_ui$ui)
-          return(out_ui$ui)
-        })
-
-      n_choices_here <-
-        reactive({
-          inp_str()$inp_str %>% pull(policy_choice) %>%
-            unique() %>% length()
-        })
-
-
-      ### Rendering tabs with content.
-      old_tabs_to_remove <- reactiveVal(NULL)
-
-
-      observeEvent(#
-        all_uis()[[n_choices_here()]][["tabs"]], {
-          # n_choices_here <- inp_str()$inp_str %>% pull(policy_choice ) %>%
-          #   unique() %>% length()
-          out_ui <- try({all_uis()[[n_choices_here()]][["tabs"]]}, silent = T)
-          shiny::validate(
-            shiny::need(!"try-error" %in% class(out_ui),
-                        "Check the UI-generation function. It fails with an error."
-                        ))
-          req(out_ui$ui)
-
-          if (isTruthy(old_tabs_to_remove())) {
-            old_tabs_to_remove() %>%
-              walk(~{
-                removeTab(inputId = "policy_tabs", target = .x, session = session)
-              })
-          }
-
-          out_ui$ui %>%
-            walk2(seq_along(.), ~ {
-              select_tab <- .y == 1
-              if (.x$attribs$class == "tab-pane") {
-                insertTab(
-                  inputId = "policy_tabs",
-                  tab = .x,
-                  target = "summary",
-                  select = select_tab,
-                  position = "before",
-                  session = session
-                )
-              }
-
-            })
-
-          out_ui$ui %>% map_chr(~{.x$attribs$`data-value`}) %>% old_tabs_to_remove()
-        })
-      # output$dynamic_inputs_ui <-
-      #   shiny::renderUI({
-      #     n_choices_here <- inp_str()$inp_str %>% pull(policy_choice ) %>%
-      #       unique() %>% length()
-      #
-      #     out_ui <- try({all_uis()[[n_choices_here]][["tabs"]]}, silent = T)
-      #     shiny::validate(#
-      #       shiny::need(
-      #         !"try-error" %in% class(out_ui),
-      #         "Check the UI-generation function. It fails with an error."
-      #       ))
-      #
-      #     req(out_ui$ui)
-      #     shiny::validate(
-      #       shiny::need(
-      #         !is.null(out_ui$ui),
-      #         "Check the UI-generation function. It does not produce a single
-      #         `ui` component that could be build"
-      #       )
-      #     )
-      #
-      #     return(out_ui$ui)
-      #   })
-
-
-
-      output$dynamic_inputs_ui_info <- shiny::renderPrint({inp_str()})
-      #
-      # observe({
-      #   req(inp_str())
-      #   shinyjs::enable(("run_sim"))
-      # })
-
-      return(inp_str)
+      return(all_ui_str)
 
     })
 
+  }
+
+
+
+#' @describeIn mod_render_inp_ui_srv UI for input tabs switches.
+#'
+#' @noRd
+#' @importFrom shiny uiOutput
+#' @export
+mod_inp_switches_ui <-
+  function(id) {
+    ns = NS(id)
+    # shiny::uiOutput(ns("switches_iu"))
+
+    shinyWidgets::radioGroupButtons(
+      inputId = ns("inp_tab"),
+      label = NULL,
+      choices = c("Policy choices" = "panel1",
+                  "Summary Table" = "summary"),
+      direction = "vertical",
+      justified = TRUE
+    )
+
+  }
+
+#' @describeIn mod_render_inp_ui_srv UI for input tabs bodies
+#' @noRd
+#' @import shiny
+#' @importFrom shiny uiOutput
+#' @export
+mod_inp_tabs_ui <-
+  function(id) {
+    ns = NS(id)
+    shiny::uiOutput(ns("tabs_ui"))
+  }
+
+#' @describeIn mod_render_inp_ui_srv UI for tabs header
+#' @noRd
+#' @importFrom shiny uiOutput
+#' @export
+mod_inp_tab_header_ui <-
+  function(id) {
+    ns = NS(id)
+    shiny::uiOutput(ns("tab_header_ui"))
+  }
+
+#' @describeIn mod_render_inp_ui_srv UI for tabs mod_inp_tab_header_intab_ui
+#' @noRd
+#' @importFrom shiny uiOutput
+#' @export
+mod_inp_tab_header_intab_ui <-
+  function(id) {
+    ns = NS(id)
+    shiny::uiOutput(ns("tab_header_intab_ui"))
+  }
+
+
+#' @describeIn mod_render_inp_ui_srv UI for tabs footer
+#' @noRd
+#' @importFrom shiny uiOutput
+#' @export
+mod_inp_tab_footer_ui <-
+  function(id) {
+    ns = NS(id)
+    shiny::uiOutput(ns("tab_footer_ui"))
+  }
+
+
+
+
+#' Module for generating and re-generating inputs UI on the server
+#'
+#' @noRd
+#' @import shiny
+#' @importFrom waiter Waiter spin_loader transparent
+#' @importFrom shinyjs disable enable
+#' @importFrom shinyWidgets updateRadioGroupButtons
+#' @export
+mod_render_inp_ui_srv <-
+  function(id, all_ui_str) {
+
+    shiny::moduleServer(id, function(input, output, session) {
+      ns <- session$ns
+
+      ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+      ### TAB switch logic
+      observe({
+        req(input$inp_tab)
+        shiny::updateTabsetPanel(session, "policy_tabs", selected = input$inp_tab)
+      })
+
+      ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+      ### Render switches
+      output$switches_iu <- shiny::renderUI({
+        ui <- all_ui_str()$all_uis$switches$ui
+        validate(need(isTruthy(ui), "`mod_render_inp_ui_srv`: problems with switches UI"))
+        ui
+      })
+      observeEvent(#
+        all_ui_str()$all_uis$switches$choices,
+        {
+          shinyWidgets::updateRadioGroupButtons(
+            session,
+            inputId = "inp_tab",
+            choices = all_ui_str()$all_uis$switches$choices)
+        }, ignoreNULL = TRUE, ignoreInit = FALSE)
+
+      ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+      ### Render header
+      output$tab_header_ui <- shiny::renderUI({
+        ui <- all_ui_str()$all_uis$header$ui
+        req(ui)
+      })
+
+      ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+      ### Render header
+      output$tab_header_intab_ui <- shiny::renderUI({
+        ui <- all_ui_str()$all_uis$tab_header$ui
+        req(ui)
+      })
+
+      ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+      ### Render tab footer
+      output$tab_footer_ui <- shiny::renderUI({
+        ui <- all_ui_str()$all_uis$tab_footer$ui
+        req(ui)
+      })
+
+      ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+      ### Render tabs
+      old_tabs_to_remove <- reactiveVal(NULL)
+      observeEvent(
+        #
+        all_ui_str()$all_uis$tabs,
+        {
+          if (isTruthy(old_tabs_to_remove())) {
+            old_tabs_to_remove() %>%
+              walk( ~ {
+                removeTab(inputId = "policy_tabs",
+                          target = .x,
+                          session = session)
+              })
+          }
+
+          all_ui_str()$all_uis$tabs %>%
+            list(., seq_along(.), names(.)) %>%
+            purrr::pwalk(~ {
+              shiny::insertTab(
+                inputId = "policy_tabs",
+                tab =  shiny::tabPanelBody(value = ..3, ..1) ,
+                target = "summary",
+                select = ..2 == 1,
+                position = "before",
+                session = session
+              )
+            })
+
+          all_ui_str()$all_uis$tabs %>% names() %>% old_tabs_to_remove()
+        },
+        ignoreNULL = FALSE,
+        ignoreInit = FALSE
+      )
+
+    })
   }
 
 

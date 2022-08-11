@@ -49,7 +49,8 @@ mod_inputs_btns_ui <- function(id = NULL, ...) {
     div(id = ns("upload_sim_holder"))
 
   input_tabs <-
-    shiny::uiOutput(ns("dynamic_tabs_ui")) %>%
+    mod_inp_switches_ui(id = id) %>%
+    # shiny::uiOutput(ns("dynamic_tabs_ui")) %>%
     div(id = ns("input_tabs"))
 
   list(
@@ -322,7 +323,7 @@ make_n_choice_ui <-
     nsim
   }
 
-#' @describeIn make_n_choice_ui
+#' @describeIn mod_inputs_btns_server update_n_choice_ui
 #' @noRd
 update_n_choice_ui <-
   function(value = 1,

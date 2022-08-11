@@ -36,6 +36,6 @@ devCEQ::CEQ_run(
   presim = presim,
   ui_fn = CEQ_ui,
 
-  n_policy = c(1,3,2),
-  n_policy_type = "numericInline", #c("numericInline", "numeric", "slider", "none"),
+  n_policy = c(1,3,1),
+  n_policy_type = "slider", #c("numericInline", "numeric", "slider", "none"),
 )

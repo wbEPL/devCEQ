@@ -69,7 +69,7 @@
 #   shinyApp(ui, server)
 # }
 
-# Test if inputs generate UI ----------------------------------------------
+# Test 1. if inputs generate UI ----------------------------------------------
 
 golem::detach_all_attached()
 golem::document_and_reload()
@@ -85,29 +85,139 @@ inp_str <- inp_str_test(inp_raw_str)
 # profvis::profvis(inp_str <- inp_str_test(inp_raw_str))
 
 
+# Test 2. If simple app launches ----------------------------------------------
+
+# pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+#
+# path <- "data-raw/complex-inputs-structure.xlsx"
+# inp_raw_str <- path %>% load_input_xlsx()
+#
+# server <- function(input, output, session) {
+#   mod_inputs_server(
+#     "test",
+#     inp_raw_str = inp_raw_str,
+#     inp_str_fn = gen_inp_str,
+#     ui_gen_fn = gen_inp_ui
+#   )
+#   # callModule(profvis::profvis_server, "prof1")
+# }
+#
+# navbarPage(
+#   id = "main_sidebar",
+#   title = "Navbar title",
+#   theme =  bslib::bs_theme(version = 4, bootswatch = "flatly", "enable-rounded" = TRUE),
+#   windowTitle = "windowTitle",
+#   collapsible = TRUE,
+#   tabPanel(
+#     title = "Policy",
+#     # shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
+#     mod_inputs_ui_wrapper("test"),
+#     profvis::profvis_ui(id = "prof1")
+#   )
+# ) %>%
+#   shinyApp(., server)
+
+# Writing a shiny app for testing the layout funcitons -------------------------
+
 pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
 
-server <- function(input, output, session) {
-  mod_inputs_server("test", inp_raw_str = inp_raw_str,
-                    inp_str_fn = gen_inp_str, ui_gen_fn = gen_inp_ui)
+path <- "data-raw/complex-inputs-structure.xlsx"
+inp_raw_str <- path %>% load_input_xlsx()
+inp_tab_str <- path %>% load_inputtabs_xlsx()
 
-  callModule(profvis::profvis_server, "prof1")
+
+# # Generate UI Simple manual process
+# ui_parts <-
+#   gen_inp_str(inp_raw_str, 2) %>%
+#   gen_inp_ui(type = "fluid")
+#
+# ui_parts %>% str(max.level = 1)
+#
+# server <- function(input, output, session) {
+#   mod_dyn_inp_srv(
+#     NULL,
+#     inp_raw_str,
+#     inp_str_fn = gen_inp_str,
+#     ui_gen_fn = gen_inp_ui)
+# }
+#
+# fluidPage(
+#   column(2, wellPanel(ui_parts$switches$ui)),
+#   column(10, ui_parts$tabs$ui)
+# ) %>%
+#   shinyApp(., server)
+
+
+# The testing function ---------------------------------------------------------
+
+# pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+# test_genui_fn(inp_raw_str, full = T)
+
+
+
+# library(reactlog)
+# pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+# reactlog_enable()
+# test_genui_fn(inp_raw_str)
+# shiny::reactlogShow()
+
+
+# Test 3. Loading tabs structure from input file ----------------------------------------------
+
+pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+
+path <- "data-raw/complex-inputs-structure.xlsx"
+inp_raw_str <- path %>% load_input_xlsx()
+inp_tab_str <- path %>% load_inputtabs_xlsx()
+
+
+gen_tabinp_ui_front <- function(inp_tab_str, ...) {
+  function(inp_ui_str, ns, type = "fixed", add_rest_btn = TRUE, ... ) {
+    gen_tabinp_ui(inp_ui_str,
+                  inp_tab_str = inp_tab_str,
+                  ns = NS(NULL),
+                  type = type,
+                  add_rest_btn = T,
+                  ...)
+  }
 }
 
-navbarPage(
-  id = "main_sidebar",
-  title = "Navbar title",
-  theme =  bslib::bs_theme(version = 4, bootswatch = "flatly", "enable-rounded" = TRUE),
-  windowTitle = "windowTitle",
-  collapsible = TRUE,
-  tabPanel(
-    title = "Policy",
-    # shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
-    mod_inputs_ui_wrapper("test"),
-    profvis::profvis_ui(id = "prof1")
-  )
-) %>%
-  shinyApp(., server)
+
+
+test_genui_fn(inp_raw_str, gen_ui_fn = gen_tabinp_ui_front)
+
+
+#
+#
+#
+#
+# server <- function(input, output, session) {
+#   mod_inputs_server(
+#     "test",
+#     inp_raw_str = inp_raw_str,
+#     inp_str_fn = gen_inp_str,
+#     ui_gen_fn = gen_tabinp_ui_front(inp_tab_str = inp_tab_str)
+#   )
+#   # callModule(profvis::profvis_server, "prof1")
+# }
+#
+#
+# options(shiny.fullstacktrace = TRUE)
+# options(shiny.reactlog=TRUE)
+# navbarPage(
+#   id = "main_sidebar",
+#   title = "Navbar title",
+#   theme =  bslib::bs_theme(version = 4, bootswatch = "flatly", "enable-rounded" = TRUE),
+#   windowTitle = "windowTitle",
+#   collapsible = TRUE,
+#   tabPanel(
+#     title = "Policy",
+#     # shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),
+#     mod_inputs_ui_wrapper("test"),
+#     profvis::profvis_ui(id = "prof1")
+#   )
+# ) %>%
+#   shinyApp(., server)
 
 
 # Developing tabs and wells grouping ------------------------------------

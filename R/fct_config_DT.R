@@ -1,25 +1,35 @@
-#' fct_config_gen_dt 
+#' fct_config_gen_dt
 #'
 #' @description Formats generif DT table for the app
 #'
 #' @return The return value, if any, from executing the function.
 #'
 #' @noRd
-#' 
+#'
 #' @importFrom DT datatable JS
-fct_config_gen_dt <- 
+fct_config_gen_dt <-
   function(dta, file_name = "Table", group_row = NULL) {
     dta %>%
+      mutate(
+        row_id = row_number(),
+        changed = pmap_lgl(., ~{
+          dta <- rlang::dots_list(...)
+          length(unique(dta[3:length(dta)])) != 1
+          })
+      ) %>%
+      arrange(desc(changed)) %>%
       DT::datatable(#
         rownames = FALSE,
         extensions = c('Buttons', 'Scroller', 'RowGroup'),
         options = list(
+          width = "450px",
+          autoWidth = T,
           rowGroup =
             if (!is.null(group_row)) {
               list(dataSrc = group_row)
             } else{
               NULL
-            }, 
+            },
           #
           dom = 'Bfrtip',
           buttons =
@@ -36,22 +46,39 @@ fct_config_gen_dt <-
           scroller = TRUE,
           searching = FALSE,
           columnDefs =
-            if (!is.null(group_row)) {
+            list(
+
+              # Text overflow in the groups title column
+              if (!is.null(group_row)) {
+                list(list(
+                  targets = group_row,
+                  render = DT::JS(
+                    "function(data, type, row, meta) {",
+                    "return type === 'display' && data.length > 25 ?",
+                    "'<span title=\"' + data + '\">' + data.substr(0, 25) + '...</span>' : data;",
+                    "}"
+                  )
+                ))
+              } else {
+                NULL
+              }
+              ,
               list(list(
-                targets = group_row,
-                render = DT::JS(
-                  "function(data, type, row, meta) {",
-                  "return type === 'display' && data.length > 25 ?",
-                  "'<span title=\"' + data + '\">' + data.substr(0, 25) + '...</span>' : data;",
-                  "}"
-                )
+                targets = 1,
+                width = "150px"
               ))
-            } else {
-              NULL
-            }
-          ), 
+
+              ,
+              list(visible=FALSE, targets=c(1,5,6))
+            )
+        ),
         # callback = DT::JS('table.page(3).draw(false);'),
-        selection = 'none')
+        selection = 'none') %>%
+      DT::formatStyle(
+        columns = "changed",
+        target = "row",
+        backgroundColor = DT::styleEqual(TRUE, c('yellow'))
+        )
   }
 
 fct_config_export_dt <- function(.data,
@@ -59,14 +86,14 @@ fct_config_export_dt <- function(.data,
                                  digits_number = 3,
                                  pageLength = 10,
                                  scroll_y = TRUE) {
-  
+
   pageLength = min(nrow(.data), pageLength)
   if (scroll_y)
     scroll_y_height = round(pageLength * 250 / 6, 0) %>% str_c(., "px")
   else {
     scroll_y_height = FALSE
   }
-  .data %>% 
+  .data %>%
     DT::datatable(
       .,
       rownames = FALSE,
@@ -87,9 +114,9 @@ fct_config_export_dt <- function(.data,
           )
         )
       )
-    ) %>% 
-    DT::formatRound(columns = names(.data)[sapply(.data, is.numeric)], 
+    ) %>%
+    DT::formatRound(columns = names(.data)[sapply(.data, is.numeric)],
                     digits = digits_number)
   # %>%
-  #   DT::formatStyle(columns = names(dta), lineHeight='80%') 
+  #   DT::formatStyle(columns = names(dta), lineHeight='80%')
 }

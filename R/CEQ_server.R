@@ -14,7 +14,7 @@ CEQ_server <- function(input, output, session,
                        inputs_str = reactive(NULL),
                        presim_dta = reactive(list(NULL)),
                        inp_str_fn = gen_inp_str,
-                       ui_gen_fn = gen_inp_ui,
+                       ui_gen_fn = gen_tabinp_ui,
                        n_policy = c(1, 2, 1),
                        n_policy_type = c("numericInline", "numeric", "slider", "none"),
                        ...) {

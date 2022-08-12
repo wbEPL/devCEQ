@@ -21,7 +21,7 @@ mod_inputs_ui_wrapper <- function(id, ...) {
   left_col <-
     wellPanel(mod_inputs_btns_ui(id)) %>%
     div(id = "well1") %>%
-    column(width = 3)
+    column(width = 4)
 
   right_col <-
     mod_dyn_inp_ui(id) %>%
@@ -31,7 +31,7 @@ mod_inputs_ui_wrapper <- function(id, ...) {
     div(id = "well2b") %>%
     tagList(text_field) %>%
     tagList(verbatimTextOutput(ns("highlighted"))) %>%
-    column(width = 9) %>%
+    column(width = 8) %>%
     tagList(
       if (getOption("ceq_dev", FALSE))
         profvis::profvis_ui("profiler")
@@ -272,12 +272,11 @@ mod_dyn_inp_srv <-
               shiny::need(cur_clean_inp$export(),
                           "An error occured when creating tabe with dat afor export."
               ))
-            req(cur_clean_inp$export())
             cur_clean_inp$export() %>%
               select(-1) %>%
               fct_config_gen_dt("Policy scenarios summary", group_row = 1)
           },
-          server = TRUE)
+          server = FALSE)
 
         cur_clean_inp
       })
@@ -336,10 +335,11 @@ mod_build_inp_srv <-
           update_ui(),
           {
             # Generating UI table  ### ### ### ### ### ### ### ### ### ### ###
-            out <- try({inp_str_fn(inp_raw_str = inp_raw_str,
-                                   n_choices = n_poly(),
-                                   ns = ns)
-            }, silent = T)
+            out <- try({
+              inp_str_fn(inp_raw_str = inp_raw_str,
+                         n_choices = n_poly(),
+                         ns = ns)
+              }, silent = T)
 
             # Gen UI switches and tabs.  ### ### ### ### ### ### ### ### ### ###
             all_uis <-  try({ui_gen_fn(out, ns = ns)}, silent = T)
@@ -385,14 +385,32 @@ mod_inp_switches_ui <-
     ns = NS(id)
     # shiny::uiOutput(ns("switches_iu"))
 
+    # shiny::radioButtons(
+    #   inputId = ns("inp_tab"),
+    #   label = NULL,
+    #   choices = c("Policy choices" = "panel1",
+    #               "Summary Table" = "summary"),
+    #   inline = FALSE,
+    #   width = "100%"
+    # )
+
     shinyWidgets::radioGroupButtons(
       inputId = ns("inp_tab"),
       label = NULL,
       choices = c("Policy choices" = "panel1",
                   "Summary Table" = "summary"),
       direction = "vertical",
-      justified = TRUE
+      justified = TRUE#,
+      # individual = TRUE,
+      # checkIcon = list(
+      #   yes = tags$i(class = "fa fa-circle",
+      #                style = "color: steelblue"),
+      #   no = tags$i(class = "fa fa-circle-o",
+      #               style = "color: steelblue"))
     )
+
+
+
 
   }
 
@@ -465,50 +483,60 @@ mod_render_inp_ui_srv <-
       ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
       ### Render switches
       output$switches_iu <- shiny::renderUI({
-        ui <- all_ui_str()$all_uis$switches$ui
-        validate(need(isTruthy(ui), "`mod_render_inp_ui_srv`: problems with switches UI"))
-        ui
+        validate(need(isTruthy(all_ui_str()$all_uis$switches$ui),
+                      "`mod_render_inp_ui_srv`: problems with switches UI"))
+        req(all_ui_str()$all_uis$switches$ui)
       })
-      observeEvent(#
-        all_ui_str()$all_uis$switches$choices,
-        {
+
+      observe({
+        req(all_ui_str()$all_uis$switches$choices)
+        isolate({
           shinyWidgets::updateRadioGroupButtons(
             session,
             inputId = "inp_tab",
             choices = all_ui_str()$all_uis$switches$choices)
-        }, ignoreNULL = TRUE, ignoreInit = FALSE)
+
+        # shiny::updateRadioButtons(
+        #   session,
+        #   inputId = "inp_tab",
+        #   choices = all_ui_str()$all_uis$switches$choices
+        #   )
+
+        })
+
+      })
 
       ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
       ### Render header
       output$tab_header_ui <- shiny::renderUI({
-        ui <- all_ui_str()$all_uis$header$ui
-        req(ui)
+        req(all_ui_str()$all_uis$header$ui)
+        # browser()
       })
 
       ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
       ### Render header
       output$tab_header_intab_ui <- shiny::renderUI({
-        ui <- all_ui_str()$all_uis$tab_header$ui
-        req(ui)
+        req(all_ui_str()$all_uis$tab_header$ui)
+        # browser()
       })
 
       ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
       ### Render tab footer
       output$tab_footer_ui <- shiny::renderUI({
-        ui <- all_ui_str()$all_uis$tab_footer$ui
-        req(ui)
+        req(all_ui_str()$all_uis$tab_footer$ui)
+        # browser()
       })
 
       ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
       ### Render tabs
       old_tabs_to_remove <- reactiveVal(NULL)
-      observeEvent(
-        #
+      observeEvent(        #
         all_ui_str()$all_uis$tabs,
         {
+          req(all_ui_str()$all_uis$tabs)
           if (isTruthy(old_tabs_to_remove())) {
             old_tabs_to_remove() %>%
-              walk( ~ {
+              walk(~ {
                 removeTab(inputId = "policy_tabs",
                           target = .x,
                           session = session)
@@ -516,19 +544,19 @@ mod_render_inp_ui_srv <-
           }
 
           all_ui_str()$all_uis$tabs %>%
-            list(., seq_along(.), names(.)) %>%
             purrr::pwalk(~ {
+              dts <- rlang::dots_list(...)
               shiny::insertTab(
                 inputId = "policy_tabs",
-                tab =  shiny::tabPanelBody(value = ..3, ..1) ,
+                tab =  shiny::tabPanelBody(value = dts$tab_id, dts$tab_ui) ,
                 target = "summary",
-                select = ..2 == 1,
+                select = dts$tab_order == 1,
                 position = "before",
                 session = session
               )
             })
 
-          all_ui_str()$all_uis$tabs %>% names() %>% old_tabs_to_remove()
+          all_ui_str()$all_uis$tabs$tab_id %>% old_tabs_to_remove()
         },
         ignoreNULL = FALSE,
         ignoreInit = FALSE

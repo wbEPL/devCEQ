@@ -43,7 +43,7 @@ load_input_xlsx <- function(path) {
 inp_str_test <-
   function(inp_raw_str,
            fn_inp_str = gen_inp_str,
-           fn_inp_ui = gen_inp_ui,
+           fn_inp_ui = gen_tabinp_ui,
            ns = NS(NULL)) {
     all_structures <-
       c(1:3) %>%
@@ -80,33 +80,43 @@ inp_str_test <-
 #' @importFrom bsplus shinyInput_label_embed shiny_iconlink bs_embed_popover
 #' @importFrom tippy tippy
 #' @export
-gen_num_inpt_ui <- function(...) {
+gen_num_inpt_ui <- function(..., nolable = FALSE) {
   inputs <-
     rlang::dots_list(...)%>%
     unlist(recursive = T) %>%
     as.list()
+
+  if (nolable) {
+    inputs$label <- NULL
+    add_arg <- list(label = NULL)
+  } else {
+    add_arg <- list()
+  }
+
   out_ui <-
     inputs  %>%
     magrittr::extract(names(.) %in%
                         c("inputId", "label", "value", "min", "max", "step", "width")) %>%
     magrittr::extract(!is.na(.)) %>%
+    append(., add_arg) %>%
     do.call(what = shiny::numericInput, args = .)
-  # if (!is.na(inputs$tooltip__body)) {
-  #   out_ui <-
-  #     out_ui %>%
-  #     bsplus::shinyInput_label_embed(
-  #       tippy::tippy(
-  #         '<i class="fa fa-info-circle"></i>',
-  #         tooltip = shiny::markdown(inputs$tooltip__body),
-  #         placement = "left",
-  #         theme = "light-border",
-  #         arrow = "round",
-  #         animation = "shift-away",
-  #         interactive = TRUE,
-  #         allowHTML = T
-  #       )
-  #     )
-  # }
+
+  if (!is.na(inputs$tooltip__body)) {
+    out_ui <-
+      out_ui %>%
+      bsplus::shinyInput_label_embed(
+        tippy::tippy(
+          '<i class="fa fa-info-circle"></i>',
+          tooltip = shiny::markdown(inputs$tooltip__body),
+          placement = "left",
+          theme = "light-border",
+          arrow = "round",
+          animation = "shift-away",
+          interactive = TRUE,
+          allowHTML = T
+        )
+      )
+  }
   out_ui %>%
     div(class = inputs$class)
 }
@@ -118,7 +128,7 @@ gen_num_inpt_ui <- function(...) {
 #' @importFrom magrittr extract
 #' @importFrom shiny textInput
 #' @export
-gen_text_inpt_ui<- function(..., value = NULL) {
+gen_text_inpt_ui<- function(..., value = NULL, nolable = FALSE) {
   rlang::dots_list(...) %>%
     unlist(recursive = T) %>%
     as.list() %>%
@@ -129,7 +139,50 @@ gen_text_inpt_ui<- function(..., value = NULL) {
 }
 
 
+#' Generate checkbox input from the list of arguments
+#'
+#' @noRd
+#' @importFrom rlang dots_list
+#' @importFrom magrittr extract
+#' @importFrom shiny checkboxInput
+#' @export
+gen_checkbox_inpt_ui<- function(..., nolable = FALSE) {
+  inputs <-
+    rlang::dots_list(...) %>%
+    unlist(recursive = T) %>%
+    as.list()
 
+  if (nolable) {
+    inputs$label <- NULL
+    add_arg <- list(label = NULL)
+  } else {
+    add_arg <- list()
+  }
+  inputs <-
+    inputs %>%
+    magrittr::extract(names(.) %in% c("inputId", "label", "value")) %>%
+    magrittr::extract(!is.na(.)) %>%
+    append(., add_arg) #%>%
+    # do.call(what = shiny::checkboxInput, args = .)
+
+  shiny::checkboxInput(inputId = inputs$inputId,
+                       value = isTRUE(inputs$value == "1"),
+                       label = inputs$label)
+}
+
+#' @describeIn gen_inp_str
+#'
+#' @noRd
+#' @export
+gen_inp_str_front <- function(inp_table_str = NULL,...) {
+  function(inp_raw_str, n_choices, ns = NS(NULL), ... ) {
+    gen_inp_str(inp_raw_str = inp_raw_str,
+                n_choices = n_choices,
+                ns = ns,
+                inp_table_str = inp_table_str,
+                ...)
+  }
+}
 
 #' Generate dataframe of the input structure
 #'
@@ -141,11 +194,11 @@ gen_text_inpt_ui<- function(..., value = NULL) {
 #' @importFrom stringr str_c
 #' @importFrom glue glue
 #' @export
-
 gen_inp_str <-
   function(inp_raw_str,
            n_choices,
-           ns = NS(NULL)) {
+           inp_table_str = NULL,
+           ns = NS(NULL), ...) {
     n_choices <- min(n_choices, 12)
     # browser()
     inp_raw_str2 <-
@@ -156,17 +209,32 @@ gen_inp_str <-
         inp_raw_str %>%
           mutate(
             tooltip__body =
-              str_c(
-                ifelse(!is.na(label),        str_c("__", label , "__ <br/>")                  , ""),
-                ifelse(!is.na(label),        str_c("*(", group_name , ")* <br/>")             , ""),
-                ifelse(!is.na(tooltip__body),str_c(tooltip__body , " <br/><hr/>")             , ""),
-                ifelse(!is.na(base_value),   str_c("Baseline value: ", base_value, "; <br/>") , ""),
-                ifelse(!is.na(min),          str_c("Minimum value: ", min, "; <br/>") , ""),
-                ifelse(!is.na(max),          str_c("Maximum value: ", max, "; <br/>") , "")
-              ) #%>%
-              # shiny::markdown()
+              ifelse(
+                !is.na(tooltip__body),
+                str_c(
+                  ifelse(!is.na(label),        str_c("__", label , "__ <br/>")                  , ""),
+                  ifelse(!is.na(label),        str_c("*(", group_name , ")* <br/>")             , ""),
+                  ifelse(!is.na(tooltip__body),str_c(tooltip__body , " <br/><hr/>")             , ""),
+                  ifelse(!is.na(base_value),   str_c("Baseline value: ", base_value, "; <br/>") , ""),
+                  ifelse(!is.na(min),          str_c("Minimum value: ", min, "; <br/>") , ""),
+                  ifelse(!is.na(max),          str_c("Maximum value: ", max, "; <br/>") , "")
+                ),
+                NA_character_)
             )
-        )
+        ) %>%
+      mutate(table_id = FALSE)
+
+    if (isTruthy(inp_table_str) && length(inp_table_str) > 0) {
+      all_tbls <-
+        bind_rows(inp_table_str) %>%
+        select(col_content, table_id)
+      inp_raw_str2 <-
+        # Add Table ID to each input in the main structure.
+        inp_raw_str2 %>%
+        select(-any_of("table_id")) %>%
+        left_join(all_tbls, c("id" = "col_content")) %>%
+        mutate(table_id = !is.na(table_id))
+    }
 
     c(1:n_choices) %>%
       purrr::map_dfr( ~ {
@@ -184,12 +252,15 @@ gen_inp_str <-
             single_ui = purrr::pmap(., ~ {
               dts <- rlang::dots_list(...)
               if ("numericInput" %in% dts$type) {
-                gen_num_inpt_ui(dts)
+                gen_num_inpt_ui(dts, nolable = dts$table_id)
               } else if ("pseudoNumericInput" %in% dts$type) {
-                gen_text_inpt_ui(dts)
+                gen_text_inpt_ui(dts, nolable = dts$table_id)
               } else if("textInput"  %in% dts$type) {
                 dts$value <- str_c("Policy choice ", choice_no)
-                gen_text_inpt_ui(dts)
+                gen_text_inpt_ui(dts, nolable = dts$table_id)
+              } else if("checkboxInput"  %in% dts$type) {
+                dts$value <- as.logical(dts$value)
+                gen_checkbox_inpt_ui(dts, nolable = dts$table_id)
               } else {
                 list()
               }
@@ -233,7 +304,7 @@ gen_inp_str <-
 #' @importFrom dplyr select mutate distinct left_join summarise arrange filter
 #' @importFrom purrr map_dfr pmap
 #' @importFrom stringr str_c
-#' @export
+#'
 gen_inp_ui <- function(inp_ui_str, type = "fixed",
                        add_rest_btn = T,
                        ns = NS(NULL)) {

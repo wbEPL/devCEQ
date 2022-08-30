@@ -153,6 +153,7 @@ gen_tabinp_ui <-
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     panel <-
       inp_ui_str %>%
+      filter(!is.na(group_name)) %>%
       dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
       dplyr::arrange(group_order, order, row) %>%
       dplyr::group_by(group_order, group_name, policy_choice, style, width) %>%
@@ -165,25 +166,23 @@ gen_tabinp_ui <-
             dts <- rlang::dots_list(...)
             column(dts$width, style = dts$style,
                    shiny::verticalLayout(dts$single_col, fluid = T))
-      })) %>%
+      }))%>%
       dplyr::group_by(group_order, group_name) %>%
       dplyr::summarise(single_well = shiny::tagList(single_col),
                        .groups = "keep")  %>%
       dplyr::mutate(single_well = purrr::map(single_well, ~ rowwing_fn(.x)))  %>%
       ungroup() %>%
       arrange(group_order)
-    # test_ui(panel$single_well)
 
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     # Tabs header
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-    head <-
-      panel %>%
+    head_inputs <-
+      inp_ui_str %>%
       filter(is.na(group_name)) %>%
-      pull(single_well) %>%
-      shiny::column(sum(input_cols_spec$width), .) %>%
-      rowwing_fn()
-    # test_ui(head)
+      dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
+      dplyr::arrange(group_order, order, row) %>%
+      dplyr::group_by(group_order, group_name, policy_choice, style, width)
 
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     # Reset buttons for each policy scenario
@@ -192,17 +191,17 @@ gen_tabinp_ui <-
       reset_btns <- gen_policy_reset(
         inp_ui_str = inp_ui_str,
         input_cols_spec = input_cols_spec,
-        ns = ns) %>%
-        dplyr::mutate(single_well = purrr::map(single_well, ~ rowwing_fn(.x)))
+        ns = ns)
     } else {
       reset_btns  <- NULL
     }
-    # test_ui(fluidRow(reset_btns$single_well))
 
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     # Compiling header
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-    intab_header <- tagList(head, reset_btns$single_well, tags$hr())
+    intab_header <-
+      gen_header_ui(heads = head_inputs, resets = reset_btns) %>%
+      fluidRow(style = "padding-right: 15px")
 
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     # Reset buttons for each policy scenario
@@ -220,7 +219,6 @@ gen_tabinp_ui <-
               shiny::tagList(..2)
           })
       )
-    # test_ui(inp_groups$single_well)
 
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     ## Converting panels with UI into tabs.
@@ -308,24 +306,82 @@ gen_policy_reset <- function(inp_ui_str,
   inp_ui_str %>%
     dplyr::distinct(policy_choice) %>%
     mutate(single_ui = map(policy_choice, ~ {
-      actionButton(ns(str_c("reset_", .x)), label = "Reset to baseline")
+      actionButton(ns(str_c("reset_", .x)), label = "Reset", width = "100%",
+                   class = "btn-warning btn-sm")
     })) %>%
-    dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
+    dplyr::left_join(input_cols_spec, by = "policy_choice")
+}
+
+#' Generate UI for policyu names header
+#'
+#' @noRd
+#'
+#' @export
+gen_header_ui <- function(heads, resets = NULL) {
+
+  if (isTruthy(resets)) {
+    out_ui <-
+      heads %>%
+      left_join(resets %>%
+                  rename(reset_ui = single_ui) %>%
+                  select(-any_of(c("width", "style"))),
+                by = c("policy_choice")) %>%
+      ungroup() %>%
+      mutate(single_ui  =
+               pmap(., ~ {
+                 dta <- rlang::dots_list(...)
+                 # div(style="display:inline-block;vertical-align:top;",
+                 fluidRow(
+                   column(9, dta$single_ui),
+                   column(3,
+                          div(dta$reset_ui,
+                              style="width:100%; margin-top: 25px;"))
+                   )
+                 # )
+                 })
+             )
+  } else {
+    out_ui <- heads
+  }
+
+  out_ui %>%
     dplyr::group_by(policy_choice, style, width) %>%
     dplyr::summarise(single_col = single_ui %>% shiny::tagList(.),
                      .groups = "keep") %>%
     dplyr::ungroup() %>%
     dplyr::mutate(single_col = purrr::pmap(., ~ {
       dts <- rlang::dots_list(...)
-      column(dts$width,
-             style = dts$style,
-             shiny::verticalLayout(dts$single_col, fluid = T))
+      column(dts$width, style = dts$style, dts$single_col)
     })) %>%
     dplyr::summarise(single_well = shiny::tagList(single_col),
                      .groups = "keep")  %>%
-    ungroup()
+    ungroup() %>%
+    pull(single_well)
 }
 
+
+#' Wrap structured data frame into columns
+#'
+#' @noRd
+#'
+#' @export
+wrap_in_cols <-
+  function(dta, ...) {
+    dta %>%
+      dplyr::group_by(policy_choice, style, width) %>%
+      dplyr::summarise(single_col = single_ui %>% shiny::tagList(.),
+                       .groups = "keep") %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(single_col = purrr::pmap(., ~ {
+        dts <- rlang::dots_list(...)
+        column(dts$width,
+               style = dts$style,
+               shiny::verticalLayout(dts$single_col, fluid = T))
+      })) %>%
+      dplyr::summarise(single_well = shiny::tagList(single_col),
+                       .groups = "keep")  %>%
+      ungroup()
+  }
 
 
 #' @noRd

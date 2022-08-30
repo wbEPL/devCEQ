@@ -26,6 +26,7 @@ CEQ_run <- function(
   n_policy_type = c("numericInline", "numeric", "slider", "none"),
   server_fn = CEQ_server,
   ui_fn = CEQ_ui,
+  inp_str_fn = gen_inp_str,
   ui_gen_fn = gen_tabinp_ui,
   ceq_fn = function(inps, presim) {tibble(var = "Results from `CEQ_run`")},
   ...
@@ -41,6 +42,7 @@ CEQ_run <- function(
             presim = presim,
             baseline_dta = baseline_dta,
             ceq_fn = ceq_fn,
+            inp_str_fn = inp_str_fn,
             ui_gen_fn = ui_gen_fn,
             n_policy = n_policy,
             n_policy_type = n_policy_type,

@@ -57,11 +57,11 @@ test_genui_fn <- function(inp_raw_str,
 #' for including under this tab.
 #' @export
 gen_tabinp_ui_front <- function(inp_tab_str = NULL, inp_table_str = NULL,...) {
-  function(inp_ui_str, ns, type = "fixed", add_rest_btn = TRUE, ... ) {
+  function(inp_ui_str, ns = NS(NULL), type = "fixed", add_rest_btn = TRUE, ... ) {
     gen_tabinp_ui(inp_ui_str,
                   inp_tab_str = inp_tab_str,
                   inp_table_str = inp_table_str,
-                  ns = NS(NULL),
+                  ns = ns,
                   type = type,
                   add_rest_btn = T,
                   ...)
@@ -115,6 +115,7 @@ gen_tabinp_ui <-
     ## Assigning inputs by table
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     if (isTruthy(inp_table_str) && length(inp_table_str) > 0) {
+      # browser()
 
       all_policy_ui <-
         map_dfr(
@@ -123,9 +124,9 @@ gen_tabinp_ui <-
             dta <- .x
             inp_ui_str %>%
               group_by(policy_choice) %>%
-              nest() %>%
+              tidyr::nest() %>%
               mutate(data2 = map(data, ~gen_one_inp_table(.x, dta))) %>%
-              unnest(data2) %>%
+              tidyr::unnest(data2) %>%
               ungroup()
             })
 
@@ -134,7 +135,7 @@ gen_tabinp_ui <-
         all_policy_ui %>%
         select(policy_choice, inp_ids, table_id) %>%
         mutate(data = map(inp_ids, ~{tibble(inputId_local = .x)})) %>%
-        unnest(data) %>%
+        tidyr::unnest(data) %>%
         select(-inp_ids) %>%
         distinct()
 
@@ -502,22 +503,22 @@ load_inputtabs_xlsx <- function(path) {
 #' @export
 #' @importFrom readxl read_excel excel_sheets
 #' @importFrom tidyr pivot_longer pivot_longer
-#' @importFrom tidyr pivot_longer pivot_longer
+#' @importFrom stringr str_detect str_split
 load_inputtables_xlsx <- function(path) {
   readxl::excel_sheets(path) %>%
-    `[`(str_detect(., "table_")) %>%
+    `[`(stringr::str_detect(., "table_")) %>%
     imap(~{
       dta <-
         suppressMessages(readxl::read_excel(path, sheet = .x, col_names = T)) %>%
         dplyr::select(tidyselect::contains("___")) #%>%
         # dplyr::select_if(function(x) !all(is.na(x)))
 
-      table_title <- names(dta) %>% `[`(str_detect(., "___title"))
+      table_title <- names(dta) %>% `[`(stringr::str_detect(., "___title"))
       if (length(table_title > 0)) {
         table_title <-
           table_title %>%
           `[[`(1) %>%
-          str_split("___") %>%
+          stringr::str_split("___") %>%
           unlist() %>%
           `[[`(1)
       } else {

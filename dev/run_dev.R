@@ -17,8 +17,9 @@ devtools::load_all()
 # library(devCEQ)
 
 inputs_path <- "./data-raw/complex-inputs-structure.xlsx"
-inputs_str <- devCEQ::load_input_xlsx(inputs_path)
-inputs_tab_str <- devCEQ::load_inputtabs_xlsx(inputs_path)
+inputs_raw_str <- inputs_path %>% load_input_xlsx()
+inputs_tab_str <- inputs_path %>% load_inputtabs_xlsx()
+inputs_table_str <- inputs_path %>% load_inputtables_xlsx()
 
 
 presim <- reactive({
@@ -29,16 +30,22 @@ presim <- reactive({
 })
 
 # Function for generating inputs UI
-gen_local_ui_fn <- gen_tabinp_ui_front(inputs_tab_str)
+
+# 1. We provide function for generating inputs that are in tables without labels
+local_inp_str_fn <- gen_inp_str_front(inp_table_str = inp_table_str)
+
+# 2. We provide function that creates UI based on all inputs.
+local_tab_ui_fn <- gen_tabinp_ui_front(inputs_tab_str, inp_table_str = inp_table_str)
 
 # Title of the App
 options(current.app.name = "CEQ")
 
 devCEQ::CEQ_run(
-  inputs_str = inputs_str,
+  inputs_str = inputs_raw_str,
   presim = presim,
   ui_fn = CEQ_ui,
-  ui_gen_fn = gen_local_ui_fn,
+  inp_str_fn = local_inp_str_fn,
+  ui_gen_fn = local_tab_ui_fn,
   n_policy = c(1, 3, 2),
   n_policy_type = "slider", #c("numericInline", "numeric", "slider", "none"),
 )

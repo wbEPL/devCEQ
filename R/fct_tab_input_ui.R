@@ -116,6 +116,49 @@ gen_tabinp_ui <-
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     if (isTruthy(inp_table_str) && length(inp_table_str) > 0) {
 
+      all_policy_ui <-
+        map_dfr(
+          inp_table_str,
+          ~{
+            dta <- .x
+            inp_ui_str %>%
+              group_by(policy_choice) %>%
+              nest() %>%
+              mutate(data2 = map(data, ~gen_one_inp_table(.x, dta))) %>%
+              unnest(data2) %>%
+              ungroup()
+            })
+
+      # browser()
+      tables_map <-
+        all_policy_ui %>%
+        select(policy_choice, inp_ids, table_id) %>%
+        mutate(data = map(inp_ids, ~{tibble(inputId_local = .x)})) %>%
+        unnest(data) %>%
+        select(-inp_ids) %>%
+        distinct()
+
+      inp_ui_str_new <-
+        inp_ui_str %>%
+        # distinct()
+        left_join(tables_map, by = c("policy_choice", "inputId_local")) %>%
+        group_by(policy_choice, table_id) %>%
+        # filter(is.na(table_id)) %>%
+        mutate(
+          keep_ui = TRUE,
+          keep_ui = ifelse(!is.na(table_id) & row_number() > 1, FALSE, keep_ui)
+        ) %>%
+        ungroup() %>%
+        filter(keep_ui) %>%
+        left_join(all_policy_ui %>%
+                    select(policy_choice, table_id, table_name, table_ui),
+                  by = c("policy_choice", "table_id")) %>%
+        # filter(!is.na(table_id))
+        mutate(single_ui = ifelse(!is.na(table_id), table_ui, single_ui),
+               group_name = ifelse(!is.na(table_name), table_name, group_name)
+        )
+
+
 
       # all_tbls <- bind_rows(inp_table_str)
       #
@@ -139,6 +182,8 @@ gen_tabinp_ui <-
       #             by = "tab_name")
     } else {
 
+      inp_ui_str_new <-
+        inp_ui_str
       # inp_tab_str_ordered <- tibble(
       #   tab_name = "Policy choices",
       #   tab_order = 1,
@@ -152,7 +197,7 @@ gen_tabinp_ui <-
     # Panel structure with rows in columns
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     panel <-
-      inp_ui_str %>%
+      inp_ui_str_new %>%
       filter(!is.na(group_name)) %>%
       dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
       dplyr::arrange(group_order, order, row) %>%
@@ -213,7 +258,7 @@ gen_tabinp_ui <-
         single_well =
           list(group_name, single_well ) %>%
           purrr::pmap( ~ {
-            shiny::h3(..1) %>%
+            shiny::h4(..1) %>%
               shiny::column(sum(input_cols_spec$width), .) %>%
               rowwing_fn() %>%
               shiny::tagList(..2)
@@ -334,8 +379,7 @@ gen_header_ui <- function(heads, resets = NULL) {
                  fluidRow(
                    column(9, dta$single_ui),
                    column(3,
-                          div(dta$reset_ui,
-                              style="width:100%; margin-top: 25px;"))
+                          div(dta$reset_ui, style="width:100%; margin-top: 27px;"))
                    )
                  # )
                  })
@@ -359,6 +403,57 @@ gen_header_ui <- function(heads, resets = NULL) {
     pull(single_well)
 }
 
+#' Generate a table with inputs instead of a inputs with lables
+#'
+#' @export
+gen_one_inp_table <- function(inp_ui_str, inp_table_str_one) {
+  table_header <-
+    inp_table_str_one %>%
+    filter(row_order == 1) %>%
+    mutate(col_content = col_name, # map(col_name, ~tags$p(.x)),
+           row_order = 0)
+
+  table_content <-
+    inp_table_str_one %>%
+    mutate(is_id = col_content %in% inp_ui_str$id) %>%
+    left_join(
+      inp_ui_str %>%
+        select(id, inputId, inputId_local, single_ui) %>%
+        filter(id %in% inp_table_str_one$col_content),
+      by = c("col_content" = "id")
+    ) %>%
+    bind_rows(table_header) %>%
+    # rowwise() %>%
+    mutate(col_content = pmap(. , ~ {
+      dta <- rlang::dots_list(...)
+      out <- NULL
+      if (isTRUE(dta$is_id))
+        out <- dta$single_ui
+      else {
+        out <- tags$p(tags$b(dta$col_content))
+      }
+      out
+    })) %>%
+    arrange(row_order, col_order) %>%
+    group_by(row_order, col_order) %>%
+    mutate(col_content = map2(col_width, col_content, ~ {
+      column(width = .x, .y)
+    })) %>%
+    group_by(row_order, table_id, table_name) %>%
+    nest() %>%
+    mutate(row_ui = map(data, ~ fluidRow(.x$col_content)),
+           row_ids = map(data, ~ c(.x$inputId_local))) %>%
+    group_by(table_id, table_name) %>%
+    nest() %>%
+    mutate(
+      table_ui = map(data, ~ tagList(.x$row_ui)),
+      inp_ids =  map(data, ~ unlist(c(.x$row_ids)) %>% na.omit())
+    ) %>%
+    select(-data)
+
+  table_content
+
+}
 
 #' Wrap structured data frame into columns
 #'
@@ -414,12 +509,28 @@ load_inputtables_xlsx <- function(path) {
     imap(~{
       dta <-
         suppressMessages(readxl::read_excel(path, sheet = .x, col_names = T)) %>%
-        dplyr::select(tidyselect::contains("___")) %>%
-        dplyr::select_if(function(x) !all(is.na(x)))
+        dplyr::select(tidyselect::contains("___")) #%>%
+        # dplyr::select_if(function(x) !all(is.na(x)))
+
+      table_title <- names(dta) %>% `[`(str_detect(., "___title"))
+      if (length(table_title > 0)) {
+        table_title <-
+          table_title %>%
+          `[[`(1) %>%
+          str_split("___") %>%
+          unlist() %>%
+          `[[`(1)
+      } else {
+        table_title <- NA_character_
+      }
+
+      if (is.null(table_title)) table_title <- NA_character_
 
       dta %>%
+        dplyr::select_if(function(x) !all(is.na(x))) %>%
+        mutate(row_order = row_number()) %>%
         tidyr::pivot_longer(
-          tidyselect::everything(),
+          tidyselect::any_of(names(dta)),
           names_to = "col_name",
           values_to = "col_content",
           values_transform = as.character
@@ -431,7 +542,9 @@ load_inputtables_xlsx <- function(path) {
             dplyr::mutate(col_order = row_number()),
           by = c("col_name", "col_width")
         ) %>%
-        mutate(table_id = .y)
+        mutate(table_id = .y, table_name = table_title) %>%
+        select(row_order, col_order, col_width, col_name, col_content, table_id, table_name) %>%
+        mutate(col_width = as.integer(col_width))
     })
 
 }

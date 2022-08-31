@@ -17,9 +17,7 @@ CEQ_ui <- function(
     request,
     theme_fn = function() {
       bslib::bs_theme(version = 4, bootswatch = "flatly", "enable-rounded" = TRUE)
-      },
-    choice_type = "slider",
-    choice_max = 2
+      }
     ) {
 
   spinner <- tagList(#
@@ -48,16 +46,18 @@ CEQ_ui <- function(
       tabPanel(
         "Policy Choices",
         value = "pc2019",
-        mod_inputs_ui_wrapper(
-          'generic_inputs',
-          choice_type = choice_type,
-          choice_max = choice_max
-          )
+        mod_inputs_ui_wrapper('generic_inputs')
       ),
       tabPanel("Results",
                shiny::h1("Results page")
                # mod_ceq2019_results_ui("ceq2019")
                ),
+      tabPanel("DEV-Results", shiny::h1("Results page")),
+
+      # if(isTRUE(getOption("ceq_results_dev"))) {
+      #   tabPanel("DEV-Results", devCEQ::mod_dev_res_ui("devres"))
+      # },
+
       tabPanel("How it works?", value = "howto")
     )
 

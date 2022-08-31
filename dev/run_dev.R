@@ -16,7 +16,7 @@ library(shiny)
 devtools::load_all()
 # library(devCEQ)
 
-inputs_path <- "./data-raw/complex-inputs-structure.xlsx"
+inputs_path <- "./data-raw/ben-inputs-structure.xlsx"
 inputs_raw_str <- inputs_path %>% load_input_xlsx()
 inputs_tab_str <- inputs_path %>% load_inputtabs_xlsx()
 inputs_table_str <- inputs_path %>% load_inputtables_xlsx()
@@ -39,8 +39,9 @@ local_tab_ui_fn <- gen_tabinp_ui_front(inputs_tab_str, inp_table_str = inputs_ta
 
 # Title of the App
 options(current.app.name = "CEQ")
+options(ceq_results_dev = TRUE)
 
-devCEQ::CEQ_run(
+CEQ_run(
   inputs_str = inputs_raw_str,
   presim = presim,
   ui_fn = CEQ_ui,

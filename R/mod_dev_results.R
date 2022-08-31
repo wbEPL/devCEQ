@@ -20,13 +20,12 @@ mod_dev_res_ui <- function(id){
     ),
     column(
       8,
-      shiny::uiOutput(
-        ns("download_btns")
-      ),
+      shiny::uiOutput(ns("download_btns")),
       h2("Results"),
       shiny::verbatimTextOutput(ns("outps"))
     )
-  )
+  ) %>%
+    fluidPage()
 }
 
 

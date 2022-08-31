@@ -34,7 +34,7 @@ CEQ_run <- function(
 
   golem::with_golem_options(
     app = shinyApp(
-      ui = ui_fn(choice_type = choice_type, choice_max = choice_max),
+      ui = ui_fn(),
       server =
         function(input, output, session, ...) {
           server_fn(

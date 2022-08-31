@@ -43,12 +43,11 @@ CEQ_server <- function(input, output, session,
     inp_raw_str = inputs_str_ui,
     inp_str_fn = inp_str_fn,
     ui_gen_fn = ui_gen_fn,
-    choice_max = choice_max,
     active_tab = active_tab,
     target_tab = "pc2019",
     source_tab = "howto",
     n_policy = n_policy,
-    n_policy_type = n_policy_type,
+    n_policy_type = n_policy_type
   )
 
   # observeEvent(ceq_inputs$run(), {

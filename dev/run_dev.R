@@ -32,10 +32,10 @@ presim <- reactive({
 # Function for generating inputs UI
 
 # 1. We provide function for generating inputs that are in tables without labels
-local_inp_str_fn <- gen_inp_str_front(inp_table_str = inp_table_str)
+local_inp_str_fn <- gen_inp_str_front(inp_table_str = inputs_table_str)
 
 # 2. We provide function that creates UI based on all inputs.
-local_tab_ui_fn <- gen_tabinp_ui_front(inputs_tab_str, inp_table_str = inp_table_str)
+local_tab_ui_fn <- gen_tabinp_ui_front(inputs_tab_str, inp_table_str = inputs_table_str)
 
 # Title of the App
 options(current.app.name = "CEQ")

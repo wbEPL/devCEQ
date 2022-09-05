@@ -50,10 +50,11 @@ CEQ_ui <- function(
         value = "pc2019",
         mod_inputs_ui_wrapper('generic_inputs', inp_nav_width = inp_nav_width)
       ),
-      tabPanel("Results",
-               shiny::h1("Results page")
-               # mod_ceq2019_results_ui("ceq2019")
-               ),
+      tabPanel(
+        "Results",
+        shiny::h1("Results page")
+        # mod_ceq2019_results_ui("ceq2019")
+      ),
       tabPanel("DEV-Results", shiny::h1("Results page")),
 
       # if(isTRUE(getOption("ceq_results_dev"))) {

@@ -17,6 +17,8 @@ CEQ_server <- function(input, output, session,
                        ui_gen_fn = gen_tabinp_ui,
                        n_policy = c(1, 2, 1),
                        n_policy_type = c("numericInline", "numeric", "slider", "none"),
+                       info_page_md = NULL,
+                       info_page_size = "l",
                        ...) {
 
   # # Loading underlining data for 2022 simulation
@@ -35,7 +37,10 @@ CEQ_server <- function(input, output, session,
   # Info-page, guides and blackouts ==========================================
   active_tab <- reactive(NULL)
   active_tab <- mod_info_page_server(first_tab = "pc2019",
-                                     how_to_tab = "howto")
+                                     how_to_tab = "howto",
+                                     info_page_md = info_page_md,
+                                     info_page_size = info_page_size,
+                                     ui_ns = NS("generic_inputs"))
 
   # Inputs UI server =========================================================
   ceq_inputs <- mod_inputs_server(

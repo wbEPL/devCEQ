@@ -21,18 +21,16 @@ mod_inputs_ui_wrapper <- function(id, inp_nav_width = NULL, ...) {
       NULL
     }
 
-
   left_col <-
     wellPanel(mod_inputs_btns_ui(id)) %>%
-    div(id = "well1") %>%
+    div(id = ns("inputs_controls_holder")) %>%
     column(width = inp_nav_width)
 
   right_col <-
     mod_dyn_inp_ui(id) %>%
     div(style = "min-height:600px") %>%
-    div(id = "well2") %>%
-    div(id = "well2a") %>%
-    div(id = "well2b") %>%
+    div(id = ns("policy_choices_tabs_1")) %>%
+    div(id = ns("policy_choices_tabs_2")) %>%
     tagList(text_field) %>%
     tagList(verbatimTextOutput(ns("highlighted"))) %>%
     column(width = 12 - inp_nav_width) %>%
@@ -179,22 +177,18 @@ mod_dyn_inp_ui <- function(id) {
   ns <- NS(id)
  # New look
     tagList(
-      mod_inp_tab_header_ui(id),
+      mod_inp_tab_header_ui(id) %>% div(id = ns("policy_names_holder")),
       mod_inp_tabs_ui(id),
-      # tags$head(str_c('#', ns("policy_tabs"), "{height:0px;}")),
       shiny::tabsetPanel(
         id = ns("policy_tabs"),
         type = "hidden",
         header = mod_inp_tab_header_intab_ui(id),
-
-        # shiny::uiOutput(ns("dynamic_inputs_ui")),
         shiny::tabPanelBody(
           value = "summary",
-
           DT::DTOutput(ns("inputs_ui_values"))
         )
-      ),
-      mod_inp_tab_footer_ui(id),
+      ) %>% div(id = ns("policy_choices_holder")),
+      # mod_inp_tab_footer_ui(id),
       if (getOption("ceq_inmodule_dev", FALSE)) {
         shiny::verbatimTextOutput(ns("dynamic_inputs_ui_info"))
       }

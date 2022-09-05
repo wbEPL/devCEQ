@@ -44,25 +44,23 @@ mod_inputs_btns_ui <- function(id = NULL, ...) {
   upload_sim_file[["children"]][[2]][["children"]][[1]][["children"]][[1]][["attribs"]][["class"]] <-
     "btn btn-primary btn-file"
 
-  upload_sim_file <-
-    upload_sim_file %>%
-    div(id = ns("upload_sim_holder"))
-
-  input_tabs <-
-    mod_inp_switches_ui(id = id) %>%
-    # shiny::uiOutput(ns("dynamic_tabs_ui")) %>%
-    div(id = ns("input_tabs"))
+  input_tabs <- mod_inp_switches_ui(id = id)
 
   list(
-    nsim,
-    input_tabs,
+    nsim %>% div(id = ns("input_sim_number_holder")),
+    input_tabs %>%
+      div(id = ns("input_tabs_nav_holder")) %>%
+      div(id = ns("input_tabs_nav_holder_2")) %>%
+      div(id = ns("input_tabs_nav_holder_3")),
     tags$hr(),
-    run_button,
+    run_button %>%
+      div(id = ns("run_btn_holder"))%>%
+      div(id = ns("run_btn_holder_2")),
     # tags$hr(),
-    reset_button,
+    reset_button %>% div(id = ns("reset_btn_0")),
     # tags$hr(),
-    download_sim,
-    upload_sim_file,
+    download_sim %>% div(id = ns("download_sim_holder")),
+    upload_sim_file %>% div(id = ns("upload_sim_holder")),
     # tags$hr(),
     if (getOption("ceq_dev", FALSE))
       actionButton(ns("run_guide"), "Run guide", class = "btn-info btn-sm")

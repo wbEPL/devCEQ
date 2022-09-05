@@ -29,6 +29,8 @@ CEQ_run <- function(
   inp_str_fn = gen_inp_str,
   ui_gen_fn = gen_tabinp_ui,
   ceq_fn = function(inps, presim) {tibble(var = "Results from `CEQ_run`")},
+  info_page_md = NULL,
+  info_page_size = "l",
   ...
 ) {
 
@@ -46,6 +48,8 @@ CEQ_run <- function(
             ui_gen_fn = ui_gen_fn,
             n_policy = n_policy,
             n_policy_type = n_policy_type,
+            info_page_md = info_page_md,
+            info_page_size = info_page_size,
             ...
           )
         },

@@ -8,13 +8,20 @@
 #'
 #' @importFrom DT datatable JS
 fct_config_gen_dt <-
-  function(dta, file_name = "Table", group_row = NULL) {
+  function(dta, file_name = "Table", group_row = NULL,
+           precision = nchar(1 / (.Machine$double.eps)^0.5)) {
     dta %>%
       mutate(
         row_id = row_number(),
         changed = pmap_lgl(., ~{
           dta <- rlang::dots_list(...)
-          length(unique(dta[3:length(dta)])) != 1
+          lll <-
+            dta[3:length(dta)] %>%
+            unlist() %>%
+            round(., digits = precision) %>%
+            unique() %>%
+            length()
+          lll != 1
           })
       ) %>%
       arrange(desc(changed)) %>%
@@ -69,7 +76,7 @@ fct_config_gen_dt <-
               ))
 
               ,
-              list(visible=FALSE, targets=c(1,5,6))
+              list(visible=FALSE, targets=c(1, ncol(dta), ncol(dta) + 1))
             )
         ),
         # callback = DT::JS('table.page(3).draw(false);'),

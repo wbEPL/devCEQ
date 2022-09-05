@@ -8,8 +8,11 @@
 #'
 #' @importFrom shiny NS tagList
 #' @export
-mod_inputs_ui_wrapper <- function(id, ...) {
+mod_inputs_ui_wrapper <- function(id, inp_nav_width = NULL, ...) {
   ns <- NS(id)
+  dots <- rlang::dots_list(...)
+
+  if (is.null(inp_nav_width)) inp_nav_width <- 4
 
   text_field <-
     if (getOption("ceq_dev", FALSE)) {
@@ -18,10 +21,11 @@ mod_inputs_ui_wrapper <- function(id, ...) {
       NULL
     }
 
+
   left_col <-
     wellPanel(mod_inputs_btns_ui(id)) %>%
     div(id = "well1") %>%
-    column(width = 4)
+    column(width = inp_nav_width)
 
   right_col <-
     mod_dyn_inp_ui(id) %>%
@@ -31,7 +35,7 @@ mod_inputs_ui_wrapper <- function(id, ...) {
     div(id = "well2b") %>%
     tagList(text_field) %>%
     tagList(verbatimTextOutput(ns("highlighted"))) %>%
-    column(width = 8) %>%
+    column(width = 12 - inp_nav_width) %>%
     tagList(
       if (getOption("ceq_dev", FALSE))
         profvis::profvis_ui("profiler")
@@ -177,7 +181,8 @@ mod_dyn_inp_ui <- function(id) {
     tagList(
       mod_inp_tab_header_ui(id),
       mod_inp_tabs_ui(id),
-      tabsetPanel(
+      # tags$head(str_c('#', ns("policy_tabs"), "{height:0px;}")),
+      shiny::tabsetPanel(
         id = ns("policy_tabs"),
         type = "hidden",
         header = mod_inp_tab_header_intab_ui(id),

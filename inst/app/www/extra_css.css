@@ -1,8 +1,13 @@
 #img-logo-navbar{
   position: fixed;
-  right: 10px;
+  right: 6rem;
+  padding-top: 0.3125rem;
+  padding-bottom: 0.3125rem;
   top: 5px;
+  z-index: 1;
 }
+
+#generic_inputs-policy_tabs{height:0px;}
 
 .pull-right {
     float: right !important;
@@ -16,3 +21,7 @@
 }
 
 .inline .form-group { display: table-row;}
+
+.tippy-tooltip {
+     font-size: 14px !important;
+}

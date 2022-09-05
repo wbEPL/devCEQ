@@ -56,14 +56,19 @@ test_genui_fn <- function(inp_raw_str,
 #' the name of the tab. The second one indicates the order of a well-group for
 #' for including under this tab.
 #' @export
-gen_tabinp_ui_front <- function(inp_tab_str = NULL, inp_table_str = NULL,...) {
-  function(inp_ui_str, ns = NS(NULL), type = "fixed", add_rest_btn = TRUE, ... ) {
+gen_tabinp_ui_front <-
+  function(inp_tab_str = NULL,
+           inp_table_str = NULL,
+           scroll_panel_style =
+             "max-height: calc(100vh - 12rem); overflow-y: scroll; overflow-x: hidden;") {
+    function(inp_ui_str, ns = NS(NULL), type = "fixed", add_rest_btn = TRUE, ... ) {
     gen_tabinp_ui(inp_ui_str,
                   inp_tab_str = inp_tab_str,
                   inp_table_str = inp_table_str,
                   ns = ns,
                   type = type,
                   add_rest_btn = T,
+                  scroll_panel_style = scroll_panel_style,
                   ...)
   }
 }
@@ -84,6 +89,8 @@ gen_tabinp_ui <-
            ns = NS(NULL),
            type = "fixed",
            add_rest_btn = T,
+           scroll_panel_style =
+             "max-height: calc(100vh - 12rem); overflow-y: scroll; overflow-x: hidden;" ,
            ...) {
 
     # Defining colours for policy columns
@@ -305,7 +312,7 @@ gen_tabinp_ui <-
             dts <- rlang::dots_list(...)
             dts$single_well %>%
               shiny::column(., width = sum(input_cols_spec$width)) %>%
-              rowwing_fn(style = "max-height: calc(60vh); overflow-y: scroll;" ,
+              rowwing_fn(style = scroll_panel_style,
                          id = ns("policy-options-inputs")) %>%
               shiny::tabPanelBody(value = paste0("panel", dts[[2]]), .)
           }))

@@ -16,7 +16,7 @@ library(shiny)
 devtools::load_all()
 # library(devCEQ)
 
-inputs_path <- "./data-raw/ben-inputs-structure.xlsx"
+inputs_path <- "./data-raw/ceq-inputs-idn-2022.xlsx"
 inputs_raw_str <- inputs_path %>% load_input_xlsx()
 inputs_tab_str <- inputs_path %>% load_inputtabs_xlsx()
 inputs_table_str <- inputs_path %>% load_inputtables_xlsx()
@@ -35,18 +35,27 @@ presim <- reactive({
 local_inp_str_fn <- gen_inp_str_front(inp_table_str = inputs_table_str)
 
 # 2. We provide function that creates UI based on all inputs.
-local_tab_ui_fn <- gen_tabinp_ui_front(inputs_tab_str, inp_table_str = inputs_table_str)
+local_tab_ui_fn <- gen_tabinp_ui_front(
+  inputs_tab_str,
+  inp_table_str = inputs_table_str
+  )
+
+# 3. Complete UI wrapper
+local_ceq_ui <- gen_ceq_ui(inp_nav_width = 3)
 
 # Title of the App
 options(current.app.name = "CEQ")
 options(ceq_results_dev = TRUE)
 
-CEQ_run(
+# Running the CEQ
+devCEQ::CEQ_run(
   inputs_str = inputs_raw_str,
   presim = presim,
-  ui_fn = CEQ_ui,
+  ui_fn = local_ceq_ui,
   inp_str_fn = local_inp_str_fn,
   ui_gen_fn = local_tab_ui_fn,
   n_policy = c(1, 3, 2),
   n_policy_type = "slider", #c("numericInline", "numeric", "slider", "none"),
 )
+
+

@@ -2,7 +2,6 @@
 #'
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
-#' @inheritParams mod_inputs_ui_wrapper
 #'
 #' @import shiny
 #' @importFrom purrr map
@@ -12,12 +11,14 @@
 #' @importFrom waiter use_waiter
 #' @noRd
 #' @export
-
 CEQ_ui <- function(
     request,
     theme_fn = function() {
       bslib::bs_theme(version = 4, bootswatch = "flatly", "enable-rounded" = TRUE)
-      }
+    },
+    style_logo_position = NULL,
+    inp_nav_width = NULL,
+    ...
     ) {
 
   spinner <- tagList(#
@@ -31,10 +32,11 @@ CEQ_ui <- function(
       id = "main_sidebar",
       title =
         div(
-          div(id = "img-logo-navbar",
-              style = "right: 80px; top:5px; z-index: 1;",
+          div(id = "img-logo-navbar", style = style_logo_position,
+              # "position: fixed; right: 6rem; padding-top: 0.3125rem;
+              # padding-bottom: 0.3125rem; z-index: 1; top: 5px;"
               img(src = "www/WBG_Horizontal-white_gradient-web.png",
-                  style = "width: auto; height: 40px;")
+                  style = "width: auto; height: 2rem;")
               ),
           get_app_name()
         ),
@@ -46,7 +48,7 @@ CEQ_ui <- function(
       tabPanel(
         "Policy Choices",
         value = "pc2019",
-        mod_inputs_ui_wrapper('generic_inputs')
+        mod_inputs_ui_wrapper('generic_inputs', inp_nav_width = inp_nav_width)
       ),
       tabPanel("Results",
                shiny::h1("Results page")
@@ -66,6 +68,42 @@ CEQ_ui <- function(
     pages
   )
 }
+
+
+#' Generate a local CEQ UI function
+#'
+#' @export
+gen_ceq_ui <-
+  function(#
+    theme_fn = function() {
+      bslib::bs_theme(
+        version = 4,
+        bootswatch = "cerulean",
+        "enable-rounded" = TRUE
+      )
+    },
+    style_logo_position = NULL,
+    inp_nav_width = NULL,
+    ...
+  ) {
+
+    function(request) {
+      CEQ_ui(
+        request,
+        theme_fn = function() {
+          bslib::bs_theme(
+            version = 4,
+            bootswatch = "cerulean",
+            "enable-rounded" = TRUE
+          )
+        },
+        style_logo_position = style_logo_position,
+        inp_nav_width = inp_nav_width,
+        ...
+      )
+    }
+  }
+
 
 #' Return app name from options:
 #'

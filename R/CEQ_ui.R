@@ -118,6 +118,7 @@ gen_ceq_ui <-
 #' Dummy results UI function
 #'
 #' @noRd
+#' @export
 fn_results_ui_dummy <- function(id) {
   ns = NS(id)
   tabPanel(
@@ -127,6 +128,10 @@ fn_results_ui_dummy <- function(id) {
   )
 }
 
+#' Dummy results UI function
+#'
+#' @noRd
+#' @export
 fn_results_ui_dummy2 <- function(id) {
   ns = NS(id)
   tabPanel(

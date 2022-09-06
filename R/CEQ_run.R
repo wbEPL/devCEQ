@@ -31,6 +31,9 @@ CEQ_run <- function(
   ceq_fn = function(inps, presim) {tibble(var = "Results from `CEQ_run`")},
   info_page_md = NULL,
   info_page_size = "l",
+  fn_sim_srvr = fn_simrun_server_dummy,
+  fn_postsim_srvr = fn_postsimrun_server_dummy,
+  fn_res_disp_srvr = fn_results_display_server_dummy,
   ...
 ) {
 
@@ -50,6 +53,9 @@ CEQ_run <- function(
             n_policy_type = n_policy_type,
             info_page_md = info_page_md,
             info_page_size = info_page_size,
+            fn_sim_srvr = fn_sim_srvr,
+            fn_postsim_srvr = fn_postsim_srvr,
+            fn_res_disp_srvr = fn_res_disp_srvr,
             ...
           )
         },

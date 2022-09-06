@@ -19,6 +19,9 @@ CEQ_server <- function(input, output, session,
                        n_policy_type = c("numericInline", "numeric", "slider", "none"),
                        info_page_md = NULL,
                        info_page_size = "l",
+                       fn_sim_srvr = fn_simrun_server_dummy,
+                       fn_postsim_srvr = fn_postsimrun_server_dummy,
+                       fn_res_disp_srvr = fn_results_display_server_dummy,
                        ...) {
 
   # # Loading underlining data for 2022 simulation
@@ -55,52 +58,100 @@ CEQ_server <- function(input, output, session,
     n_policy_type = n_policy_type
   )
 
-  # observeEvent(ceq_inputs$run(), {
-  #   browser()
-  # }, ignoreInit = TRUE)
+  # observeEvent(ceq_inputs$run(), {browser()}, ignoreInit = TRUE)
+  # Simulation runner module ==================================================
+  sim_results <-
+    fn_sim_srvr(
+      id = 'ceqsim',
+      run = ceq_inputs$run,
+      inps = ceq_inputs$key,
+      presim = presim_dta,
+      all_inps = reactive(inps_all)
+    )
 
+  # Post simulation ===========================================================
+  postsim_results <-
+    fn_postsim_srvr(
+      id = 'ceqsim',
+      sim_res = sim_results
+    )
 
-  # Analysis runner module ==================================================
-  # sim19_results <-
-  #   mod_ceq2019_run_server(
-  #     id = 'ceq2019',
-  #     run = ceq_inputs$run,
-  #     inps = ceq_inputs$key,
-  #     presim = presim_dta,
-  #     all_inps = reactive(inps_all)
-  #   )
+  # Results display ==================================================
+  fn_res_disp_srvr(
+    id = "ceqsim",
+    sim_res = sim_results,
+    postsim_res = postsim_results
+  )
 
-  # postsim19_results <- mod_ceq2019_postsim_server(id = 'ceq2019', sim19_results)
+  # Observer to make things run
   observe({
     ceq_inputs$run
     ceq_inputs$key
-    # req(postsim19_results())# %>%
-    #   # readr::write_rds("data-dev/postsim19_results.rds", compress = "gz")
-    # req(sim19_results()) %>%
-    #   readr::write_rds("data-dev/sim19_results.rds", compress = "gz")
-    # browser()
-
-    })
-
-  # Results display ==================================================
-  # mod_ceq2019_results_server(
-  #   id = "ceq2019",
-  #   sim_res = sim19_results,
-  #   postsim_res = postsim19_results
-  # )
-
-  # callModule(profvis_server, "profiler")
-
-  observe({
-    # ceq_inputs$key()
-    # ceq_results$out()
-    # browser()
+    sim_results()
+    postsim_results
   })
 
 }
 
+#' dummy simulaiton run function
+#' @noRd
+fn_simrun_server_dummy <-
+  function(id = "sim_id",
+           run = reactive(1),
+           inps = reactive(list()),
+           presim = reactive(list()),
+           all_inps = reactive(list())) {
+    moduleServer(id, function(input, output, session) {
+      ns <- session$ns
+
+      # observe({
+      #   run()
+      #   browser()
+      # })
+      reactive({
+        req(run())
+        list(
+          id = id,
+          run = run(),
+          inps = inps(),
+          presim = presim(),
+          all_inps = all_inps(),
+          result = "fn_simrun_server_dummy() result"
+        )
+      })
+    })
+  }
 
 
+#' dummy post-simulation run function
+#' @noRd
+fn_postsimrun_server_dummy <-
+  function(id = "sim_id",
+           sim_res = reactive(list())) {
+    moduleServer(id, function(input, output, session) {
+      ns <- session$ns
+      reactive({
+        req(sim_res())
+        sim_res()
+      })
+    })
+  }
+
+#' dummy results visualization
+#' @noRd
+fn_results_display_server_dummy <-
+  function(id = "sim_id",
+           sim_res = reactive(list()),
+           postsim_res = reactive(list())) {
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+    observe({
+      req(postsim_res())
+      postsim_res()
+    })
+  })
+
+}
 
 #' Generic CEQ runner server that uses CEQ functions to run the analysis per simulation.
 #'

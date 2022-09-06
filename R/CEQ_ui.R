@@ -18,6 +18,7 @@ CEQ_ui <- function(
     },
     style_logo_position = NULL,
     inp_nav_width = NULL,
+    fn_results_ui = fn_results_ui_dummy,
     ...
     ) {
 
@@ -45,17 +46,21 @@ CEQ_ui <- function(
       theme = theme_fn(),
       selected = "Info",
       tabPanel("Info"),
+
+      # Policy choices tab.
       tabPanel(
         "Policy Choices",
         value = "pc2019",
         mod_inputs_ui_wrapper('generic_inputs', inp_nav_width = inp_nav_width)
       ),
-      tabPanel(
-        "Results",
-        shiny::h1("Results page")
-        # mod_ceq2019_results_ui("ceq2019")
-      ),
-      tabPanel("DEV-Results", shiny::h1("Results page")),
+
+      # Results tab
+      fn_results_ui(id = "ceqsim"),
+
+      # Dev results tab
+      if(isTRUE(getOption("ceq_results_dev"))) {
+        tabPanel("DEV-Results", shiny::h1("Results page"))
+      },
 
       # if(isTRUE(getOption("ceq_results_dev"))) {
       #   tabPanel("DEV-Results", devCEQ::mod_dev_res_ui("devres"))
@@ -71,11 +76,13 @@ CEQ_ui <- function(
 }
 
 
+
 #' Generate a local CEQ UI function
 #'
 #' @export
 gen_ceq_ui <-
   function(#
+    fn_results_ui = fn_results_ui_dummy,
     theme_fn = function() {
       bslib::bs_theme(
         version = 4,
@@ -100,11 +107,32 @@ gen_ceq_ui <-
         },
         style_logo_position = style_logo_position,
         inp_nav_width = inp_nav_width,
+        fn_results_ui = fn_results_ui,
         ...
       )
     }
   }
 
+#' Dummy results UI function
+#'
+#' @noRd
+fn_results_ui_dummy <- function(id) {
+  ns = NS(id)
+  tabPanel(
+    "Results",
+    value = "Results",
+    shiny::h1(paste0("Results page in ns: ", ns("ID")))
+  )
+}
+
+fn_results_ui_dummy2 <- function(id) {
+  ns = NS(id)
+  tabPanel(
+    "Results",
+    value = "Results",
+    shiny::h1(paste0("2222Results page in ns: ", ns("ID")))
+  )
+}
 
 #' Return app name from options:
 #'

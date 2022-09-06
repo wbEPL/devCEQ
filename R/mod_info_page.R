@@ -243,7 +243,7 @@ compile_guides <- function(ns = NS(NULL)) {
       el = ns("input_tabs_nav_holder_3"),
       is_id = TRUE,
       title =
-        "‘Summary’ tab contains a table with all policy inputs compared side-by side.",
+        "'Summary' tab contains a table with all policy inputs compared side-by side.",
       description =
         shiny::markdown("It compares provided values with the baseline and
                         highlights inputs that are different from each other"),

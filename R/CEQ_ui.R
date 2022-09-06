@@ -9,6 +9,7 @@
 #' @importFrom tippy use_tippy
 #' @importFrom profvis profvis_ui
 #' @importFrom waiter use_waiter
+#' @importFrom bslib bs_theme
 #' @noRd
 #' @export
 CEQ_ui <- function(
@@ -80,6 +81,7 @@ CEQ_ui <- function(
 #' Generate a local CEQ UI function
 #'
 #' @export
+#' @importFrom bslib bs_theme
 gen_ceq_ui <-
   function(#
     fn_results_ui = fn_results_ui_dummy,

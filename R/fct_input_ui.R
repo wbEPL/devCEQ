@@ -3,9 +3,10 @@
 #'
 #' @export
 #' @importFrom readxl read_excel
+#' @importFrom tidyselect any_of contains
 load_input_xlsx <- function(path) {
   readxl::read_excel(path, sheet = 1) %>%
-    tidyr::fill(contains("group")) %>%
+    tidyr::fill(tidyselect::contains("group")) %>%
     dplyr::select(group_name, group_order,
                   tidyselect::any_of("include"),
                   tidyselect::contains("para__"), factor ,

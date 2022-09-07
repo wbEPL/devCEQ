@@ -314,7 +314,7 @@ mod_runceq_server <-
 
 
 
-#' @describeIn mod_ceq2019_run_server Initialize progress.
+#' @describeIn mod_runceq_server Initialize progress.
 fct_make_ceq_progress <- function(session, prog_length = 4) {
   shiny::Progress$new(session = session,
                       min = 0,
@@ -323,7 +323,7 @@ fct_make_ceq_progress <- function(session, prog_length = 4) {
 
 
 
-#' @describeIn mod_ceq2019_run_server big step progress
+#' @describeIn mod_runceq_server big step progress
 #' @export
 fct_big_step_ceq_progress <- function(prog,
                                       message = NULL,
@@ -335,7 +335,7 @@ fct_big_step_ceq_progress <- function(prog,
 }
 
 
-#' @describeIn mod_ceq2019_run_server small step progress
+#' @describeIn mod_runceq_server small step progress
 #' @export
 fct_samll_step_ceq_progress <- function(prog,
                                         n_small = 4,
@@ -348,7 +348,7 @@ fct_samll_step_ceq_progress <- function(prog,
 
 
 
-#' @describeIn mod_ceq2019_run_server small step progress
+#' @describeIn mod_runceq_server small step progress
 #' @export
 fct_close_ceq_progress <- function(prog,
                                    title = "Simulation is completed",

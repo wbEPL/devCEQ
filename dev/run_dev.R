@@ -52,6 +52,7 @@ options(ceq_results_dev = TRUE)
 
 devtools::load_all()
 # Running the CEQ
+options( "golem.app.prod" = FALSE)
 devCEQ::CEQ_run(
   inputs_str = inputs_raw_str,
   presim = presim,

@@ -72,6 +72,14 @@ CEQ_ui <- function(
 
   tagList(
     golem_add_external_resources(),
+    if (isTRUE(unlist(options("golem.app.prod"))))
+    {
+      waiter::waiter_show_on_load(spinner)
+    },
+    if (isTRUE(unlist(options("golem.app.prod"))))
+    {
+      waiter::waiter_hide_on_render(NS('generic_inputs')("n_policy_ui"))
+    },
     pages
   )
 }
@@ -193,6 +201,7 @@ golem_add_external_resources <- function(){
     cicerone::use_cicerone(),
     shinyjs::useShinyjs(),
     waiter::use_waiter(),
+    # if (isTRUE(unlist(options( "golem.app.prod" )))) {waiter::waiterPreloader()},
     # shinyalert::useShinyalert(),
     shinyWidgets::useSweetAlert(theme = "bootstrap-4"),
     shinyFeedback::useShinyFeedback(feedback = TRUE, toastr = TRUE),

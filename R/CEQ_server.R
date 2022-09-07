@@ -60,27 +60,36 @@ CEQ_server <- function(input, output, session,
 
   # observeEvent(ceq_inputs$run(), {browser()}, ignoreInit = TRUE)
   # Simulation runner module ==================================================
+  ceq_progress <-
+    moduleServer(NULL, function(input, output, session) {
+      reactive({fct_make_ceq_progress(session = session, 3)})
+    })
+
+
   sim_results <-
     fn_sim_srvr(
       id = 'ceqsim',
       run = ceq_inputs$run,
       inps = ceq_inputs$key,
       presim = presim_dta,
-      all_inps = reactive(inps_all)
+      all_inps = reactive(inps_all),
+      ceq_progress = ceq_progress
     )
 
   # Post simulation ===========================================================
   postsim_results <-
     fn_postsim_srvr(
       id = 'ceqsim',
-      sim_res = sim_results
+      sim_res = sim_results,
+      ceq_progress = ceq_progress
     )
 
   # Results display ==================================================
   fn_res_disp_srvr(
     id = "ceqsim",
     sim_res = sim_results,
-    postsim_res = postsim_results
+    postsim_res = postsim_results,
+    ceq_progress = ceq_progress
   )
 
   # Observer to make things run
@@ -100,7 +109,8 @@ fn_simrun_server_dummy <-
            run = reactive(1),
            inps = reactive(list()),
            presim = reactive(list()),
-           all_inps = reactive(list())) {
+           all_inps = reactive(list()),
+           ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns
 
@@ -127,7 +137,8 @@ fn_simrun_server_dummy <-
 #' @noRd
 fn_postsimrun_server_dummy <-
   function(id = "sim_id",
-           sim_res = reactive(list())) {
+           sim_res = reactive(list()),
+           ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns
       reactive({
@@ -142,7 +153,8 @@ fn_postsimrun_server_dummy <-
 fn_results_display_server_dummy <-
   function(id = "sim_id",
            sim_res = reactive(list()),
-           postsim_res = reactive(list())) {
+           postsim_res = reactive(list()),
+           ...) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     observe({
@@ -177,7 +189,8 @@ mod_runceq_server <-
            baseline = tibble(var = "Baseline default"),
            all_inps = reactive(NULL),
            ceq_fn = function(inps, presim) {tibble(var = "`ceq_fn` results default")},
-           misspolicy_fn = devCEQ::add_missing_inp_generic ) {
+           misspolicy_fn = devCEQ::add_missing_inp_generic ,
+           ...) {
 
     moduleServer(id, function(input, output, session) {
 
@@ -298,3 +311,55 @@ mod_runceq_server <-
       sim_res
     })
   }
+
+
+
+#' @describeIn mod_ceq2019_run_server Initialize progress.
+fct_make_ceq_progress <- function(session, prog_length = 4) {
+  shiny::Progress$new(session = session,
+                      min = 0,
+                      max = prog_length + 1)
+}
+
+
+
+#' @describeIn mod_ceq2019_run_server big step progress
+#' @export
+fct_big_step_ceq_progress <- function(prog,
+                                      message = NULL,
+                                      detail =  NULL, ...) {
+  fct_samll_step_ceq_progress(prog,
+                              n_small = 1,
+                              message = message,
+                              detail =  detail, ...)
+}
+
+
+#' @describeIn mod_ceq2019_run_server small step progress
+#' @export
+fct_samll_step_ceq_progress <- function(prog,
+                                        n_small = 4,
+                                        message = NULL,
+                                        detail =  NULL, ...) {
+  prog$set(message = message,
+           detail = detail,
+           value = prog$getValue() + 1 / n_small)
+}
+
+
+
+#' @describeIn mod_ceq2019_run_server small step progress
+#' @export
+fct_close_ceq_progress <- function(prog,
+                                   title = "Simulation is completed",
+                                   ...) {
+  prog$close()
+
+  # Simulation completed alert --- --- --- --- --- --- --- --- --- ---
+  shinyWidgets::show_alert(
+    title = "Simulation is completed",
+    type = "success",
+    ...
+  )
+}
+

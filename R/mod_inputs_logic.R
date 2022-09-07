@@ -703,7 +703,7 @@ mod_coll_inp_srv <-
       # reanable <- out %>% debounce(1500)
       observeEvent(out(), {
         shinyjs::enable(("run_sim"))
-        shinyjs::enable(selector = "#main_sidebar li:nth-child(3) a")
+        # shinyjs::enable(selector = "#main_sidebar li:nth-child(3) a")
       }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
       out

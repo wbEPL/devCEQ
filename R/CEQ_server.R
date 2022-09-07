@@ -62,7 +62,9 @@ CEQ_server <- function(input, output, session,
   # Simulation runner module ==================================================
   ceq_progress <-
     moduleServer(NULL, function(input, output, session) {
-      reactive({fct_make_ceq_progress(session = session, 3)})
+      eventReactive(ceq_inputs$run(), {
+        fct_make_ceq_progress(session = session, 3)
+      })
     })
 
 

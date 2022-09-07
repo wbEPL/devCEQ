@@ -319,9 +319,9 @@ mod_build_inp_srv <-
       ignoreNULL = TRUE)
 
       update_ui <- reactive({
-        # shinyjs::disable(("run_sim"))
         req(n_poly())
         req(inp_raw_str)
+        shinyjs::disable(("run_sim"))
         list(inp_raw_str, n_poly(), reseter())
       }) %>%
         debounce(250)

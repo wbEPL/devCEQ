@@ -25,3 +25,14 @@
 .tippy-tooltip {
      font-size: 14px !important;
 }
+
+.radiobtn .disabled{
+  text-align: left;
+  padding-left: 25px;
+}
+
+
+.radiobtn  {
+  text-align: left;
+  padding-left: 25px;
+}

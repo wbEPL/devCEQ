@@ -150,7 +150,13 @@
 
 # The testing function ---------------------------------------------------------
 
+library(tidyverse)
 pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+
+path <- "data-raw/complex-inputs-structure.xlsx"
+inp_raw_str <- path %>% load_input_xlsx()
+inp_tab_str <- path %>% load_inputtabs_xlsx()
+
 test_genui_fn(inp_raw_str, full = T)
 
 # library(reactlog)
@@ -237,7 +243,12 @@ inp_table_str <- path %>% load_inputtables_xlsx()
 pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
 
 local_inp_str_fn <- gen_inp_str_front(inp_table_str)
-local_tab_ui_fn <- gen_tabinp_ui_front(inp_tab_str, inp_table_str)
+local_tab_ui_fn <- gen_tabinp_ui_front(
+  bind_rows(
+    tibble(tab_name = "dta"),
+    inp_tab_str
+    ),
+  inp_table_str)
 
 all_outs <-
   local_inp_str_fn(inp_raw_str, n_choices = 5, ns = NS(NULL)) %>%

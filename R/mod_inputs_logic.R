@@ -27,18 +27,16 @@ mod_inputs_ui_wrapper <- function(id, inp_nav_width = NULL, ...) {
     column(width = inp_nav_width)
 
   right_col <-
-    mod_dyn_inp_ui(id) %>%
+    mod_inp_tabs_content_ui(id) %>%
     div(style = "min-height:600px") %>%
     div(id = ns("policy_choices_tabs_1")) %>%
     div(id = ns("policy_choices_tabs_2")) %>%
     tagList(text_field) %>%
-    tagList(verbatimTextOutput(ns("highlighted"))) %>%
     column(width = 12 - inp_nav_width) %>%
     tagList(
-      if (getOption("ceq_dev", FALSE))
+      if (getOption("ceq_dev", FALSE)) {
         profvis::profvis_ui("profiler")
-      else
-        NULL
+      }
     )
 
   fluidRow(left_col, right_col)
@@ -157,45 +155,6 @@ mod_inputs_server <-
       cur_inps
     })
   }
-
-## To be copied in the UI
-# mod_inputs_ui("inputs_ui_1")
-
-## To be copied in the server
-# mod_inputs_server("inputs_ui_1")
-
-
-#' UI for dynamic inputs generated / updated by server function
-#'
-#' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
-#' @import shiny
-#' @export
-mod_dyn_inp_ui <- function(id) {
-  ns <- NS(id)
- # New look
-    tagList(
-      mod_inp_tab_header_ui(id) %>% div(id = ns("policy_names_holder")),
-      mod_inp_tabs_ui(id),
-      shiny::tabsetPanel(
-        id = ns("policy_tabs"),
-        type = "hidden",
-        header = mod_inp_tab_header_intab_ui(id),
-        shiny::tabPanelBody(
-          value = "summary",
-          DT::DTOutput(ns("inputs_ui_values"))
-        )
-      ) %>% div(id = ns("policy_choices_holder")),
-      # mod_inp_tab_footer_ui(id),
-      if (getOption("ceq_inmodule_dev", FALSE)) {
-        shiny::verbatimTextOutput(ns("dynamic_inputs_ui_info"))
-      }
-    )
-
-}
-
 
 
 
@@ -372,88 +331,6 @@ mod_build_inp_srv <-
 
   }
 
-
-
-#' @describeIn mod_render_inp_ui_srv UI for input tabs switches.
-#'
-#' @noRd
-#' @importFrom shiny uiOutput
-#' @export
-mod_inp_switches_ui <-
-  function(id) {
-    ns = NS(id)
-    # shiny::uiOutput(ns("switches_iu"))
-
-    # shiny::radioButtons(
-    #   inputId = ns("inp_tab"),
-    #   label = NULL,
-    #   choices = c("Policy choices" = "panel1",
-    #               "Summary Table" = "summary"),
-    #   inline = FALSE,
-    #   width = "100%"
-    # )
-
-    shinyWidgets::radioGroupButtons(
-      inputId = ns("inp_tab"),
-      label = NULL,
-      choices = c("Policy choices" = "panel1",
-                  "Summary Table" = "summary"),
-      direction = "vertical",
-      justified = TRUE#,
-      # individual = TRUE,
-      # checkIcon = list(
-      #   yes = tags$i(class = "fa fa-circle",
-      #                style = "color: steelblue"),
-      #   no = tags$i(class = "fa fa-circle-o",
-      #               style = "color: steelblue"))
-    )
-
-
-
-
-  }
-
-#' @describeIn mod_render_inp_ui_srv UI for input tabs bodies
-#' @noRd
-#' @import shiny
-#' @importFrom shiny uiOutput
-#' @export
-mod_inp_tabs_ui <-
-  function(id) {
-    ns = NS(id)
-    shiny::uiOutput(ns("tabs_ui"))
-  }
-
-#' @describeIn mod_render_inp_ui_srv UI for tabs header
-#' @noRd
-#' @importFrom shiny uiOutput
-#' @export
-mod_inp_tab_header_ui <-
-  function(id) {
-    ns = NS(id)
-    shiny::uiOutput(ns("tab_header_ui"))
-  }
-
-#' @describeIn mod_render_inp_ui_srv UI for tabs mod_inp_tab_header_intab_ui
-#' @noRd
-#' @importFrom shiny uiOutput
-#' @export
-mod_inp_tab_header_intab_ui <-
-  function(id) {
-    ns = NS(id)
-    shiny::uiOutput(ns("tab_header_intab_ui"))
-  }
-
-
-#' @describeIn mod_render_inp_ui_srv UI for tabs footer
-#' @noRd
-#' @importFrom shiny uiOutput
-#' @export
-mod_inp_tab_footer_ui <-
-  function(id) {
-    ns = NS(id)
-    shiny::uiOutput(ns("tab_footer_ui"))
-  }
 
 
 

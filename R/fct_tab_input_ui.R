@@ -45,7 +45,8 @@ test_genui_fn <- function(inp_raw_str,
   }
 
   fluidPage(column(2, wellPanel(mod_inp_switches_ui(NULL))),
-            column(10, mod_dyn_inp_ui(NULL))) %>%
+            column(10, mod_dyn_inp_ui(NULL)),
+            golem_add_external_resources()) %>%
     shinyApp(., server)
 }
 
@@ -279,11 +280,17 @@ gen_tabinp_ui <-
     if (isTruthy(inp_tab_str) && nrow(inp_tab_str) > 0) {
       inp_tab_str_ordered <-
         inp_tab_str %>%
-        left_join(distinct(., tab_name) %>%
-                    mutate(tab_order = row_number(),
-                           tab_id = paste0("panel", tab_order)
-                           ),
-                  by = "tab_name")
+        left_join(
+          distinct(., tab_name) %>%
+            mutate(tab_order = row_number(),
+                   tab_id = paste0("panel", tab_order),
+                   ),
+          by = "tab_name") %>%
+        mutate(
+          tab_id = ifelse(is.na(group_order),
+                          paste0("DISABLED", tab_order),
+                          tab_id)
+          )
     } else {
       inp_tab_str_ordered <- tibble(
         tab_name = "Policy choices",
@@ -293,6 +300,7 @@ gen_tabinp_ui <-
       )
     }
 
+    # browser()
     out_wells_tabs <-
       inp_groups %>%
       left_join(inp_tab_str_ordered, "group_order") %>%
@@ -326,9 +334,17 @@ gen_tabinp_ui <-
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     switches <- list()
 
+    switch_values <- inp_tab_str_ordered %>% distinct(tab_name, tab_id)
     switches$choices <-
-      set_names(out_wells_tabs$tab_id, out_wells_tabs$tab_name) %>%
+      set_names(switch_values$tab_id, switch_values$tab_name) %>%
       c(., "Summary Table" = "summary")
+
+    switches$disabled <-
+      switches$choices[str_detect(switches$choices, regex("disabled", ignore_case = T))]
+
+    switches$selected <-
+      switches$choices[!str_detect(switches$choices, regex("disabled", ignore_case = T))]
+    switches$selected <- switches$selected[[1]]
 
     switches$ui <-
       shinyWidgets::radioGroupButtons(
@@ -342,7 +358,10 @@ gen_tabinp_ui <-
 
     list(
       tabs = out_tabs,
-      switches = list(choices = switches$choices, ui = switches$ui),
+      switches = list(choices = switches$choices,
+                      ui = switches$ui,
+                      disabled = switches$disabled,
+                      selected = switches$selected),
       header = list(ui = intab_header)
       )
 }

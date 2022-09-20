@@ -59,7 +59,7 @@ mod_inputs_server <-
            target_tab = NULL,
            source_tab = NULL,
            n_policy = c(1, 2, 1),
-           n_policy_type = c("slider", "numericInline", "numeric","none"),
+           n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
            ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns

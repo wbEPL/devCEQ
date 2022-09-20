@@ -16,7 +16,7 @@ CEQ_server <- function(input, output, session,
                        inp_str_fn = gen_inp_str,
                        ui_gen_fn = gen_tabinp_ui,
                        n_policy = c(1, 2, 1),
-                       n_policy_type = c("numericInline", "numeric", "slider", "none"),
+                       n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
                        info_page_md = NULL,
                        info_page_size = "l",
                        fn_sim_srvr = fn_simrun_server_dummy,
@@ -180,7 +180,7 @@ fn_results_display_server_dummy <-
 #'   (`inps` and `all_inps`) and adds missing elements to the first policy chice
 #'   by name.
 #'
-#' @noRd
+#'
 #' @importFrom shinyWidgets show_alert
 #' @export
 mod_runceq_server <-

@@ -23,7 +23,7 @@ CEQ_run <- function(
   presim,
   baseline_dta = reactive(tibble(var = "Baseline from `CEQ_run`")),
   n_policy = c(1, 2, 1),
-  n_policy_type = c("numericInline", "numeric", "slider", "none"),
+  n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
   server_fn = CEQ_server,
   ui_fn = CEQ_ui,
   inp_str_fn = gen_inp_str,

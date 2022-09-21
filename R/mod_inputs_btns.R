@@ -87,7 +87,7 @@ mod_inputs_btns_ui <- function(id = NULL, ...) {
   upload_sim_file[["children"]][[2]][["children"]][[1]][["children"]][[1]][["attribs"]][["class"]] <-
     "btn btn-primary btn-file"
 
-  input_tabs <- mod_inp_switches_ui(id = id)
+  input_tabs <- mod_inp_tab_switches_ui(id = id)
 
   tagList(
     ## Number of simulations

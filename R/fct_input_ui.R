@@ -1,4 +1,5 @@
 
+# UI structure loader from Excel ---------------------------------------------
 #' @noRd
 #'
 #' @export
@@ -71,105 +72,9 @@ inp_str_test <-
   }
 
 
-
-#' Generate numeric input from the list of arguments
-#'
-#' @noRd
-#' @importFrom rlang dots_list
-#' @importFrom magrittr extract
-#' @importFrom shiny numericInput
-#' @importFrom bsplus shinyInput_label_embed shiny_iconlink bs_embed_popover
-#' @importFrom tippy tippy
-#' @export
-gen_num_inpt_ui <- function(..., nolable = FALSE) {
-  inputs <-
-    rlang::dots_list(...)%>%
-    unlist(recursive = T) %>%
-    as.list()
-
-  if (nolable) {
-    inputs$label <- NULL
-    add_arg <- list(label = NULL)
-  } else {
-    add_arg <- list()
-  }
-
-  out_ui <-
-    inputs  %>%
-    magrittr::extract(names(.) %in%
-                        c("inputId", "label", "value", "min", "max", "step", "width")) %>%
-    magrittr::extract(!is.na(.)) %>%
-    append(., add_arg) %>%
-    do.call(what = shiny::numericInput, args = .)
-
-  if (!is.na(inputs$tooltip__body)) {
-    out_ui <-
-      out_ui %>%
-      bsplus::shinyInput_label_embed(
-        tippy::tippy(
-          '<i class="fa fa-info-circle"></i>',
-          tooltip = shiny::markdown(inputs$tooltip__body),
-          placement = "left",
-          theme = "light-border",
-          arrow = "round",
-          animation = "shift-away",
-          interactive = TRUE,
-          allowHTML = T
-        )
-      )
-  }
-  out_ui %>%
-    div(class = inputs$class)
-}
-
-#' Generate text input from the list of arguments
-#'
-#' @noRd
-#' @importFrom rlang dots_list
-#' @importFrom magrittr extract
-#' @importFrom shiny textInput
-#' @export
-gen_text_inpt_ui<- function(..., value = NULL, nolable = FALSE) {
-  rlang::dots_list(...) %>%
-    unlist(recursive = T) %>%
-    as.list() %>%
-    magrittr::extract(names(.) %in%
-                        c("inputId", "label", "value", "width")) %>%
-    magrittr::extract(!is.na(.)) %>%
-    do.call(what = shiny::textInput, args = .)
-}
+# UI generators -----------------------------------------------------------
 
 
-#' Generate checkbox input from the list of arguments
-#'
-#' @noRd
-#' @importFrom rlang dots_list
-#' @importFrom magrittr extract
-#' @importFrom shiny checkboxInput
-#' @export
-gen_checkbox_inpt_ui<- function(..., nolable = FALSE) {
-  inputs <-
-    rlang::dots_list(...) %>%
-    unlist(recursive = T) %>%
-    as.list()
-
-  if (nolable) {
-    inputs$label <- NULL
-    add_arg <- list(label = NULL)
-  } else {
-    add_arg <- list()
-  }
-  inputs <-
-    inputs %>%
-    magrittr::extract(names(.) %in% c("inputId", "label", "value")) %>%
-    magrittr::extract(!is.na(.)) %>%
-    append(., add_arg) #%>%
-    # do.call(what = shiny::checkboxInput, args = .)
-
-  shiny::checkboxInput(inputId = inputs$inputId,
-                       value = isTRUE(inputs$value == "1"),
-                       label = inputs$label)
-}
 
 #' @describeIn gen_inp_str
 #'
@@ -297,150 +202,178 @@ gen_inp_str <-
 # )
 
 
-#' Generate IU of the inputs
+
+# UI Generators --------------------------------------------------------------
+
+
+
+#' Generate numeric input from the list of arguments
 #'
 #' @noRd
-#' @import shiny
 #' @importFrom rlang dots_list
-#' @importFrom dplyr select mutate distinct left_join summarise arrange filter
-#' @importFrom purrr map_dfr pmap
-#' @importFrom stringr str_c
-#'
-gen_inp_ui <- function(inp_ui_str, type = "fixed",
-                       add_rest_btn = T,
-                       ns = NS(NULL)) {
+#' @importFrom magrittr extract
+#' @importFrom shiny numericInput
+#' @importFrom bsplus shinyInput_label_embed shiny_iconlink bs_embed_popover
+#' @importFrom tippy tippy
+#' @export
+gen_num_inpt_ui <- function(..., nolable = FALSE) {
+  inputs <-
+    rlang::dots_list(...)%>%
+    unlist(recursive = T) %>%
+    as.list()
 
-  input_cols_spec <-
-    inp_ui_str %>%
-    dplyr::distinct(policy_choice) %>%
-    dplyr::mutate(
-      width = floor(12 / nrow(.)),
-      style = ifelse(row_number() %% 2 == 0, "background-color:#F8F8F8;", NA_real_)
-    )
-
-  if (sum(input_cols_spec$width) < 12 ) {
-    input_cols_spec <-
-      input_cols_spec %>%
-      mutate(width = ifelse(
-        row_number() == min(row_number()),
-        width + 12 - sum(input_cols_spec$width),
-        width
-      ))
-  }
-
-  rowwing_fn <- switch (type,
-                       "fixed" = shiny::fixedRow,
-                       "fluid" = shiny::fluidRow
-  )
-
-  # out <- NULL
-
-  # browser()
-  # Panel structure with columns in rows.
-  # panel <-
-  #   inp_ui_str %>%
-  #   # dplyr::filter(row > 0) %>%
-  #   dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
-  #   dplyr::mutate(single_ui = purrr::pmap(., ~ {
-  #     dts <- rlang::dots_list(...)
-  #     shiny::column(dts$width, style = dts$style, dts$single_ui)
-  #   })) %>%
-  #   dplyr::group_by(group_name, row) %>%
-  #   dplyr::summarise(single_row = single_ui %>% shiny::tagList(.), .groups = "keep") %>%
-  #   dplyr::mutate(single_row = purrr::map(single_row, ~ rowwing_fn(.x))) %>%
-  #   dplyr::group_by(group_name) %>%
-  #   dplyr::arrange(row) %>%
-  #   dplyr::summarise(single_well = shiny::tagList(single_row), .groups = "keep")
-
-  # Panel structure with rows in columns
-  # browser()
-  panel <-
-    inp_ui_str %>%
-    dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
-    dplyr::arrange(group_order, order, row) %>%
-    dplyr::group_by(group_order, group_name, policy_choice, style, width ) %>%
-    dplyr::summarise(single_col = single_ui %>% shiny::tagList(.), .groups = "keep") %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(single_col = purrr::pmap(., ~ {
-      dts <- rlang::dots_list(...)
-      column(dts$width, style = dts$style, shiny::verticalLayout(dts$single_col, fluid = T))
-    })) %>%
-    dplyr::group_by(group_order, group_name) %>%
-    dplyr::summarise(single_well = shiny::tagList(single_col), .groups = "keep")  %>%
-    dplyr::mutate(single_well = purrr::map(single_well, ~rowwing_fn(.x)))  %>%
-    ungroup() %>%
-    arrange(group_order)
-
-  head <-
-    panel %>%
-    filter(is.na(group_name)) %>%
-    pull(single_well) %>%
-    shiny::column(sum(input_cols_spec$width), .) %>%
-    rowwing_fn()
-
-  if (add_rest_btn) {
-    reset_btns <-
-      inp_ui_str %>%
-      dplyr::distinct(policy_choice) %>%
-      mutate(single_ui = map(policy_choice, ~ {
-        actionButton(ns(str_c("reset_", .x)), label = "Reset to baseline")
-      })) %>%
-      dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
-      dplyr::group_by( policy_choice, style, width ) %>%
-      dplyr::summarise(single_col = single_ui %>% shiny::tagList(.), .groups = "keep") %>%
-      dplyr::ungroup() %>%
-      dplyr::mutate(single_col = purrr::pmap(., ~ {
-        dts <- rlang::dots_list(...)
-        column(dts$width, style = dts$style, shiny::verticalLayout(dts$single_col, fluid = T))
-      })) %>%
-      dplyr::summarise(single_well = shiny::tagList(single_col), .groups = "keep")  %>%
-      dplyr::mutate(single_well = purrr::map(single_well, ~rowwing_fn(.x)))  %>%
-      ungroup()
+  if (nolable) {
+    inputs$label <- NULL
+    add_arg <- list(label = NULL)
   } else {
-    reset_btns  <- NULL
+    add_arg <- list()
   }
 
-  panel <-
-    panel %>%
-    filter(!is.na(group_name)) %>%
-    purrr::pmap( ~ {
-      dts <- rlang::dots_list(...)
-      dts$group_name %>%
-        shiny::h3() %>%
-        shiny::column(sum(input_cols_spec$width), .) %>%
-        rowwing_fn() %>%
-        shiny::tagList(dts$single_well)
-    }) %>%
-    shiny::tagList()
+  out_ui <-
+    inputs  %>%
+    magrittr::extract(names(.) %in%
+                        c("inputId", "label", "value", "min", "max", "step", "width")) %>%
+    magrittr::extract(!is.na(.)) %>%
+    append(., add_arg) %>%
+    do.call(what = shiny::numericInput, args = .)
 
-  all_tabs <-
-    tagList(head, reset_btns, tags$hr()) %>%
-    shiny::column(sum(input_cols_spec$width), .) %>%
-    rowwing_fn(style = "overflow-y: auto; padding-right: 19px;") %>%
-    tagList(panel %>%
-              shiny::column(sum(input_cols_spec$width), .) %>%
-              rowwing_fn(style = "max-height: calc(70vh); overflow-y: scroll;" ,
-                         id = ns("policy-options-inputs"))
-            ) %>%
-    shiny::column(sum(input_cols_spec$width), .) %>%
-    list() %>%
-    setNames("panel1")
-
-  # browser()
-
-  # Switches ----------------------------------------------------------------
-  switches <- list()
-  switches$choices <- c("Policy choices" = "panel1",
-                           "Summary Table" = "summary")
-  # switches$ui <-
-  #   shinyWidgets::radioGroupButtons(
-  #     inputId = ns("selected_input_tab"),
-  #     label = NULL,
-  #     choices = c("Policy choices" = "panel1",
-  #                 "Summary Table" = "summary"),
-  #     direction = "vertical",
-  #     justified = TRUE
-  #     )
-  list(tabs = all_tabs, switches = switches)
+  if (!is.na(inputs$tooltip__body)) {
+    out_ui <-
+      out_ui %>%
+      bsplus::shinyInput_label_embed(
+        tippy::tippy(
+          '<i class="fa fa-info-circle"></i>',
+          tooltip = shiny::markdown(inputs$tooltip__body),
+          placement = "left",
+          theme = "light-border",
+          arrow = "round",
+          animation = "shift-away",
+          interactive = TRUE,
+          allowHTML = T
+        )
+      )
+  }
+  out_ui %>%
+    div(class = inputs$class)
 }
 
+#' Generate text input from the list of arguments
+#'
+#' @noRd
+#' @importFrom rlang dots_list
+#' @importFrom magrittr extract
+#' @importFrom shiny textInput
+#' @export
+gen_text_inpt_ui<- function(..., value = NULL, nolable = FALSE) {
+  rlang::dots_list(...) %>%
+    unlist(recursive = T) %>%
+    as.list() %>%
+    magrittr::extract(names(.) %in%
+                        c("inputId", "label", "value", "width")) %>%
+    magrittr::extract(!is.na(.)) %>%
+    do.call(what = shiny::textInput, args = .)
+}
+
+
+#' Generate checkbox input from the list of arguments
+#'
+#' @noRd
+#' @importFrom rlang dots_list
+#' @importFrom magrittr extract
+#' @importFrom shiny checkboxInput
+#' @export
+gen_checkbox_inpt_ui<- function(..., nolable = FALSE) {
+  inputs <-
+    rlang::dots_list(...) %>%
+    unlist(recursive = T) %>%
+    as.list()
+
+  if (nolable) {
+    inputs$label <- NULL
+    add_arg <- list(label = NULL)
+  } else {
+    add_arg <- list()
+  }
+  inputs <-
+    inputs %>%
+    magrittr::extract(names(.) %in% c("inputId", "label", "value")) %>%
+    magrittr::extract(!is.na(.)) %>%
+    append(., add_arg) #%>%
+  # do.call(what = shiny::checkboxInput, args = .)
+
+  shiny::checkboxInput(inputId = inputs$inputId,
+                       value = isTRUE(inputs$value == "1"),
+                       label = inputs$label)
+}
+
+
+
+
+#   Test functions -----------------------------------------------------------
+
+#' Test input tabs content generation process by providing basic data.
+#'
+#' @noRd
+test_gen_inp_front_simple <-
+  function(inp_raw_str,
+           inp_tab_str = NULL,
+           inp_table_str = NULL,
+           n_choices = 2) {
+    local_inp_str_fn <- gen_inp_str_front(inp_table_str = inp_table_str)
+
+    # inp_ui_str <- local_inp_str_fn(inp_raw_str, n_choices = 2, ns = NS(NULL))
+    #
+    local_tab_ui_fn <- gen_tabinp_ui_front(inp_tab_str, inp_table_str)
+
+    all_outs <-
+      local_inp_str_fn(inp_raw_str, n_choices = n_choices, ns = NS(NULL)) %>%
+      local_tab_ui_fn()
+
+    # gen_one_inp_table(inp_ui_str, inp_table_str[[2]])
+
+    ui <- fluidPage(all_outs$tabs %>% slice(1) %>% pull(tab_ui))
+
+    server <- function(input, output, session) {
+
+    }
+
+
+    a <- shinyApp(ui, server)
+    runApp(a, launch.browser = T)
+
+  }
+
+#' Test input tabs content generation process by providing basic data.
+#'
+#' @noRd
+test_gen_inp_front_tabs <-
+  function(inp_raw_str,
+           inp_tab_str = NULL,
+           inp_table_str = NULL,
+           n_choices = 2) {
+    local_inp_str_fn <- gen_inp_str_front(inp_table_str = inp_table_str)
+
+    # inp_ui_str <- local_inp_str_fn(inp_raw_str, n_choices = 2, ns = NS(NULL))
+    #
+    local_tab_ui_fn <- gen_tabinp_ui_front(inp_tab_str, inp_table_str)
+
+    all_outs <-
+      local_inp_str_fn(inp_raw_str, n_choices = n_choices, ns = NS(NULL)) %>%
+      local_tab_ui_fn()
+
+    # gen_one_inp_table(inp_ui_str, inp_table_str[[2]])
+
+    test_mod_inp_tabs_simple(id = NULL, switches = all_outs$switches, tabs = all_outs$tabs)
+
+  }
+
+
+#' Test input tabs content generation process by providing basic data.
+#'
+#' @noRd
+test_gen_inp_front_tabs_file <- function(path) {
+  inp_raw_str <- path %>% load_input_xlsx()
+  inp_tab_str <- path %>% load_inputtabs_xlsx()
+  inp_table_str <- path %>% load_inputtables_xlsx()
+  test_gen_inp_front_tabs(inp_raw_str, inp_tab_str, inp_table_str)
+}

@@ -1,42 +1,80 @@
+# Space for testing the inputs tabs
+
+golem::detach_all_attached()
+golem::document_and_reload()
+pkgload::load_all(export_all = TRUE, helpers = FALSE, attach_testthat = FALSE)
+
+library(tidyverse)
+library(shiny)
+
+
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+### Integrating tabs switches to the full page UI
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+# # The problem. Code below builds the input tabs UI. But it is not integrated
+# # into the "gen_inp_str_front" and "gen_tabinp_ui_front"
+#
+# "data-raw/ben-inputs-structure.xlsx" %>%
+#   load_inputtabs_xlsx() %>%
+#   fct_inp_tab_order() %>%
+#   fct_inp_tab_str() %>%
+#   test_mod_inp_tabs_simple(
+#     id = NULL,
+#     switches = .)
+
+
+# here we attempt to integrate these two --- --- --- --- --- --- --- ---
+# Usual structure:
+
 # golem::detach_all_attached()
 # golem::document_and_reload()
 
 library(shiny)
 library(tidyverse)
 
-# pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+pkgload::load_all(export_all = TRUE, helpers = FALSE, attach_testthat = FALSE)
 
-path <- "../data-raw/complex-inputs-structure.xlsx"
+path <- "./data-raw/complex-inputs-structure.xlsx"
 inp_raw_str <- path %>% load_input_xlsx()
 inp_tab_str <- path %>% load_inputtabs_xlsx()
 inp_table_str <- path %>% load_inputtables_xlsx()
 
+# Simple UI generation
+test_gen_inp_front_simple(inp_raw_str)
+test_gen_inp_front_simple(inp_raw_str, inp_tab_str)
+test_gen_inp_front_simple(inp_raw_str, NULL, inp_table_str)
+test_gen_inp_front_simple(inp_raw_str, inp_tab_str, inp_table_str, n_choices = 12)
+
 # === === === === === === === === === === === === === === === === === === ===
-# Function that we develop:   === === === === === === === === === === === ===
+# gen_tabinput_iu === === === === === === === === === === === ===
 # === === === === === === === === === === === === === === === === === === ===
-
-local_inp_str_fn <- gen_inp_str_front(inp_table_str = inp_table_str)
-# inp_ui_str <- local_inp_str_fn(inp_raw_str, n_choices = 2, ns = NS(NULL))
-#
-local_tab_ui_fn <- gen_tabinp_ui_front(inp_tab_str, inp_table_str)
-
-all_outs <-
-  local_inp_str_fn(inp_raw_str, n_choices = 3, ns = NS(NULL)) %>%
-  local_tab_ui_fn()
-
-# gen_one_inp_table(inp_ui_str, inp_table_str[[2]])
-
-ui <- fluidPage(
-  all_outs$tabs %>% slice(1) %>% pull(tab_ui)
-)
-
-server <- function(input, output, session) {
-
-}
+pkgload::load_all(export_all = TRUE, helpers = FALSE, attach_testthat = FALSE)
+test_gen_inp_front_simple(inp_raw_str)
+test_gen_inp_front_simple(inp_raw_str, inp_tab_str)
 
 
-shinyApp(ui, server)
+# Testing input UI generation with update of the switches and tabs  ------------------------
+pkgload::load_all(export_all = TRUE, helpers = FALSE, attach_testthat = FALSE)
 
+test_gen_inp_front_tabs(inp_raw_str)
+test_gen_inp_front_tabs(inp_raw_str, inp_tab_str)
+test_gen_inp_front_tabs(inp_raw_str, NULL, inp_table_str)
+test_gen_inp_front_tabs(inp_raw_str, inp_tab_str, inp_table_str)
+
+
+# Checking if the tabs are working with all the files
+test_gen_inp_front_tabs_file( "./data-raw/complex-inputs-structure.xlsx")
+test_gen_inp_front_tabs_file( "./data-raw/ben-inputs-structure.xlsx")
+test_gen_inp_front_tabs_file( "./data-raw/ceq-inputs-idn-2022.xlsx")
+test_gen_inp_front_tabs_file( "./data-raw/simple-inputs-structure.xlsx")
+
+
+# Testing input UI generation with complete re-activity  ------------------------
+# CONTINUE HERE!!!
+test_genui_fn(inp_raw_str, full = T)
 
 # # === === === === === === === === === === === === === === === === === === ===
 # # Manual testing if it works  === === === === === === === === === === === ===

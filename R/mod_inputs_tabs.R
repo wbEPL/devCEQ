@@ -28,33 +28,34 @@ mod_inp_tabs_content_ui <- function(id) {
       # Body of the inputs summary page
       shiny::tabPanelBody(
         value = "summary",
-        DT::DTOutput(ns("inputs_ui_values"))
+        DT::DTOutput(ns("inputs_summary_dt"))
       )
     ) %>%
       div(id = ns("policy_choices_holder")),
 
     # Place for the footer just in case
-    # mod_inp_tab_footer_ui(id),
+    mod_inp_tab_footer_ui(id),
 
-    # Debugging UI optiosn
+    # Debugging UI options
     if (getOption("ceq_dev", FALSE)) {
-      taglist(h4("dev output for mod_inp_tabs_content_ui()"),
-              shiny::verbatimTextOutput(ns("dynamic_inputs_ui_info")))
+      tagList(
+        h4("dev output for mod_inp_tabs_content_ui()"),
+        shiny::verbatimTextOutput(ns("dynamic_inputs_ui_info"))
+      )
     }
   )
-
 }
-
 
 
 #' @describeIn mod_inp_tabs_content_ui UI for input tabs switches.
 #'
 #' @noRd
-#' @importFrom shiny uiOutput
+#' @importFrom shiny radioButtons
+#' @importFrom shinyWidgets radioGroupButtons
 #' @export
 mod_inp_tab_switches_ui <-
   function(id) {
-    ns = NS(id)
+    ns <- NS(id)
 
     # shiny::radioButtons(
     #   inputId = ns("inp_tab"),
@@ -68,54 +69,319 @@ mod_inp_tab_switches_ui <-
     shinyWidgets::radioGroupButtons(
       inputId = ns("inp_tab"),
       label = NULL,
-      choices = c("Policy choices" = "panel1",
-                  "Summary Table" = "summary"),
+      choices = c(
+        "Policy choices" = "panel1",
+        "Summary Table" = "summary"
+      ),
       direction = "vertical",
       justified = TRUE
     )
-
   }
 
 
-#' @describeIn mod_render_inp_ui_srv UI for input tabs bodies
+#' helper function with the example of the choices for the tab switches to update
+#'
+#' @noRd
+get_test_tab_switches <- function() {
+  list(
+    choices = c(
+      "Group 1" = "panel0",
+      "Tab 1" = "panel1",
+      "Tab 2" = "panel2",
+      "Group 2" = "panel3",
+      "Summary" = "summary"
+    ),
+    selected = c("Tab 1" = "panel1"),
+    disabledChoices = c("Group 1" = "panel0", "Group 2" = "panel3"),
+    enabled = c("Tab 1" = "panel1", "Tab 2" = "panel2")
+  )
+}
+
+#' returns a list with dummy tab content for teting
+#'
+#' @noRd
+get_test_tabs <- function(id = NULL) {
+  ns = NS(id)
+  tibble(
+    tab_id = c("panel1", "panel2"),
+    tab_order = c(1, 2),
+    tab_ui = list(shiny::tags$h1("panel1"),
+                  shiny::tags$h1("panel2"))
+  )
+}
+
+
+
+
+
+#' Module for generating and re-generating inputs UI on the server
+#'
+#' @param switches reactive that returns a list with key information needed
+#'     for tab switches to be rendered:
+#' @import shiny
+#' @importFrom waiter Waiter spin_loader transparent
+#' @importFrom shinyjs disable enable
+#' @importFrom shinyWidgets updateRadioGroupButtons
+#' @export
+mod_render_inp_tabs_srv <-
+  function(id,
+           switches = reactive(get_test_tab_switches()),
+           tabs = reactive(get_test_tabs(id)),
+           summary_tab = reactive(mtcars),
+           header = reactive(NULL),
+           tab_header = reactive(NULL),
+           tab_footer = reactive(NULL),
+           ...
+  ) {
+    shiny::moduleServer(id, function(input, output, session) {
+      ns <- session$ns
+
+      ### TAB switch logic
+      observe({
+        req(input$inp_tab)
+        shiny::updateTabsetPanel(session, "policy_tabs", selected = input$inp_tab)
+      })
+
+      ### Render switches
+      observe({
+        req(switches())
+        isolate({
+          shinyWidgets::updateRadioGroupButtons(
+            session,
+            inputId = "inp_tab",
+            choices = switches()$choices,
+            selected = switches()$selected,
+            disabledChoices = switches()$disabledChoices,
+            justified = TRUE
+          )
+        })
+      })
+
+      ### Render headers and footers
+      output$tab_header_ui <- shiny::renderUI({req(header())})
+      output$tab_header_intab_ui <- shiny::renderUI({req(tab_header())})
+      output$tab_footer_ui <- shiny::renderUI({req(tab_footer())})
+
+      ### Render tabs
+      old_tabs <- reactiveVal(NULL)
+      observeEvent( #
+        tabs(),
+        {
+          req(tabs())
+          if (isTruthy(old_tabs())) {
+            walk(old_tabs(),  ~ {
+              removeTab(inputId = "policy_tabs",
+                        target = .x,
+                        session = session)
+            })
+          }
+
+          tabs() %>%
+            purrr::pwalk( ~ {
+              dts <- rlang::dots_list(...)
+              shiny::insertTab(
+                inputId = "policy_tabs",
+                tab = shiny::tabPanelBody(value = dts$tab_id, dts$tab_ui),
+                target = "summary",
+                select = dts$tab_order == 1,
+                position = "before",
+                session = session
+              )
+            })
+
+          tabs()$tab_id %>% old_tabs()
+        },
+        ignoreNULL = FALSE,
+        ignoreInit = FALSE
+      )
+
+      ### Render summary DT
+      output$inputs_summary_dt <-
+        DT::renderDT({
+          shiny::validate(shiny::need(summary_tab(), "Error in data for vis policy diff"))
+          req(summary_tab())
+        },
+        server = FALSE)
+    })
+  }
+
+
+#' @describeIn mod_render_inp_tabs_srv UI for input tabs bodies
 #' @noRd
 #' @import shiny
 #' @importFrom shiny uiOutput
 #' @export
 mod_inp_tabs_ui <-
   function(id) {
-    ns = NS(id)
+    ns <- NS(id)
     shiny::uiOutput(ns("tabs_ui"))
   }
 
-#' @describeIn mod_render_inp_ui_srv UI for tabs header
+#' @describeIn mod_render_inp_tabs_srv UI for tabs header
 #' @noRd
 #' @importFrom shiny uiOutput
 #' @export
 mod_inp_tab_header_ui <-
   function(id) {
-    ns = NS(id)
+    ns <- NS(id)
     shiny::uiOutput(ns("tab_header_ui"))
   }
 
-#' @describeIn mod_render_inp_ui_srv UI for tabs mod_inp_tab_header_intab_ui
+#' @describeIn mod_render_inp_tabs_srv UI for tabs mod_inp_tab_header_intab_ui
 #' @noRd
 #' @importFrom shiny uiOutput
 #' @export
 mod_inp_tab_header_intab_ui <-
   function(id) {
-    ns = NS(id)
+    ns <- NS(id)
     shiny::uiOutput(ns("tab_header_intab_ui"))
   }
 
 
-#' @describeIn mod_render_inp_ui_srv UI for tabs footer
+#' @describeIn mod_render_inp_tabs_srv UI for tabs footer
 #' @noRd
 #' @importFrom shiny uiOutput
 #' @export
 mod_inp_tab_footer_ui <-
   function(id) {
-    ns = NS(id)
+    ns <- NS(id)
     shiny::uiOutput(ns("tab_footer_ui"))
   }
+
+
+#' Testing the tabs modules
+#'
+#' @noRd
+test_mod_inp_tabs_simple <-
+  function(id = NULL,
+           switches = get_test_tab_switches(),
+           tabs = fct_inp_make_dummy_tabs(switches)) {
+
+    tst_ui <-
+      tagList(
+        column(width = 4, mod_inp_tab_switches_ui(id) %>% wellPanel()),
+        column(width = 8, mod_inp_tabs_content_ui(id)),
+        golem_add_external_resources()
+      ) %>%
+      fluidPage()
+
+    tst_srv <- function(input, output, session) {
+      mod_render_inp_tabs_srv(
+        id = id,
+        switches = reactive(switches),
+        tabs = reactive(tabs)
+        )
+    }
+
+    shinyApp(tst_ui, tst_srv)
+  }
+
+#' returns a list with dummy tab content for teting
+#'
+#' @noRd
+fct_inp_make_dummy_tabs <- function(switches) {
+  tibble(
+    tab_id = unname(switches$enabled),
+    tab_order = seq_along(switches$enabled),
+    tab_ui =
+      switches$enabled %>% imap(~shiny::tags$h1(str_c(.x, " - ", .y))) %>%
+      unname()
+  )
+
+}
+
+
+#' Clean excel-red structure of the tabs
+#'
+#' @noRd
+fct_inp_tab_order <- function(dta = NULL, ...) {
+  if (all(is.null(dta))) {
+    out <- tibble(
+      tab_name = "Policy choices",
+      tab_id = "panel1"
+    )
+  } else {
+    out <-
+      dta %>%
+      tidyr::fill(tab_name) %>%
+      left_join(
+        distinct(., tab_name) %>%
+          mutate(
+            tab_order = row_number(),
+            tab_id = paste0("panel", tab_order),
+          ),
+        by = "tab_name") %>%
+      mutate(
+        tab_id = ifelse(is.na(group_order),
+                        paste0("panel", tab_order),
+                        tab_id)
+      )
+  }
+  out
+}
+
+#' Make a structured list for generating tabs UI
+#'
+#' @noRd
+fct_inp_tab_str <- function(dta) {
+
+  switches <- list()
+  switch_values <- dta %>% distinct(tab_name, tab_id)
+
+  switches$choices <- set_names(switch_values$tab_id, switch_values$tab_name)
+
+  ends_hr <-
+    switches$choices %>% `[`(length(.)) %>%
+    str_detect(regex("hr"))
+
+  if (!ends_hr) {
+    switches$choices <- switches$choices %>% c(., "hr" = "panel90")
+  }
+
+  switches$choices <- switches$choices %>% c(., "Summary Table" = "summary")
+  tu_sub <- switches$choices %>% names() %>% str_detect(., "hr")
+  names(switches$choices)[tu_sub] <- as.character(hr(class = "hr-small-line"))
+
+  if ("group_order" %in% names(dta)) {
+    switch_disabled <-
+      dta %>% filter(is.na(group_order)) %>% pull(tab_id) %>% unique()
+  } else {
+    switch_disabled <- NULL
+  }
+
+  switches$disabledChoices <-
+    switches$choices[
+      switches$choices %in% switch_disabled |
+        str_detect(switches$choices, regex("panel90", ignore_case = T))|
+        str_detect(names(switches$choices), regex("<hr", ignore_case = T))]
+
+  switches$enabled <- switches$choices[!switches$choices %in% switches$disabledChoices]
+  switches$selected <- switches$enabled[1]
+
+  switches$ui <- NULL
+  switches
+}
+
+
+#' Returns a test version of the input tabs structure
+#'
+#' @noRd
+get_test_inp_tab_str_raw <- function(type = 1) {
+  list(
+    tibble(
+      tab_name = c("Group 1", "Tab1", NA, "Tab2", "Tab3", NA, NA, "hr", "Tab4", 'hr'),
+      group_order = c(NA, 1, 2, 4, 5, 7, 8, NA, 34, NA)
+    ),
+    tibble(
+      tab_name = c("Tab1", NA, "Tab2", "Tab3", NA, NA, "Tab4"),
+      group_order = c( 1, 2, 4, 5, 7, 8, 34)
+    ),
+    NULL
+  ) %>%
+    `[[`(type)
+
+}
+
+
+
 

@@ -514,8 +514,7 @@ load_inputtabs_xlsx <- function(path) {
   all_sheets <- readxl::excel_sheets(path)
   if ("tabs" %in% all_sheets) {
     readxl::read_excel(path, sheet = "tabs") %>%
-      tidyr::fill(tidyselect::contains("group"),
-                  tidyselect::contains("tab")) %>%
+      tidyr::fill(tidyselect::contains("tab")) %>%
       dplyr::select(tidyselect::contains("tab"),
                     tidyselect::contains("group_order"))
 

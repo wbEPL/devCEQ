@@ -1,3 +1,7 @@
+
+# UIs ---------------------------------------------------------------------
+
+
 #' inputs UI Function
 #'
 #' @description A shiny Module.
@@ -41,6 +45,10 @@ mod_inputs_ui_wrapper <- function(id, inp_nav_width = NULL, ...) {
 
   fluidRow(left_col, right_col)
 }
+
+
+
+# Servers -----------------------------------------------------------------
 
 
 #' inputs Server Functions
@@ -223,19 +231,6 @@ mod_dyn_inp_srv <-
         cur_clean_inp$export <- mod_export_inp_srv(NULL, clean_inp_values)
         cur_clean_inp$key <- mod_key_inp_srv(NULL, clean_inp_values)
 
-        ## ## ## Rendering the data table
-        # output$inputs_ui_values <-
-        #   DT::renderDT({
-        #     shiny::validate(
-        #       shiny::need(cur_clean_inp$export(),
-        #                   "An error occured when creating tabe with dat afor export."
-        #       ))
-        #     cur_clean_inp$export() %>%
-        #       select(-1) %>%
-        #       fct_config_gen_dt("Policy scenarios summary", group_row = 1)
-        #   },
-        #   server = FALSE)
-
         cur_clean_inp
       })
   }
@@ -255,9 +250,11 @@ mod_build_inp_srv <-
            inp_raw_str,
            inp_str_fn,
            ui_gen_fn,
+           inp_pre_structure = NULL,
            n_choices = reactive(1),
            n_max_choices = reactive(4),
-           reseter = reactive(0)) {
+           reseter = reactive(0),
+           ...) {
 
     shiny::moduleServer(id, function(input, output, session) {
       ns <- session$ns
@@ -288,19 +285,54 @@ mod_build_inp_srv <-
 
       ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
       ### Gen table with UI elements
+
+
+      # max_out <- reactive({
+      #   try({
+      #     inp_str_fn(inp_raw_str = inp_raw_str,
+      #                n_choices = n_max_choices(),
+      #                ns = ns)
+      #   }, silent = T)
+      # })
+      #
+      #
+      # max_all_uis <- reactive({
+      #   try({
+      #     1:n_max_choices() %>%
+      #       map(~{
+      #         max_out() %>%
+      #           filter(policy_choice %in% str_c("policy", 1:.x)) %>%
+      #           ui_gen_fn(., ns = ns)
+      #       })
+      #   }, silent = T)
+      # })
+
+
       all_ui_str <-
         shiny::eventReactive(#
           update_ui(),
           {
+            # if (isTruthy(inp_pre_structure)) {
+            #   browser()
+            #   out <- try({
+            #     max_out() %>%
+            #       filter(policy_choice %in% str_c("policy", 1: n_poly()))
+            #   })
+            # } else {
+
             # Generating UI table  ### ### ### ### ### ### ### ### ### ### ###
             out <- try({
               inp_str_fn(inp_raw_str = inp_raw_str,
                          n_choices = n_poly(),
                          ns = ns)
-              }, silent = T)
+            }, silent = T
+            )
 
             # Gen UI switches and tabs.  ### ### ### ### ### ### ### ### ### ###
-            all_uis <-  try({ui_gen_fn(out, ns = ns)}, silent = T)
+            all_uis <-  try({
+              ui_gen_fn(out, ns = ns)
+            }, silent = T
+            )
 
             # Validating it  ### ### ### ### ### ### ### ### ### ### ### ###
             validate(#
@@ -311,6 +343,8 @@ mod_build_inp_srv <-
               need(!"try-error" %in% class(all_uis),
                    "`mod_build_inp_srv`: check `ui_gen_fn`. It failed.")
             )
+
+            # }
 
             list(inp_str = out, timestamp = Sys.time(), reseter = reseter(), all_uis = all_uis)
           },

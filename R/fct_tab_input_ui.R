@@ -412,18 +412,24 @@ gen_all_inp_tables <- function(inp_ui_str, inp_table_str) {
   if (isTruthy(inp_table_str) && length(inp_table_str) > 0) {
     # browser()
 
+    grp_inp_ui_str <-
+      inp_ui_str %>%
+      group_by(policy_choice) %>%
+      tidyr::nest() %>%
+      ungroup()
+
+    # browser()
     all_policy_ui <-
       map_dfr(
         inp_table_str,
         ~{
+          # browser()
           dta <- .x
-          inp_ui_str %>%
-            group_by(policy_choice) %>%
-            tidyr::nest() %>%
-            mutate(data2 = map(data, ~gen_one_inp_table(.x, dta))) %>%
-            tidyr::unnest(data2) %>%
-            ungroup()
-        })
+          grp_inp_ui_str %>%
+            mutate(data2 = map(data, ~gen_one_inp_table(.x, dta) %>% ungroup()))
+        }) %>%
+      # ungroup() %>%
+      tidyr::unnest(data2)
 
     # browser()
     tables_map <-
@@ -561,7 +567,6 @@ load_inputtables_xlsx <- function(path) {
 
 
 # Testers -----------------------------------------------------------------
-
 
 
 #' Test input UI functions

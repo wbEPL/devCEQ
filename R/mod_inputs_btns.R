@@ -123,7 +123,12 @@ mod_inputs_btns_ui <- function(id = NULL, ...) {
     if (getOption("ceq_dev", FALSE))
       actionButton(ns("run_guide"), "Run guide", class = "btn-info btn-sm"),
 
-    if (getOption("ceq_dev", FALSE)) mod_inputs_btns_devout_ui(id)
+    if (getOption("ceq_dev", FALSE)) mod_inputs_btns_devout_ui(id),
+
+    actionButton("browser", "browser"),
+
+    if (!getOption("ceq_dev", FALSE)) tags$script("$('#browser').hide();")
+
   )
 }
 

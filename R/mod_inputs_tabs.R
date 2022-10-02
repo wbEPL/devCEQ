@@ -1,3 +1,8 @@
+
+# Key input tab UI module ------------------------------------------------
+
+
+
 #' UI for dynamic inputs generated / updated by server function
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
@@ -56,16 +61,6 @@ mod_inp_tabs_content_ui <- function(id) {
 mod_inp_tab_switches_ui <-
   function(id) {
     ns <- NS(id)
-
-    # shiny::radioButtons(
-    #   inputId = ns("inp_tab"),
-    #   label = NULL,
-    #   choices = c("Policy choices" = "panel1",
-    #               "Summary Table" = "summary"),
-    #   inline = FALSE,
-    #   width = "100%"
-    # )
-
     shinyWidgets::radioGroupButtons(
       inputId = ns("inp_tab"),
       label = NULL,
@@ -78,40 +73,50 @@ mod_inp_tab_switches_ui <-
     )
   }
 
-
-#' helper function with the example of the choices for the tab switches to update
-#'
+#' @describeIn mod_render_inp_tabs_srv UI for input tabs bodies
 #' @noRd
-get_test_tab_switches <- function() {
-  list(
-    choices = c(
-      "Group 1" = "panel0",
-      "Tab 1" = "panel1",
-      "Tab 2" = "panel2",
-      "Group 2" = "panel3",
-      "Summary" = "summary"
-    ),
-    selected = c("Tab 1" = "panel1"),
-    disabledChoices = c("Group 1" = "panel0", "Group 2" = "panel3"),
-    enabled = c("Tab 1" = "panel1", "Tab 2" = "panel2")
-  )
-}
+#' @import shiny
+#' @importFrom shiny uiOutput
+#' @export
+mod_inp_tabs_ui <-
+  function(id) {
+    ns <- NS(id)
+    shiny::uiOutput(ns("tabs_ui"))
+  }
 
-#' returns a list with dummy tab content for teting
-#'
+#' @describeIn mod_render_inp_tabs_srv UI for tabs header
 #' @noRd
-get_test_tabs <- function(id = NULL) {
-  ns = NS(id)
-  tibble(
-    tab_id = c("panel1", "panel2"),
-    tab_order = c(1, 2),
-    tab_ui = list(shiny::tags$h1("panel1"),
-                  shiny::tags$h1("panel2"))
-  )
-}
+#' @importFrom shiny uiOutput
+#' @export
+mod_inp_tab_header_ui <-
+  function(id) {
+    ns <- NS(id)
+    shiny::uiOutput(ns("tab_header_ui"))
+  }
+
+#' @describeIn mod_render_inp_tabs_srv UI for tabs mod_inp_tab_header_intab_ui
+#' @noRd
+#' @importFrom shiny uiOutput
+#' @export
+mod_inp_tab_header_intab_ui <-
+  function(id) {
+    ns <- NS(id)
+    shiny::uiOutput(ns("tab_header_intab_ui"))
+  }
 
 
+#' @describeIn mod_render_inp_tabs_srv UI for tabs footer
+#' @noRd
+#' @importFrom shiny uiOutput
+#' @export
+mod_inp_tab_footer_ui <-
+  function(id) {
+    ns <- NS(id)
+    shiny::uiOutput(ns("tab_footer_ui"))
+  }
 
+
+# Servers -----------------------------------------------------------------
 
 
 #' Module for generating and re-generating inputs UI on the server
@@ -155,6 +160,20 @@ mod_render_inp_tabs_srv <-
             justified = TRUE
           )
         })
+      },
+      label = "inp-tab: update switches",
+      priority = 10)
+
+      ### Setting output priorities
+      observe({
+        if ("tab_header_ui" %in% names(outputOptions(output))) {
+          outputOptions(output, "tab_header_ui", priority = 1000)
+        }
+
+        if ("inputs_summary_dt" %in% names(outputOptions(output))) {
+          outputOptions(output, "inputs_summary_dt", priority = 10)
+        }
+
       })
 
       ### Render headers and footers
@@ -177,13 +196,21 @@ mod_render_inp_tabs_srv <-
           }
 
           tabs() %>%
+            mutate(row = row_number()) %>%
             purrr::pwalk( ~ {
               dts <- rlang::dots_list(...)
+
+              if (input$inp_tab %in% tabs()$tab_id) {
+                select <- input$inp_tab == dts$tab_id
+              } else {
+                select <- dts$row == 1
+              }
+
               shiny::insertTab(
                 inputId = "policy_tabs",
                 tab = shiny::tabPanelBody(value = dts$tab_id, dts$tab_ui),
                 target = "summary",
-                select = dts$tab_order == 1,
+                select = select,
                 position = "before",
                 session = session
               )
@@ -192,61 +219,174 @@ mod_render_inp_tabs_srv <-
           tabs()$tab_id %>% old_tabs()
         },
         ignoreNULL = FALSE,
-        ignoreInit = FALSE
+        ignoreInit = FALSE,
+        label = "inp-tab: render tabs UI",
+        priority = 10
       )
 
       ### Render summary DT
       output$inputs_summary_dt <-
         DT::renderDT({
           shiny::validate(shiny::need(summary_tab(), "Error in data for vis policy diff"))
-          req(summary_tab())
-        },
+          req(summary_tab()) %>%
+            select(-1) %>%
+            fct_config_gen_dt("Policy scenarios summary", group_row = 1)
+          },
         server = FALSE)
     })
   }
 
 
-#' @describeIn mod_render_inp_tabs_srv UI for input tabs bodies
+
+# Testers -----------------------------------------------------------------
+
+#' Test simple logic of changing number of choices and tabs
+#'
+#'
 #' @noRd
-#' @import shiny
-#' @importFrom shiny uiOutput
-#' @export
-mod_inp_tabs_ui <-
-  function(id) {
-    ns <- NS(id)
-    shiny::uiOutput(ns("tabs_ui"))
+test_mod_inp_n_choices_tabs <-
+  function(path,
+           id = NULL,
+           n_policy = c(1, 5, 2),
+           n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
+           inp_pre_structure = NULL,
+           ...) {
+    #
+    srv <- function(input, output, session) {
+      callModule(profvis::profvis_server, "prof")
+      test_mod_inp_n_choices_tabs_srv(id,
+                                      path = path,
+                                      n_policy = n_policy,
+                                      n_policy_type = n_policy_type,
+                                      inp_pre_structure = inp_pre_structure,
+                                      ...)
+    }
+
+    test_mod_inp_n_choices_tabs_ui(id) %>%
+      tagList(
+        profvis::profvis_ui("prof")
+      ) %>%
+      shinyApp(., srv)
+
   }
 
-#' @describeIn mod_render_inp_tabs_srv UI for tabs header
-#' @noRd
-#' @importFrom shiny uiOutput
-#' @export
-mod_inp_tab_header_ui <-
-  function(id) {
-    ns <- NS(id)
-    shiny::uiOutput(ns("tab_header_ui"))
-  }
-
-#' @describeIn mod_render_inp_tabs_srv UI for tabs mod_inp_tab_header_intab_ui
-#' @noRd
-#' @importFrom shiny uiOutput
-#' @export
-mod_inp_tab_header_intab_ui <-
-  function(id) {
-    ns <- NS(id)
-    shiny::uiOutput(ns("tab_header_intab_ui"))
-  }
 
 
-#' @describeIn mod_render_inp_tabs_srv UI for tabs footer
+#' UI for the test module with input tabs and n choices
+#'
 #' @noRd
-#' @importFrom shiny uiOutput
-#' @export
-mod_inp_tab_footer_ui <-
-  function(id) {
-    ns <- NS(id)
-    shiny::uiOutput(ns("tab_footer_ui"))
+test_mod_inp_n_choices_tabs_ui <- function(id = NULL) {
+  fluidPage(mod_inputs_ui_wrapper(id),
+            # profvis::profvis_ui("prof"),
+            golem_add_external_resources())
+}
+
+
+#' server for the test module with input tabs and n choices
+#'
+#' @noRd
+test_mod_inp_n_choices_tabs_srv <-
+  function(id = NULL,
+           path,
+           n_policy = c(1, 5, 2),
+           n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
+           inp_pre_structure = NULL,
+           ...) {
+    shiny::moduleServer(id, function(input, output, session) {
+      ns <- session$ns
+
+
+      inp_raw_str <- path %>% load_input_xlsx()
+      inp_tab_str <- path %>% load_inputtabs_xlsx()
+      inp_table_str <- path %>% load_inputtables_xlsx()
+
+      local_inp_str = gen_inp_str_front(inp_table_str = inp_table_str)
+      local_ui_fn = gen_tabinp_ui_front(inp_tab_str = inp_tab_str,
+                                        inp_table_str = inp_table_str)
+
+
+
+      inps <- reactiveValues(inp_str = NULL)
+
+      # inp_btns <- mod_inputs_btns_server(
+      #   NULL,
+      #   n_policy = c(1, 5, 2),
+      #   n_policy_type = "dropdown"
+      # )
+
+      observeEvent(input$browser,{
+        browser()
+      })
+
+      n_policy = c(1, 5, 2)
+      n_policy_type = "dropdown"
+
+      current_n_choices <-
+        mod_inp_n_choices_server(
+          id = id,
+          value = reactive(n_policy[[length(n_policy)]]),
+          min = reactive(n_policy[[1]]),
+          max = reactive(n_policy[[2]]),
+          n_policy_type = reactive(n_policy_type[[1]])
+        )
+
+      inps$inp_str <-
+        mod_build_inp_srv(
+          id,
+          inp_raw_str = inp_raw_str,
+          inp_str_fn = local_inp_str,
+          ui_gen_fn = local_ui_fn,
+          n_choices = current_n_choices,
+          n_max_choices = reactive(n_policy[[2]]),
+          reseter = reactive(NULL),
+          inp_pre_structure = inp_pre_structure,
+          ...
+        )
+
+      inps$export <- reactive({mtcars})
+
+      mod_render_inp_tabs_srv(
+        id,
+        tabs = reactive(inps$inp_str()$all_uis$tabs),
+        header = reactive(inps$inp_str()$all_uis$header),
+        switches = reactive(inps$inp_str()$all_uis$switches),
+        summary_tab = inps$export
+      )
+
+    })
   }
+
+
+#' helper function with the example of the choices for the tab switches to update
+#'
+#' @noRd
+get_test_tab_switches <- function() {
+  list(
+    choices = c(
+      "Group 1" = "panel0",
+      "Tab 1" = "panel1",
+      "Tab 2" = "panel2",
+      "Group 2" = "panel3",
+      "Summary" = "summary"
+    ),
+    selected = c("Tab 1" = "panel1"),
+    disabledChoices = c("Group 1" = "panel0", "Group 2" = "panel3"),
+    enabled = c("Tab 1" = "panel1", "Tab 2" = "panel2")
+  )
+}
+
+#' returns a list with dummy tab content for teting
+#'
+#' @noRd
+get_test_tabs <- function(id = NULL) {
+  ns = NS(id)
+  tibble(
+    tab_id = c("panel1", "panel2"),
+    tab_order = c(1, 2),
+    tab_ui = list(shiny::tags$h1("panel1"),
+                  shiny::tags$h1("panel2"))
+  )
+}
 
 
 #' Testing the tabs modules

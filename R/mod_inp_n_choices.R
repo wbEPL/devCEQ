@@ -157,7 +157,8 @@ mod_inp_n_choices_server <-
         },
         ignoreNULL = FALSE,
         ignoreInit = FALSE
-      )
+      ) %>%
+        debounce(500)
     })
   }
 

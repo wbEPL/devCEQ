@@ -72,9 +72,6 @@ test_gen_inp_front_tabs_file( "./data-raw/ceq-inputs-idn-2022.xlsx")
 test_gen_inp_front_tabs_file( "./data-raw/simple-inputs-structure.xlsx")
 
 
-# Testing input UI generation with complete re-activity  ------------------------
-# CONTINUE HERE!!!
-test_genui_fn(inp_raw_str, full = T)
 
 # # === === === === === === === === === === === === === === === === === === ===
 # # Manual testing if it works  === === === === === === === === === === === ===

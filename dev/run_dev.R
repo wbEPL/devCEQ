@@ -51,6 +51,7 @@ options(ceq_results_dev = TRUE)
 
 
 devtools::load_all()
+
 # Running the CEQ
 options( "golem.app.prod" = FALSE)
 devCEQ::CEQ_run(
@@ -60,7 +61,7 @@ devCEQ::CEQ_run(
   inp_str_fn = local_inp_str_fn,
   ui_gen_fn = local_tab_ui_fn,
   n_policy = c(1, 3, 2),
-  n_policy_type = "slider", #c("numericInline", "numeric", "slider", "none"),
+  n_policy_type = "dropdown", #  "slider", #c("numericInline", "numeric", "slider", "none"),
   info_page_md = "./inst/app/info-page.md"
 )
 

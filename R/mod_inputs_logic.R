@@ -200,7 +200,13 @@ mod_dyn_inp_srv <-
                             reseter = reseter)
 
         ## ## ## Rendering the Inputs UI
-        mod_render_inp_tabs_srv(NULL, cur_clean_inp$inp_str)
+        mod_render_inp_tabs_srv(
+          NULL,
+          tabs = reactive(cur_clean_inp$inp_str()$all_uis$tabs),
+          header = reactive(cur_clean_inp$inp_str()$all_uis$header),
+          switches = reactive(cur_clean_inp$inp_str()$all_uis$switches),
+          summary_tab = cur_clean_inp$export
+        )
 
         ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
         ## ## ## Update new inputs UI with previous values (if n changes)
@@ -218,13 +224,6 @@ mod_dyn_inp_srv <-
         ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
         cur_unvalidated_inp <- mod_coll_inp_srv(NULL, cur_clean_inp$inp_str)
         cur_clean_inp$inp <- mod_check_inp_srv(NULL, cur_unvalidated_inp)
-
-        # observeEvent(cur_clean_inp$inp(),
-        #              {
-        #                browser()
-        #                shinyjs::enable("run_sim")
-        #                shinyjs::enable(selector = "#main_sidebar li:nth-child(3) a")
-        #              }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
         ## ## ## Exportable inputs and key values tables
         clean_inp_values <- reactive(req(cur_clean_inp$inp()$inp))
@@ -880,4 +879,113 @@ mod_key_inp_srv <-
   }
 
 
+
+# Testers -----------------------------------------------------------------
+
+
+
+
+
+#' test_mod_inputs ui side
+#'
+#' @noRd
+test_mod_inputs_ui <- function(id) {
+  fluidPage(
+    mod_inputs_ui_wrapper(id, 3),
+    golem_add_external_resources()
+  )
+}
+
+
+#' test_mod_inputs server side
+#'
+#' @noRd
+test_mod_inputs_server <-
+  function(id,
+           path,
+           n_policy = c(1, 5, 2),
+           n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
+           ...) {
+
+    shiny::moduleServer(id, function(input, output, session) {
+      ns <- session$ns
+      inp_raw_str <- path %>% load_input_xlsx()
+      inp_tab_str <- path %>% load_inputtabs_xlsx()
+      inp_table_str <- path %>% load_inputtables_xlsx()
+
+      local_inp_str = gen_inp_str_front(inp_table_str = inp_table_str)
+      local_ui_fn = gen_tabinp_ui_front(inp_tab_str = inp_tab_str,
+                                        inp_table_str = inp_table_str)
+
+      cur_inps <- mod_dyn_inp_srv(
+        id = id,
+        inp_raw_str = inp_raw_str,
+        n_choices = reactive(inp_btns$n_choices),
+        n_max_choices = reactive(inp_btns$n_max_choices),
+        upd_inp = reactive(inp_btns$upload_sim) %>% debounce(750),
+        reseter = reactive(if(!isTruthy(inp_btns$reset)) {0} else {inp_btns$reset}),
+        inp_str_fn = local_inp_str,
+        ui_gen_fn = local_ui_fn
+      )
+
+      # Run btn click
+      cur_inps$run <- reactive({
+        list(value = inp_btns$run,
+             timestamp = Sys.time())
+      })
+
+      # Upload-donwload-resetall module
+      inp_btns <- mod_inputs_btns_server(
+        NULL,
+        sim_export_dta = cur_inps$inp,
+        n_policy = n_policy,
+        n_policy_type = n_policy_type
+      )
+    })
+  }
+
+#' Test complete inputs in one
+#'
+#' @noRd
+test_mod_inputs <-
+  function(path,
+           n_policy = c(1, 5, 2),
+           n_policy_type = c("dropdown", "numericInline", "numeric", "slider", "dropdown", "none"),
+           id = NULL,
+           type = c("full", "selected")) {
+    uui <-
+      test_mod_inputs_ui(id) %>%
+      tagList(profvis::profvis_ui("prof"))
+
+    if (type == "selected") {
+      sserv <- function(input, output, server) {
+
+        callModule(profvis::profvis_server, "prof")
+
+        test_mod_inputs_server(id, path = path, n_policy_type = n_policy_type)
+      }
+    } else {
+      sserv <- function(input, output, server) {
+
+        callModule(profvis::profvis_server, "prof")
+
+        inp_raw_str <- path %>% load_input_xlsx()
+        inp_tab_str <- path %>% load_inputtabs_xlsx()
+        inp_table_str <- path %>% load_inputtables_xlsx()
+
+        local_inp_str = gen_inp_str_front(inp_table_str = inp_table_str)
+        local_ui_fn = gen_tabinp_ui_front(inp_tab_str = inp_tab_str,
+                                          inp_table_str = inp_table_str)
+
+        mod_inputs_server(
+          id,
+          inp_raw_str = inp_raw_str,
+          inp_str_fn = local_inp_str,
+          ui_gen_fn = local_ui_fn,
+          n_policy = n_policy
+        )
+      }
+    }
+    shinyApp(uui, sserv)
+  }
 

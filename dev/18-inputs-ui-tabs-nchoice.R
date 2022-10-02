@@ -15,6 +15,11 @@ pkgload::load_all(export_all = TRUE, helpers = FALSE, attach_testthat = FALSE)
 test_mod_inp_n_choices_tabs("data-raw/ceq-inputs-idn-2022.xlsx")
 test_mod_inp_n_choices_tabs("data-raw/simple-inputs-structure.xlsx")
 
+# Seting full input UI ----------------------------------------------------------
+
+
+pkgload::load_all(export_all = TRUE, helpers = FALSE, attach_testthat = FALSE)
+test_mod_inputs("data-raw/ceq-inputs-idn-2022.xlsx", type = "full")
 
 # # Optimizing gen_one_inp_table --------------------------------------------------
 #

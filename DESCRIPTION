@@ -40,7 +40,9 @@ Imports:
     statar (>= 0.7.3),
     forcats (>= 0.5),
     openxlsx (>= 4.2),
-    scales (>= 1.2)
+    scales (>= 1.2),
+    tidyselect (>= 1.1.2),
+    bslib (>= 0.4.0)
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.1

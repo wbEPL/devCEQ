@@ -11,3 +11,4 @@ docs
 inst/doc
 *.Rd
 *.dcf
+*.Rprof

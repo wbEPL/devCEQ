@@ -53,7 +53,7 @@ mod_info_page_server <-
                     ns("tour"),
                     "Show how it works",
                     class = "btn-success",
-                    icon = icon(name = "arrow-circle-right")#,
+                    icon = icon(name = "circle-arrow-right")#,
                     # class = "disabled"
                   )
                 )

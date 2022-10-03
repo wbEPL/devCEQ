@@ -37,8 +37,7 @@ CEQ_ui <- function(
           div(id = "img-logo-navbar", style = style_logo_position,
               # "position: fixed; right: 6rem; padding-top: 0.3125rem;
               # padding-bottom: 0.3125rem; z-index: 1; top: 5px;"
-              img(src = "www/WBG_Horizontal-white_gradient-web.png",
-                  style = "width: auto; height: 2rem;")
+              img(src = "www/WBG_Horizontal-white_gradient-web.png", id = "logo-style")
               ),
           get_app_name()
         ),
@@ -90,16 +89,15 @@ CEQ_ui <- function(
 #'
 #' @export
 #' @importFrom bslib bs_theme
+#' @importFrom shinythemes shinytheme
 gen_ceq_ui <-
   function(#
     fn_results_ui = fn_results_ui_dummy,
-    theme_fn = function() {
-      bslib::bs_theme(
-        version = 4,
-        bootswatch = "cerulean",
-        "enable-rounded" = TRUE
-      )
-    },
+    theme_fn = function() shinythemes::shinytheme("cerulean"),
+      # function() NULL,
+    # function() {
+    #   bslib::bs_theme(version = 4, bootswatch = "cerulean", "enable-rounded" = TRUE)
+    # },
     style_logo_position = NULL,
     inp_nav_width = NULL,
     ...
@@ -108,13 +106,7 @@ gen_ceq_ui <-
     function(request) {
       CEQ_ui(
         request,
-        theme_fn = function() {
-          bslib::bs_theme(
-            version = 4,
-            bootswatch = "cerulean",
-            "enable-rounded" = TRUE
-          )
-        },
+        theme_fn = theme_fn,
         style_logo_position = style_logo_position,
         inp_nav_width = inp_nav_width,
         fn_results_ui = fn_results_ui,

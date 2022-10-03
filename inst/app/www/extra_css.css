@@ -7,6 +7,12 @@
   z-index: 1;
 }
 
+#logo-style{
+  width: auto;
+  height: 3rem;
+}
+
+
 #generic_inputs-policy_tabs{height:0px;}
 
 .pull-right {

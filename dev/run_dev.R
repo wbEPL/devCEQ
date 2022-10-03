@@ -16,12 +16,14 @@ library(shiny)
 devtools::load_all()
 # library(devCEQ)
 
-inputs_path <- "./data-raw/ceq-inputs-idn-2022.xlsx"
+# inputs_path <- "./data-raw/ceq-inputs-idn-2022.xlsx"
 inputs_path <- "./data-raw/complex-inputs-structure.xlsx"
 inputs_raw_str <- inputs_path %>% load_input_xlsx()
 inputs_tab_str <- inputs_path %>% load_inputtabs_xlsx()
 inputs_table_str <- inputs_path %>% load_inputtables_xlsx()
 
+
+# inp_tab_str_ordered <- fct_inp_tab_order(inputs_tab_str)
 
 presim <- reactive({
   out <- list() #read_rds("./data-app/presim-2022.rds")
@@ -42,8 +44,11 @@ local_tab_ui_fn <- gen_tabinp_ui_front(
   )
 
 # 3. Complete UI wrapper
-local_ceq_ui <- gen_ceq_ui(inp_nav_width = 3,
-                           fn_results_ui = fn_results_ui_dummy2)
+local_ceq_ui <-
+  gen_ceq_ui(
+    inp_nav_width = 3,
+    fn_results_ui = fn_results_ui_dummy2
+  )
 
 # Title of the App
 options(current.app.name = "CEQ")

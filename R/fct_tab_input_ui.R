@@ -245,28 +245,33 @@ fct_inp_tab_order <- function(dta = NULL, ...) {
 #' Make a structured list for generating tabs UI
 #'
 #' @noRd
+#' @importFrom stringr regex str_detect
+#' @importFrom purrr set_names
 fct_inp_tab_str <- function(dta) {
 
   switches <- list()
   switch_values <- dta %>% distinct(tab_name, tab_id)
 
-  switches$choices <- set_names(switch_values$tab_id, switch_values$tab_name)
+  switches$choices <- purrr::set_names(switch_values$tab_id, switch_values$tab_name)
 
   ends_hr <-
     switches$choices %>% `[`(length(.)) %>%
-    str_detect(regex("hr"))
+    stringr::str_detect(stringr::regex("hr"))
 
   if (!ends_hr) {
     switches$choices <- switches$choices %>% c(., "hr" = "panel90")
   }
 
   switches$choices <- switches$choices %>% c(., "Summary Table" = "summary")
-  tu_sub <- switches$choices %>% names() %>% str_detect(., "hr")
-  names(switches$choices)[tu_sub] <- as.character(hr(class = "hr-small-line"))
+  tu_sub <- switches$choices %>% names() %>% stringr::str_detect(., "hr")
+  names(switches$choices)[tu_sub] <- as.character(shiny::tags$hr(class = "hr-small-line"))
 
   if ("group_order" %in% names(dta)) {
     switch_disabled <-
-      dta %>% filter(is.na(group_order)) %>% pull(tab_id) %>% unique()
+      dta %>%
+      dplyr::filter(is.na(group_order)) %>%
+      dplyr::pull(tab_id) %>%
+      unique()
   } else {
     switch_disabled <- NULL
   }
@@ -274,8 +279,10 @@ fct_inp_tab_str <- function(dta) {
   switches$disabledChoices <-
     switches$choices[
       switches$choices %in% switch_disabled |
-        str_detect(switches$choices, regex("panel90", ignore_case = T))|
-        str_detect(names(switches$choices), regex("<hr", ignore_case = T))]
+        stringr::str_detect(switches$choices,
+                            stringr::regex("panel90", ignore_case = T))|
+        stringr::str_detect(names(switches$choices),
+                            stringr::regex("<hr", ignore_case = T))]
 
   switches$enabled <- switches$choices[!switches$choices %in% switches$disabledChoices]
   switches$selected <- switches$enabled[1]

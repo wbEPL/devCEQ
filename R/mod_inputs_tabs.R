@@ -42,7 +42,7 @@ mod_inp_tabs_content_ui <- function(id) {
     mod_inp_tab_footer_ui(id),
 
     # Debugging UI options
-    if (getOption("ceq_dev", FALSE)) {
+    if (golem::app_dev()) {
       tagList(
         h4("dev output for mod_inp_tabs_content_ui()"),
         shiny::verbatimTextOutput(ns("dynamic_inputs_ui_info"))
@@ -314,9 +314,7 @@ test_mod_inp_n_choices_tabs_srv <-
       #   n_policy_type = "dropdown"
       # )
 
-      observeEvent(input$browser,{
-        browser()
-      })
+      mod_browser_button_server(id)
 
       n_policy = c(1, 5, 2)
       n_policy_type = "dropdown"

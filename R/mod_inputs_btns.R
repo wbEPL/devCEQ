@@ -3,7 +3,7 @@
 #' @noRd
 test_mod_inputs_btn <-
   function(id = NULL, n_policy_type = "slider") {
-    options(ceq_dev = TRUE)
+    options(golem.app.prod = FALSE)
     get_n_policy_types() %>%
       map(~{
         mod_inputs_btns_ui(id = .x) %>%
@@ -120,22 +120,24 @@ mod_inputs_btns_ui <- function(id = NULL, ...) {
     upload_sim_file %>% div(id = ns("upload_sim_holder")),
 
     ## CEQ dev options:
-    if (getOption("ceq_dev", FALSE))
-      actionButton(ns("run_guide"), "Run guide", class = "btn-info btn-sm"),
-
-    if (getOption("ceq_dev", FALSE)) mod_inputs_btns_devout_ui(id),
-
-    actionButton("browser", "browser"),
-
-    if (!getOption("ceq_dev", FALSE)) tags$script("$('#browser').hide();")
-
+    mod_inputs_btns_devout_ui(id)
   )
 }
 
 # Function for showing the dev output of UI buttons
 mod_inputs_btns_devout_ui <- function(id = NULL) {
   ns <- NS(id)
-  shiny::verbatimTextOutput(ns("inputs_btns_devout"))
+  if (golem::app_dev()) {
+    tagList(
+      mod_browser_button_ui(NULL, FALSE),
+      actionButton(ns("run_guide"), "Run guide", class = "btn-info btn-sm"),
+      shiny::verbatimTextOutput(ns("inputs_btns_devout"))
+    )
+  } else {
+    tagList(
+      mod_browser_button_ui(NULL)
+    )
+  }
 }
 
 #' inputs_btns Server Functions

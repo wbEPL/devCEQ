@@ -19,7 +19,7 @@ mod_inputs_ui_wrapper <- function(id, inp_nav_width = NULL, ...) {
   if (is.null(inp_nav_width)) inp_nav_width <- 4
 
   text_field <-
-    if (getOption("ceq_dev", FALSE)) {
+    if (golem::app_dev()) {
       shiny::verbatimTextOutput(ns("inputs_out"))
     } else {
       NULL
@@ -38,9 +38,7 @@ mod_inputs_ui_wrapper <- function(id, inp_nav_width = NULL, ...) {
     tagList(text_field) %>%
     column(width = 12 - inp_nav_width) %>%
     tagList(
-      if (getOption("ceq_dev", FALSE)) {
-        profvis::profvis_ui("profiler")
-      }
+      # if (golem::app_dev()) {}
     )
 
   fluidRow(left_col, right_col)
@@ -468,36 +466,34 @@ mod_coll_inp_srv <-
     shiny::moduleServer(id, function(input, output, session) {
       ns <- session$ns
 
-      # new_inputs <-
-      #   reactive({req(inp_str()$inp_str)}) %>%
-      #   debounce(debounce_rate)
+      str_change <- reactiveVal(0)
+      observe({
+        req(out())
+        isolate({
+          str_change(str_change() + 1)
+          golem::message_dev("inputs to output change/recollection",
+                             str_change(),
+                             "\n")
+        })
+      })
 
       # UI values collector
       out <-
-      shiny::reactive(#
-        label = "Inputs collector",
-        {
-          req(inp_str()$inp_str)
-          current_out <- NULL
-          current_out$inp <-
-            inp_str()$inp_str %>%
-            mutate(current_value = map(inputId_local, ~ {
-              # if (is.null(input[[.x]])) {
-              #   (NA_real_)
-              # } else {
-              #   input[[.x]]
-              # }
-              input[[.x]]
-            })) %>%
-            select(-single_ui)
-
-          current_out$timestamp <- Sys.time()
-          current_out$str_timestamp <- inp_str()$timestamp
-          if (getOption("ceq_dev", FALSE)) {
-            shiny::showNotification("inputs were recollected!", duration = 3)
-          }
-          current_out
-        }) %>%
+        shiny::reactive(#
+          label = "Inputs collector",
+          {
+            req(inp_str()$inp_str)
+            current_out <- NULL
+            current_out$inp <-
+              inp_str()$inp_str %>%
+              mutate(current_value = map(inputId_local, ~ {
+                input[[.x]]
+              })) %>%
+              select(-single_ui)
+            current_out$timestamp <- Sys.time()
+            current_out$str_timestamp <- inp_str()$timestamp
+            current_out
+          }) %>%
         debounce(debounce_rate)
 
       # reanable <- out %>% debounce(1500)
@@ -727,7 +723,7 @@ mod_upd_old_vals_to_exist_inp <-
                                          value = as.character(dts$current_value))
                 }
 
-                if (getOption("ceq_dev", FALSE)) {
+                if (golem::app_dev()) {
                   str_c(dts$inputId_local,
                         " will update with the old value ",
                         unlist(dts$current_value)) %>%

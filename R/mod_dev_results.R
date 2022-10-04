@@ -1,6 +1,6 @@
 #' dev_res displays and allows to download development results of the app.
 #'
-#' @description only active if `options(ceq_results_dev = TRUE)`.
+#' @description only active if `golem::app_dev()`
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -45,10 +45,12 @@ mod_dev_res_server <- function(id, sim_res = reactive(NULL)){
 
     # "Inputs structure"
     output$inps <- renderPrint({
-      validate(need(sim_res(),
+      req((sim_res()))
+      browser()
+      validate(need(sim_res()$inps,
                     message = "To see development results, Run the simulation first"))
-      base_policy <- sim_res()$policy0$policy_choices %>% unlist()
-      sim_res() %>%
+      base_policy <- sim_res()$inps$policy0$policy_choices %>% unlist()
+      sim_res()$result %>%
         imap( ~ {
           list(
             policy_id = .y,

@@ -57,14 +57,14 @@ CEQ_ui <- function(
       # Results tab
       fn_results_ui(id = "ceqsim"),
 
-      # Dev results tab
-      if(isTRUE(getOption("ceq_results_dev"))) {
-        tabPanel("DEV-Results", shiny::h1("Results page"))
-      },
-
-      # if(isTRUE(getOption("ceq_results_dev"))) {
-      #   tabPanel("DEV-Results", devCEQ::mod_dev_res_ui("devres"))
+      # # Dev results tab
+      # if(golem::app_dev()) {
+      #   tabPanel("DEV-Results", shiny::h1("Results page"))
       # },
+
+      if(golem::app_dev()) {
+        tabPanel("DEV-Results", devCEQ::mod_dev_res_ui("devres"))
+      },
 
       tabPanel("How it works?", value = "howto")
     )

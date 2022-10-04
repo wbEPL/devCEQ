@@ -94,13 +94,28 @@ CEQ_server <- function(input, output, session,
     ceq_progress = ceq_progress
   )
 
-  # Observer to make things run
+  # Dev results display  ==================================================
+  mod_dev_res_server("devres", sim_results)
+
+  # # Browser for the button ================================================
+  # mod_browser_button_server(NULL, sim_results)
+
   observe({
-    ceq_inputs$run
-    ceq_inputs$key
-    sim_results()
-    postsim_results
+    req(sim_results())
+    browser()
   })
+
+  # Observer to make things run
+  reactive({
+    list(
+      ceq_inputs$run,
+      ceq_inputs$key,
+      sim_results(),
+      postsim_results
+    )
+  })
+
+
 
 }
 
@@ -127,7 +142,7 @@ fn_simrun_server_dummy <-
           run = run(),
           inps = inps(),
           presim = presim(),
-          all_inps = all_inps(),
+          # all_inps = all_inps(),
           result = "fn_simrun_server_dummy() result"
         )
       })

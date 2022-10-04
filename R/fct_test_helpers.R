@@ -9,7 +9,7 @@ testrun_input_ui_generation <-
         str_path %>%
         load_input_xlsx()
     }
-    options(ceq_dev = TRUE)
+    options(golem.app.prod = FALSE)
     options(scipen = 16)
 
     out_ui <-
@@ -36,7 +36,7 @@ testrun_input_ui_page <-
         str_path %>%
         load_input_xlsx()
     }
-    options(ceq_dev = FALSE)
+    options(golem.app.prod = TRUE)
     options(scipen = 16)
 
     server <- function(input, output, session) {

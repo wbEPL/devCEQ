@@ -46,7 +46,7 @@ gen_inp_str(inp_raw_str, 2) %>%
 ## Only input UI in the test mode ==================================
 ## === === === === === === === === === === === === === === === === === === ===
 
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 # options(scipen = 16)
 # options(shiny.reactlog = TRUE)
 # options(shiny.fullstacktrace = TRUE)
@@ -72,7 +72,7 @@ gen_inp_str(inp_raw_str, 2) %>%
 ## === === === === === === === === === === === === === === === === === === ===
 
 # Full module on inputs with UI and server logic in buckets.
-options(ceq_dev = TRUE)
+options(golem.app.prod = FALSE)
 options(scipen = 16)
 options(shiny.reactlog=TRUE)
 options(shiny.fullstacktrace = TRUE)
@@ -124,7 +124,7 @@ fluidPage(
 
 # Wrapping UI into a self-generated module -----------------------------------
 
-options(ceq_dev = TRUE)
+options(golem.app.prod = FALSE)
 server <- function(input, output, session) {
   n_ch <- reactive(input$n_choices_inp)
   mod_build_inp_srv(NULL,
@@ -140,7 +140,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
   shinyApp(., server)
 
 # #  # Same but with modules names
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 #
 # server <- function(input, output, session) {
 #   n_ch <- reactive(input$n_choices_inp)
@@ -161,7 +161,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # UI self-generation plus collecting all inputs ---------------------------
 
 # # Option without modules names
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 # server <- function(input, output, session) {
 #   n_ch <- reactive(input$n_choices_inp)
 #   inp_raw_str <- indonesia.ceq.app.v2::inp_str_test_dta
@@ -186,7 +186,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 
 # # Option with modules names
 # options(scipen = 16)
-# options(ceq_dev = FALSE)
+# options(golem.app.prod = FALSE)
 # server <- function(input, output, session) {
 #   n_ch <- reactive(input$n_choices_inp)
 #   inp_str <- mod_build_inp_srv("NULL", inp_raw_str,
@@ -224,7 +224,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 
 # # Adding internal validation of inputs -----------------------------------------
 
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 # options(shiny.fullstacktrace = TRUE)
 #
 # # Local server function
@@ -284,7 +284,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # # Adding update inputs based on previous values -----------------------------------------
 # # Logic necessary for new inputs to not overwrite old values
 
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 # options(shiny.fullstacktrace = TRUE)
 #
 # # Local server function
@@ -338,7 +338,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # # Adding export of inputs ------------------------------------------
 
 # # # # Option with modules names
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 # options(ceq_inmodule_dev = FALSE)
 # options(scipen = 16)
 #
@@ -418,7 +418,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # Wrapping all around one function ----------------------------------------
 
 # # # Option with modules names
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 # options(scipen = 16)
 #
 # server <- function(input, output, session) {
@@ -436,7 +436,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # Wrapping all around one function but with the pronounced namespace --------
 
 # # Option with modules names
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 # options(scipen = 16)
 #
 # server <- function(input, output, session) {
@@ -454,7 +454,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 # Module wrapper for all inputs with the valid side panel ===============
 
 # # Not connected to the main logic
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 # options(scipen = 16)
 # options(shiny.reactlog=TRUE)
 # options(shiny.fullstacktrace = TRUE)
@@ -472,7 +472,7 @@ fluidPage(column(2, wellPanel(numericInput("n_choices_inp", "exmpl", 1))),
 
 
 # # Full module on inputs with UI and server logic in buckets.
-# options(ceq_dev = TRUE)
+# options(golem.app.prod = FALSE)
 # options(scipen = 16)
 #
 # options(shiny.reactlog=TRUE)

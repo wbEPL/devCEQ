@@ -7,9 +7,6 @@ options(shiny.reactlog=TRUE)
 
 # Dev paras
 options(scipen = 16)
-options(ceq_dev = FALSE)
-options(ceq_run_dev = TRUE)
-options(ceq_results_dev = TRUE)
 
 library(shiny)
 # remotes::install_github("CEQwb/devCEQ")
@@ -51,14 +48,10 @@ local_ceq_ui <-
   )
 
 # Title of the App
-options(current.app.name = "CEQ")
-options(ceq_results_dev = TRUE)
-
-
+options(current.app.name = "CEQ app name that is very long")
 devtools::load_all()
 
 # Running the CEQ
-options( "golem.app.prod" = FALSE)
 devCEQ::CEQ_run(
   inputs_str = inputs_raw_str,
   presim = presim,

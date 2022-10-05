@@ -1,15 +1,4 @@
 
-#' add inputs that are missing to the CEQ inputs list.
-#'
-#' @noRd
-#' @export
-add_missing_inp_generic <-
-  function(inps, all_inps) {
-    all_inps %>%
-      `[`(!names(.) %in% names(inps)) %>%
-      prepend(inps)
-  }
-
 #' prep_key_inp
 #'
 #' @description Prepares inputs to a specific key inputs structure.

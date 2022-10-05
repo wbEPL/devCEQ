@@ -46,10 +46,9 @@ mod_dev_res_server <- function(id, sim_res = reactive(NULL)){
     # "Inputs structure"
     output$inps <- renderPrint({
       req((sim_res()))
-      browser()
-      validate(need(sim_res()$inps,
+      validate(need(sim_res(),
                     message = "To see development results, Run the simulation first"))
-      base_policy <- sim_res()$inps$policy0$policy_choices %>% unlist()
+      base_policy <- sim_res()$policy0$policy_choices %>% unlist()
       sim_res()$result %>%
         imap( ~ {
           list(
@@ -60,7 +59,7 @@ mod_dev_res_server <- function(id, sim_res = reactive(NULL)){
           )
         }) %>%
         str()
-      })
+    })
 
     # "outps structure"
     output$outps <- renderPrint({
@@ -74,7 +73,7 @@ mod_dev_res_server <- function(id, sim_res = reactive(NULL)){
           )
         }) %>%
         str()
-      })
+    })
 
     # Buttons
     output$download_btns <-

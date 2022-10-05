@@ -7,6 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
+#' @export
 mod_browser_button_ui <- function(id, hide = TRUE){
   ns <- NS(id)
   tagList(
@@ -18,6 +19,7 @@ mod_browser_button_ui <- function(id, hide = TRUE){
 #' browser_button Server Functions
 #'
 #' @noRd
+#' @export
 mod_browser_button_server <- function(id, ...){
   moduleServer( id, function(input, output, session){
     ns <- session$ns

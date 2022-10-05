@@ -32,19 +32,22 @@
      font-size: 14px !important;
 }
 
-.radiobtn.disabled {
-  text-align: left;
-  padding-left: 10px;
-  cursor: auto;
-}
-
-.radiobtn  {
-  text-align: left;
-  padding-left: 25px;
-}
-
 .hr-small-line {
   margin-top: 0px;
   margin-bottom: 0px;
 }
 
+.btn.radiobtn.btn-default {
+  text-align: left;
+  padding-left: 25px;
+}
+
+
+.btn.radiobtn.btn-default.disabled {
+  padding-left: 10px;
+  cursor: auto;
+}
+
+.btn.radiobtn.btn-default.active {
+  font-weight: bold;
+}

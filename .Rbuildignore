@@ -2,4 +2,5 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 /dev/*
-
+/data-temp/*
+/data-test/*

@@ -124,7 +124,7 @@ mod_generic_run_sim_server <-
 
               # # Skip running if it is like base.
               if (.x$run && .x$policy_as_base) {
-                .x$policy_sim_raw <- presim()$bl_res
+                .x$policy_sim_raw <- presim()$baseline
                 .x$policy_sim_agg <- .x$policy_sim_raw %>% fn_ceq_pre_postsim()
                 .x$run_timestamp <- Sys.time()
               }
@@ -235,6 +235,9 @@ ceq_pre_postsim_generic <- function(x, ...) {
 #'
 #' @export
 test_mod_run_sim <- function(
+    sim_inp_path = NULL,
+    presim_path = NULL,
+    raw_str_path = NULL,
     id = NULL,
     fn_sim_srvr = make_run_sim_server(),
     inps = reactive(list(
@@ -251,8 +254,28 @@ test_mod_run_sim <- function(
       c = 3,
       d = 3
     )),
-    presim = reactive(tibble(presim = c(5:9)))
+    presim = reactive(
+      list(
+        baseline = tibble(baseline = 1:10),
+        presim_1 = tibble(presim = c(5:9))
+        )
+      )
     ) {
+
+  if (!missing(raw_str_path)) {
+    all_inps <-
+      raw_str_path %>% load_input_xlsx() %>% get_all_inps() %>% reactive()
+  }
+
+  if (!missing(sim_inp_path)) {
+    inps <-
+      sim_inp_path %>% read_rds() %>% `[[`("inp") %>% fct_prep_key_inp() %>%
+      reactive()
+  }
+
+  if (!missing(presim_path)) {
+    presim <- presim_path %>% read_rds() %>% reactive()
+  }
 
   ui <- fluidPage(
     actionButton("run", "Run simulation"),
@@ -287,7 +310,7 @@ test_mod_run_sim <- function(
       list(
         run = run(),
         inps = inps(),
-        all_inps = all_inps(),
+        all_inps = all_inps()[1:min(5, length(all_inps()))],
         presim = presim(),
         ceq_progress = ceq_progress()
       ) %>%

@@ -44,12 +44,7 @@ CEQ_server <- function(
     filter(if_any(any_of("include"), ~ .x)) %>%
     select(-any_of("include"))
 
-  inps_all <-
-    inputs_str %>%
-    mutate(base_value = base_value * factor) %>%
-    select(inputId, base_value) %>%
-    pmap(~ set_names(list(.y), .x)) %>%
-    unlist(recursive = F)
+  inps_all <- inputs_str %>% get_all_inps()
 
   # Info-page, guides and blackouts ==========================================
   active_tab <- reactive(NULL)

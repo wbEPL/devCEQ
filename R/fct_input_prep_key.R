@@ -71,6 +71,10 @@ fct_compare_key_inp <- function(data, policy_choice) {
 }
 
 
+#' Base key inputs
+#'
+#' @importFrom dplyr near filter mutate select pull
+#' @noRd
 fct_base_key_inp <- function(data, policy_choice = "policy0") {
 
   for_list <-
@@ -96,4 +100,18 @@ fct_base_key_inp <- function(data, policy_choice = "policy0") {
     set_names(policy_choice)
 
   comparison_results
+}
+
+
+#' Return all inputs from the raw inputs structure
+#'
+#' @param data dataframe with the raw inputs structure
+#'
+#' @export
+get_all_inps <- function(dta) {
+  dta %>%
+    mutate(base_value = base_value * factor) %>%
+    select(inputId, base_value) %>%
+    pmap(~ set_names(list(.y), .x)) %>%
+    unlist(recursive = F)
 }

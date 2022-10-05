@@ -189,8 +189,7 @@ make_run_sim_server <-
         ceq_progress = ceq_progress,
         fn_add_missing_inp = fn_add_missing_inp,
         fn_ceq_sim = fn_ceq_sim,
-        fn_ceq_pre_postsim = fn_ceq_pre_postsim,
-        ...
+        fn_ceq_pre_postsim = fn_ceq_pre_postsim
       )
   }
 
@@ -231,7 +230,7 @@ ceq_pre_postsim_generic <- function(x, ...) {
 
 # Testers -----------------------------------------------------------------
 
-#' Simpole app for testing module `mod_generic_run_sim_server`
+#' Simple app for testing module `mod_generic_run_sim_server`
 #'   with the user-defined logic
 #'
 #' @export

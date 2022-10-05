@@ -19,7 +19,6 @@ inputs_raw_str <- inputs_path %>% load_input_xlsx()
 inputs_tab_str <- inputs_path %>% load_inputtabs_xlsx()
 inputs_table_str <- inputs_path %>% load_inputtables_xlsx()
 
-
 # inp_tab_str_ordered <- fct_inp_tab_order(inputs_tab_str)
 
 presim <- reactive({
@@ -47,6 +46,9 @@ local_ceq_ui <-
     fn_results_ui = fn_results_ui_dummy2
   )
 
+# 4. Server side logic
+local_run_sim_server <- make_run_sim_server()
+
 # Title of the App
 options(current.app.name = "CEQ app name that is very long")
 devtools::load_all()
@@ -59,8 +61,10 @@ devCEQ::CEQ_run(
   inp_str_fn = local_inp_str_fn,
   ui_gen_fn = local_tab_ui_fn,
   n_policy = c(1, 3, 2),
-  n_policy_type = "dropdown", #  "slider", #c("numericInline", "numeric", "slider", "none"),
-  info_page_md = "./inst/app/info-page.md"
+  n_policy_type = "dropdown",
+  info_page_md = "./inst/app/info-page.md",
+
+  fn_sim_srvr = local_run_sim_server
 )
 
 

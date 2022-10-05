@@ -14,26 +14,29 @@
 #' @importFrom readr read_rds
 #' @noRd
 #' @export
-CEQ_server <- function(input, output, session,
-                       inputs_str = reactive(NULL),
-                       presim_dta = reactive(list(NULL)),
-                       inp_str_fn = gen_inp_str,
-                       ui_gen_fn = gen_tabinp_ui,
-                       n_policy = c(1, 2, 1),
-                       n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
-                       info_page_md = NULL,
-                       info_page_size = "l",
-                       fn_sim_srvr = mod_generic_run_sim_server,
+CEQ_server <- function(
+    input,
+    output,
+    session,
+    inputs_str = reactive(NULL),
+    presim_dta = reactive(list(NULL)),
+    inp_str_fn = gen_inp_str,
+    ui_gen_fn = gen_tabinp_ui,
+    n_policy = c(1, 2, 1),
+    n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
+    info_page_md = NULL,
+    info_page_size = "l",
 
-                       fn_add_missing_inp = function(x) x,
-                       fn_ceq_sim = function(...) "ceq-results",
-                       fn_ceq_pre_postsim = function(x, ...) x,
+    fn_sim_srvr = make_run_sim_server(),
 
-                       fn_postsim_srvr = mod_generic_run_postsim_server,
-                       fn_ceq_postsim = function(x, ...) x,
+    fn_add_missing_inp = NULL,
+    fn_ceq_sim = NULL,
+    fn_ceq_pre_postsim = NULL,
 
-                       fn_res_disp_srvr = fn_results_display_server_dummy,
-                       ...) {
+    fn_postsim_srvr = mod_generic_run_postsim_server,
+    fn_ceq_postsim = function(x, ...) x,
+    fn_res_disp_srvr = fn_results_display_server_dummy,
+    ...) {
 
   # # Loading underlining data for 2022 simulation
   inputs_str_ui <-
@@ -77,7 +80,6 @@ CEQ_server <- function(input, output, session,
         fct_make_ceq_progress(session = session, 3)
       })
     })
-
 
   sim_results <-
     fn_sim_srvr(

@@ -31,10 +31,10 @@ CEQ_run <- function(
   ceq_fn = function(inps, presim) {tibble(var = "Results from `CEQ_run`")},
   info_page_md = NULL,
   info_page_size = "l",
-  fn_sim_srvr = mod_generic_run_sim_server,
-  fn_add_missing_inp = function(x) x,
-  fn_ceq_sim = function(...) "ceq-results",
-  fn_ceq_pre_postsim = function(x, ...) x,
+  fn_sim_srvr = make_run_sim_server(),
+  fn_add_missing_inp = NULL,
+  fn_ceq_sim = NULL,
+  fn_ceq_pre_postsim = NULL,
   fn_postsim_srvr = mod_generic_run_postsim_server,
   fn_ceq_postsim = function(x, ...) x,
   fn_res_disp_srvr = fn_results_display_server_dummy,
@@ -58,14 +58,14 @@ CEQ_run <- function(
             info_page_md = info_page_md,
             info_page_size = info_page_size,
 
-            # key functions
+            # key functions simulation
             fn_sim_srvr = fn_sim_srvr,
-            fn_add_missing_inp = fn_add_missing_inp,
-            fn_ceq_sim = fn_ceq_sim,
-            fn_ceq_pre_postsim = fn_ceq_pre_postsim,
+            fn_add_missing_inp = fn_add_missing_inp, # Not important
+            fn_ceq_sim = fn_ceq_sim, # Not important
+            fn_ceq_pre_postsim = fn_ceq_pre_postsim, # Not important
             fn_postsim_srvr = fn_postsim_srvr,
-            fn_ceq_postsim = fn_ceq_postsim,
-            fn_res_disp_srvr = fn_res_disp_srvr,
+            fn_ceq_postsim = fn_ceq_postsim, # Not important
+            fn_res_disp_srvr = fn_res_disp_srvr, # Not important
             ...
           )
         },

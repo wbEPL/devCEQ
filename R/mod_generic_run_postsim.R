@@ -20,7 +20,7 @@ mod_generic_run_postsim_server <-
     id,
     sim_res = reactive(NULL),
     ceq_progress = NULL,
-    fn_ceq_postsim = function(x) {x},
+    fn_ceq_postsim = function(x, progress_tick = function(){}) {progress_tick(); x},
     ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns

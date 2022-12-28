@@ -943,6 +943,7 @@ test_mod_inputs_server <-
 #' Test complete inputs in one
 #'
 #' @noRd
+#' @export
 test_mod_inputs <-
   function(path,
            n_policy = c(1, 5, 2),

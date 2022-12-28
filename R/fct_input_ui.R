@@ -302,7 +302,9 @@ gen_checkbox_inpt_ui<- function(..., nolable = FALSE) {
   # do.call(what = shiny::checkboxInput, args = .)
 
   shiny::checkboxInput(inputId = inputs$inputId,
-                       value = isTRUE(inputs$value == "1"),
+                       value = isTRUE(inputs$value == "1" ||
+                                        inputs$value == 1 ||
+                                        inputs$value == "TRUE"),
                        label = inputs$label)
 }
 
@@ -314,6 +316,7 @@ gen_checkbox_inpt_ui<- function(..., nolable = FALSE) {
 #' Test input tabs content generation process by providing basic data.
 #'
 #' @noRd
+#' @export
 test_gen_inp_front_simple <-
   function(inp_raw_str,
            inp_tab_str = NULL,
@@ -346,6 +349,7 @@ test_gen_inp_front_simple <-
 #' Test input tabs content generation process by providing basic data.
 #'
 #' @noRd
+#' @export
 test_gen_inp_front_tabs <-
   function(inp_raw_str,
            inp_tab_str = NULL,
@@ -371,6 +375,7 @@ test_gen_inp_front_tabs <-
 #' Test input tabs content generation process by providing basic data.
 #'
 #' @noRd
+#' @export
 test_gen_inp_front_tabs_file <- function(path) {
   inp_raw_str <- path %>% load_input_xlsx()
   inp_tab_str <- path %>% load_inputtabs_xlsx()

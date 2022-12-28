@@ -244,6 +244,7 @@ mod_render_inp_tabs_srv <-
 #'
 #'
 #' @noRd
+#' @export
 test_mod_inp_n_choices_tabs <-
   function(path,
            id = NULL,

@@ -433,15 +433,21 @@ mod_reset_scenarios <-
                   purrr::pwalk(~ {
                     dts <- rlang::dots_list(...)
                     if ("numericInput" %in% dts$type) {
+                      # browser()
+                      toval <- as.numeric(dts$base_value)
+                      # if (is.na(toval)) toval <- NULL
                       shiny::updateNumericInput(session,
                                                 dts$inputId_local,
-                                                value = as.numeric(dts$base_value))
+                                                value = toval)
                     }
 
                     if ("textInput" %in% dts$type) {
+
+                      toval <- as.character(dts$base_value)
+                      # if (is.na(toval)) toval <- NULL
                       shiny::updateTextInput(session,
                                              dts$inputId_local,
-                                             value = as.character(dts$base_value))
+                                             value = as.toval)
                     }
                   })
                 }
@@ -483,6 +489,7 @@ mod_coll_inp_srv <-
           label = "Inputs collector",
           {
             req(inp_str()$inp_str)
+            # browser()
             current_out <- NULL
             current_out$inp <-
               inp_str()$inp_str %>%
@@ -528,6 +535,7 @@ mod_check_inp_srv <-
           {
             req(current_inp())
             req(unlist(current_inp()$inp$current_value))
+            # browser()
             n_nulls <-
               current_inp()$inp$current_value %>%
               purrr::map_lgl(is_null) %>%
@@ -535,18 +543,33 @@ mod_check_inp_srv <-
               as.integer() %>%
               sum()
             # req(length(current_inp()$inp$current_value) - n_nulls > 10)
-            current_inp()$inp %>%
+            current_inp_dta <- current_inp()$inp
+            if (!"allowna" %in% names(current_inp_dta)) {
+              current_inp_dta <- current_inp_dta %>% mutate(allowna = FALSE)
+            } else {
+              current_inp_dta <-
+                current_inp_dta %>%
+                mutate(allowna = as.logical(allowna)) %>%
+                replace_na(list(allowna = FALSE))
+            }
+            current_inp_dta %>%
+              # select(id, inputId, inputId_local, label, min, max,
+              #        type, current_value, base_value) %>%
               filter(map_lgl(current_value, ~ !is.null(.x))) %>%
               mutate(
                 max = ifelse(is.na(max), Inf, max),
-                min = ifelse(is.na(min), Inf, min)) %>%
+                min = ifelse(is.na(min), -Inf, min)
+                ) %>%
               dplyr::rowwise() %>%
               dplyr::mutate(greater = map_lgl(current_value, ~ .x > max )) %>%
               dplyr::mutate(less = map_lgl(current_value, ~ .x < min)) %>%
-              dplyr::mutate(na_val = map_lgl(current_value, ~ is.na(.x) | .x == "")) %>%
+              dplyr::mutate(
+                na_val = map2_lgl(current_value, base_value, ~ (is.na(.x) | .x == "") & !is.na(.y)),
+                na_val = if_else(na_val & allowna, FALSE, na_val, na_val)
+                ) %>%
               tidyr::replace_na(list(less = FALSE, greater = FALSE, na_val = FALSE)) %>%
               dplyr::mutate(greater = ifelse(type == "textInput", FALSE, greater)) %>%
-              dplyr::mutate(less = ifelse(type == "textInput", FALSE, less)) #%>%
+              dplyr::mutate(less = ifelse(type == "textInput", FALSE, less))# %>%
 
               # dplyr::filter(less | greater | na_val)
               # dplyr::mutate(current_value = ifelse(less, list(min), list(current_value)),
@@ -596,10 +619,9 @@ mod_check_inp_srv <-
               # Correcting
               if ("numericInput" %in% dts$type) {
                 new_val <- dts$min
-                if (dts$greater)
-                  new_val <- dts$max
-                if (dts$na_val)
-                  new_val <- as.numeric(dts$base_value)
+                if (dts$greater) new_val <- dts$max
+                if (dts$na_val) new_val <- as.numeric(dts$base_value)
+                if (is.na(new_val)) new_val <- NULL
                 shiny::updateNumericInput(session, dts$inputId_local, value = new_val)
               }
 
@@ -705,9 +727,11 @@ mod_upd_old_vals_to_exist_inp <-
               if (check_dts(dts)) {
 
                 if ("numericInput" %in% dts$type) {
+                  toval <- as.numeric(dts$current_value)
+                  if (is.na(toval)) toval <- NULL
                   shiny::updateNumericInput(session,
                                             dts$inputId_local,
-                                            value = as.numeric(dts$current_value))
+                                            value = toval)
                 }
 
                 if ("textInput" %in% dts$type) {
@@ -760,9 +784,14 @@ mod_upd_inp_srv <-
               purrr::pmap( ~ {
                 dts <- rlang::dots_list(...)
                 if ("numericInput" %in% dts$type) {
+                  toval <- as.numeric(dts$current_value)
+                  # if (is.na(toval)) {
+                  #   # browser()
+                  #   # toval <- NULL
+                  # }
                   shiny::updateNumericInput(session,
                                             dts$inputId_local,
-                                            value = as.numeric(dts$current_value))
+                                            value = toval)
                 }
 
                 if ("textInput" %in% dts$type) {

@@ -184,6 +184,7 @@ gen_inp_str <-
                         min,
                         max,
                         type,
+                        any_of(c("allowna")),
                         base_value,
                         factor,
                         single_ui) %>%
@@ -227,6 +228,10 @@ gen_num_inpt_ui <- function(..., nolable = FALSE) {
     add_arg <- list(label = NULL)
   } else {
     add_arg <- list()
+  }
+
+  if (! "value" %in% names(inputs) || is.null(inputs$value)|| is.na(inputs$value)) {
+    add_arg <- add_arg %>% append(list(value = NULL))
   }
 
   out_ui <-

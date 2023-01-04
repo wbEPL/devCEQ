@@ -1,7 +1,7 @@
 Package: devCEQ
 Type: Package
 Title: devCEQ serves main function for the CEQ R-Shiny (Title Case)
-Version: 0.0.0.9011
+Version: 0.0.0.9012
 Authors@R: person(given = "Eduard", family = "Bukin", role = c("aut", "cre"),
                   email = "edwardbukin@gmail.com")
 Description: Contains a Shiny app that runs Benin CEQ analysis.

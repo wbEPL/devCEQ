@@ -566,7 +566,8 @@ load_inputtables_xlsx <- function(path) {
         ) %>%
         mutate(table_id = .y, table_name = table_title) %>%
         select(row_order, col_order, col_width, col_name, col_content, table_id, table_name) %>%
-        mutate(col_width = as.integer(col_width))
+        mutate(col_width = as.integer(col_width),
+               col_content = ifelse(is.na(col_content), "", col_content))
     })
 
 }

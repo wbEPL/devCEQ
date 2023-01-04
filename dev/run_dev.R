@@ -19,6 +19,8 @@ inputs_raw_str <- inputs_path %>% load_input_xlsx()
 inputs_tab_str <- inputs_path %>% load_inputtabs_xlsx()
 inputs_table_str <- inputs_path %>% load_inputtables_xlsx()
 
+# pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
+# test_gen_inp_front_simple(inputs_raw_str, n_choices = 2)
 # inp_tab_str_ordered <- fct_inp_tab_order(inputs_tab_str)
 
 presim <- reactive({

@@ -1,4 +1,19 @@
 
+#' Return a function that extracts inputs frmo the inputs list do not returning NAs
+#'
+#' @param actual_inps is the inputs list with the inputs
+#' @export
+make_get_inp_fn <-
+  function(actual_inps) {
+    # browser()
+    function(inp_nm) {
+      if (!is.null(actual_inps[[inp_nm]]))
+        return(actual_inps[[inp_nm]])
+      else
+        return(NA_real_)
+    }
+  }
+
 
 #' Create a data frame with the tax brakes
 #'

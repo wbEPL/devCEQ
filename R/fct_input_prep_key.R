@@ -17,6 +17,7 @@ fct_prep_key_inp <- function(dta) {
     dta_list %>%
     purrr::pmap( ~ {
       dts <- rlang::dots_list(...)
+      # browser()
       fct_compare_key_inp(dts$data, dts$policy_choice)
     }) %>%
     unlist(recursive = F)
@@ -49,6 +50,20 @@ fct_compare_key_inp <- function(data, policy_choice) {
     select(-factor)
   policy_choices = setNames(for_list$current_value, for_list$id)
   policy_base_choices = setNames(for_list$base_value , for_list$id)
+  policy_as_base <-
+    map2_lgl(policy_choices, policy_base_choices, ~ {
+      (is.na(.x) && is.na(.y)) || dplyr::near(.x, .y)
+    }) %>% all(na.rm = TRUE)
+  # policy_as_base <-
+  #   map2(policy_choices, policy_base_choices, ~ {
+  #
+  #     list(x = .x,
+  #          y = .y,
+  #          compare = dplyr::near(.x, .y))
+  #     # (is.na(.x) && is.na(.y)) ||
+  #   })
+  # aa <- all(dplyr::near(policy_choices, policy_base_choices), na.rm = T)
+
   comparison_results <-
     list(
       policy_name =
@@ -59,7 +74,7 @@ fct_compare_key_inp <- function(data, policy_choice) {
         as.character(),
       # policy_name_same = FALSE,
       policy_choices = setNames(for_list$current_value, for_list$id),
-      policy_as_base = all(dplyr::near(policy_choices, policy_base_choices)),
+      policy_as_base = policy_as_base,
       # policy_choices_as_before = FALSE,
       # policy_choices_new = TRUE,
       timestamp = Sys.time()

@@ -14,7 +14,8 @@ devtools::load_all()
 # library(devCEQ)
 
 # inputs_path <- "./data-raw/ceq-inputs-idn-2022.xlsx"
-inputs_path <- "./data-raw/ben-inputs-structure.xlsx"
+# inputs_path <- "./data-raw/ben-inputs-structure.xlsx"
+inputs_path <- normalizePath("C:/Users/wb532966/CEQ/benin/CEQBeninApp/data-app/ben-inputs-structure.xlsx")
 inputs_raw_str <- inputs_path %>% load_input_xlsx()
 inputs_tab_str <- inputs_path %>% load_inputtabs_xlsx()
 inputs_table_str <- inputs_path %>% load_inputtables_xlsx()

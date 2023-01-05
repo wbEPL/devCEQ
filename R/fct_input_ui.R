@@ -167,6 +167,8 @@ gen_inp_str <-
               } else if("checkboxInput"  %in% dts$type) {
                 dts$value <- as.logical(dts$value)
                 gen_checkbox_inpt_ui(dts, nolable = dts$table_id)
+              } else if("radioButtons"  %in% dts$type) {
+                gen_radiobuttons_inpt_ui(dts, nolable = dts$table_id)
               } else {
                 list()
               }
@@ -311,6 +313,43 @@ gen_checkbox_inpt_ui<- function(..., nolable = FALSE) {
                                         inputs$value == 1 ||
                                         inputs$value == "TRUE"),
                        label = inputs$label)
+}
+
+
+#' Generate checkbox input from the list of arguments
+#'
+#' @noRd
+#' @importFrom rlang dots_list
+#' @importFrom magrittr extract
+#' @importFrom shiny radioButtons
+#' @export
+gen_radiobuttons_inpt_ui<- function(..., nolable = FALSE) {
+  inputs <-
+    rlang::dots_list(...) %>%
+    unlist(recursive = T) %>%
+    as.list()
+
+  # if (nolable) {
+  #   inputs$label <- NULL
+  #   add_arg <- list(label = NULL)
+  # } else {
+  #   add_arg <- list()
+  # }
+  # browser()
+
+  inputs_main <- eval(parse(text = inputs$label))
+  # inputs <-
+  #   inputs %>%
+  #   magrittr::extract(names(.) %in% c("inputId", "label", "value")) %>%
+  #   magrittr::extract(!is.na(.)) %>%
+  #   append(., add_arg) #%>%
+  # do.call(what = shiny::checkboxInput, args = .)
+
+  shiny::radioButtons(inputId = inputs$inputId,
+                      choices = inputs_main$choices,
+                      label = inputs_main$label,
+                      selected = as.numeric(inputs$value)
+                      )
 }
 
 

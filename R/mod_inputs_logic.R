@@ -441,6 +441,27 @@ mod_reset_scenarios <-
                                                 value = toval)
                     }
 
+                    if ("checkboxInput" %in% dts$type) {
+                      shiny::updateCheckboxInput(
+                        session = session,
+                        inputId = dts$inputId_local,
+                        value = isTRUE(
+                          dts$base_value == "1" ||
+                            dts$base_value == 1 ||
+                            dts$base_value == "TRUE" ||
+                            isTRUE(dts$base_value)
+                        )
+                      )
+                    }
+
+                    if ("radioButtons" %in% dts$type) {
+                      shiny::updateRadioButtons(
+                        session = session,
+                        inputId = dts$inputId_local,
+                        selected = dts$base_value
+                      )
+                    }
+
                     if ("textInput" %in% dts$type) {
 
                       toval <- as.character(dts$base_value)
@@ -489,13 +510,19 @@ mod_coll_inp_srv <-
           label = "Inputs collector",
           {
             req(inp_str()$inp_str)
-            # browser()
             current_out <- NULL
             current_out$inp <-
               inp_str()$inp_str %>%
-              mutate(current_value = map(inputId_local, ~ {
-                input[[.x]]
-              })) %>%
+              mutate(current_value =
+                       map(inputId_local,
+                            # type,
+                            ~ {
+                         # if ("checkboxInput" %in% .y) {
+                         #   as.integer(input[[.x]])
+                         # } else {
+                           input[[.x]]
+                         # }
+                       })) %>%
               select(-single_ui)
             current_out$timestamp <- Sys.time()
             current_out$str_timestamp <- inp_str()$timestamp
@@ -628,6 +655,26 @@ mod_check_inp_srv <-
               if ("textInput" %in% dts$type) {
                 shiny::updateTextInput(session, dts$inputId_local, value = "Specify a name")
               }
+
+              if ("checkboxInput" %in% dts$type) {
+                shiny::updateCheckboxInput(
+                  session = session,
+                  inputId = dts$inputId_local,
+                  value = isTRUE(
+                    dts$base_value == "1" || dts$base_value == 1 ||
+                      dts$base_value == "TRUE" ||
+                      isTRUE(dts$base_value)
+                  )
+                )
+              }
+
+              if ("radioButtons" %in% dts$type) {
+                shiny::updateRadioButtons(
+                  session = session,
+                  inputId = dts$inputId_local,
+                  selected = dts$base_value
+                )
+              }
             })
         }, ignoreInit = TRUE)
 
@@ -735,16 +782,24 @@ mod_upd_old_vals_to_exist_inp <-
                 }
 
                 if ("textInput" %in% dts$type) {
-                  # if (is.null(dts$current_value)) {
-                  #   browser()
-                  #   choice_number <- str_extract(dts$policy_choice, "\\d")
-                  #   new_name <- str_c("Policy choice ",  choice_number)
-                  # } else
-                  # {
-                  #   new_name <- dts$current_value
-                  # }
                   shiny::updateTextInput(session, dts$inputId_local,
                                          value = as.character(dts$current_value))
+                }
+
+                if ("checkboxInput" %in% dts$type) {
+                  shiny::updateCheckboxInput(
+                    session = session,
+                    inputId = dts$inputId_local,
+                    value = isTRUE(dts$current_value)
+                  )
+                }
+
+                if ("radioButtons" %in% dts$type) {
+                  shiny::updateRadioButtons(
+                    session = session,
+                    inputId = dts$inputId_local,
+                    selected = dts$current_value
+                  )
                 }
 
                 if (golem::app_dev()) {
@@ -799,6 +854,22 @@ mod_upd_inp_srv <-
                                          dts$inputId_local,
                                          value = as.character(dts$current_value))
                 }
+
+                if ("checkboxInput" %in% dts$type) {
+                  shiny::updateCheckboxInput(
+                    session = session,
+                    inputId = dts$inputId_local,
+                    value = isTRUE(dts$current_value)
+                  )
+                }
+
+                if ("radioButtons" %in% dts$type) {
+                  shiny::updateRadioButtons(
+                    session = session,
+                    inputId = dts$inputId_local,
+                    selected = dts$current_value
+                  )
+                }
               })
           },
           ignoreNULL = TRUE,
@@ -826,11 +897,33 @@ mod_export_inp_srv <-
             dplyr::filter(type == "textInput") %>%
             dplyr::mutate(policy_name = as.character(current_value)) %>%
             dplyr::select(policy_choice, policy_name)
+          # browser()
           cur_clean_inp() %>%
             dplyr::ungroup() %>%
             dplyr::filter(type != "textInput") %>%
             dplyr::left_join(policy_choice, by = "policy_choice") %>%
-            dplyr::mutate(current_value = as.numeric(unlist(current_value))) %>%
+            dplyr::mutate(
+              current_value =
+                map2(current_value, type, ~ {
+                  if ("checkboxInput" %in% .y) {
+                    as.integer(.x)
+                  } else {
+                    as.numeric(.x)
+                  }
+                }),
+              label_change = str_detect(label, "^list\\("),
+              label = map2_chr(label, label_change, ~ {
+                out_label <- .x
+                if (.y) {
+                  lab <- eval(parse(text = .x))
+                  out_label <- lab$label[[1]]
+                }
+                # out_label %>%
+                #   strwrap(width=75, simplify=T) %>%
+                #   str_c(collapse = "\n")
+                out_label
+              })
+            ) %>%
             dplyr::select(
               `Input id` = id,
               `Input name` = label,

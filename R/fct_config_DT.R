@@ -87,43 +87,43 @@ fct_config_gen_dt <-
         backgroundColor = DT::styleEqual(TRUE, c('yellow'))
         )
   }
-
-fct_config_export_dt <- function(.data,
-                                 file_title = "Table",
-                                 digits_number = 3,
-                                 pageLength = 10,
-                                 scroll_y = TRUE) {
-
-  pageLength = min(nrow(.data), pageLength)
-  if (scroll_y)
-    scroll_y_height = round(pageLength * 250 / 6, 0) %>% str_c(., "px")
-  else {
-    scroll_y_height = FALSE
-  }
-  .data %>%
-    DT::datatable(
-      .,
-      rownames = FALSE,
-      extensions = c("Buttons", "Scroller"),
-      options = list(
-        pageLength = pageLength,
-        dom = c("Bfrtip"),
-        scrollX = TRUE,
-        deferRender = TRUE,
-        scrollY = scroll_y_height,
-        scroller = TRUE,
-        buttons = list(
-          list(extend = "copy", text = "Copy"),
-          list(
-            extend = "excel",
-            text = "Save in Excel",
-            title = file_title
-          )
-        )
-      )
-    ) %>%
-    DT::formatRound(columns = names(.data)[sapply(.data, is.numeric)],
-                    digits = digits_number)
-  # %>%
-  #   DT::formatStyle(columns = names(dta), lineHeight='80%')
-}
+#
+# fct_config_export_dt <- function(.data,
+#                                  file_title = "Table",
+#                                  digits_number = 3,
+#                                  pageLength = 10,
+#                                  scroll_y = TRUE) {
+#
+#   pageLength = min(nrow(.data), pageLength)
+#   if (scroll_y)
+#     scroll_y_height = round(pageLength * 250 / 6, 0) %>% str_c(., "px")
+#   else {
+#     scroll_y_height = FALSE
+#   }
+#   .data %>%
+#     DT::datatable(
+#       .,
+#       rownames = FALSE,
+#       extensions = c("Buttons", "Scroller"),
+#       options = list(
+#         pageLength = pageLength,
+#         dom = c("Bfrtip"),
+#         scrollX = TRUE,
+#         deferRender = TRUE,
+#         scrollY = scroll_y_height,
+#         scroller = TRUE,
+#         buttons = list(
+#           list(extend = "copy", text = "Copy"),
+#           list(
+#             extend = "excel",
+#             text = "Save in Excel",
+#             title = file_title
+#           )
+#         )
+#       )
+#     ) %>%
+#     DT::formatRound(columns = names(.data)[sapply(.data, is.numeric)],
+#                     digits = digits_number)
+#   # %>%
+#   #   DT::formatStyle(columns = names(dta), lineHeight='80%')
+# }

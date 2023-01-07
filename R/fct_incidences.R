@@ -1,3 +1,23 @@
+
+#' Tests a simple results page module providing it with the sim_res
+#'
+#' @export
+test_results_mod <-
+  function(sim_res = NULL,
+           ui_side,
+           server_side,
+           id = "testid") {
+    ui <- fluidPage(ui_side(id = id))
+    srv <-
+      function(input, output, session) {
+        server_side(id = id, sim_res = reactive(sim_res))
+      }
+    shinyApp(ui, srv)
+
+  }
+
+
+
 #' Prepares data for incidences bar cart
 #'
 #' @importFrom stringr str_remove_all str_c str_to_lower regex
@@ -200,7 +220,7 @@ make_bar_dta <-
 #' @importFrom scales number_format percent_format
 #' @import ggplot2
 #' @noRd
-#'
+#' @export
 make_bar_ly <-
   function(one_bar_dta,
            type = "relative",
@@ -257,7 +277,7 @@ make_bar_ly <-
 #' Make a plotly for one source.
 #' @import ggplot2
 #' @noRd
-#'
+#' @export
 make_bar_gg <-
   function(one_bar_dta,
            type = "relative",

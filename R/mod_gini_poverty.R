@@ -204,6 +204,7 @@ mod_gini_pov_gen_server <-
             label = NULL,
             choices = stat_esimates()$plt_indx,
             selected = stat_esimates()$plt_indx[[1]],
+            size = "sm",
             status = "primary",
             individual  = TRUE,
             direction = "horizontal",

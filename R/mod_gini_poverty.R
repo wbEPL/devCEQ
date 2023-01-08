@@ -7,6 +7,7 @@
 #' @noRd
 #' @export
 #' @importFrom shiny NS tagList
+#' @importFrom shinycssloaders withSpinner
 mod_gini_ui <- function(id){
   ns <- NS(id)
   tagList(

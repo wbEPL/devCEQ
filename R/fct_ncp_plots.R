@@ -42,12 +42,12 @@ fct_make_ncp_gg <- function(one_plt_dta,
     ggplot2::geom_bar(position = "stack", stat = "identity", colour = NA) +
     ggplot2::geom_path(
       data = line_dta,
-      aes(x = Decile, y = value, group = Simulation, color = Source, linetype = Source),
+      aes(x = Decile, y = value, group = Source, color = Source, linetype = Source),
       inherit.aes = FALSE
     ) +
     ggplot2::geom_point(
       data = line_dta,
-      aes(x = Decile, y = value, group = Simulation, color = Source, shape = Source),
+      aes(x = Decile, y = value, group = Source, color = Source, shape = Source),
       inherit.aes = FALSE
     ) +
     ggplot2::facet_grid(~ Simulation) +
@@ -55,7 +55,7 @@ fct_make_ncp_gg <- function(one_plt_dta,
     ggplot2::theme(legend.position = "right") +
     ggplot2::labs(title = title) +
     ggplot2::scale_y_continuous(labels = num_round, n.breaks = 10) +
-    ggplot2::scale_color_grey() +
+    ggplot2::scale_color_grey(start = 0.01, end = 0.7) +
     ggplot2::scale_fill_manual(
       values = (plotly_pal(length(levels(plt_dta$Source)))),
       breaks = (levels(plt_dta$Source))
@@ -152,6 +152,12 @@ fct_make_ncp_ly <- function(one_plt_dta,
     mutate(nnn = row_number()) %>%
     mutate(
       ply = pmap(list(data, Simulation, nnn, data2), ~{
+        col_tibble <-
+          tibble(
+            Source = unique(..4$Source),
+            col =  grDevices::grey.colors(length(unique(..4$Source)))
+          )
+        line_dta <- ..4 %>% left_join(col_tibble, by = "Source")
         plotly::plot_ly() %>%
           plotly::add_bars(
             data = ..1,
@@ -167,9 +173,10 @@ fct_make_ncp_ly <- function(one_plt_dta,
             showlegend = ..3 == 1
           )  %>%
           plotly::add_trace(
+            inherit = FALSE,
             mode = "lines+markers",
             type = "scatter",
-            data = ..4,
+            data = line_dta,
             x = ~ Decile,
             y = ~ value,
             linetype = ~ Source,
@@ -177,8 +184,8 @@ fct_make_ncp_ly <- function(one_plt_dta,
             hoverinfo = "text+name",
             name = ~ Source,
             showlegend = ..3 == 1,
-            line = list(color = grDevices::grey.colors(length(unique(..4$Source)))),
-            marker = list(color = grDevices::grey.colors(length(unique(..4$Source))))
+            line = list(color = line_dta$col),
+            marker = list(color = line_dta$col)
           ) %>%
           plotly::layout(
             xaxis = list(

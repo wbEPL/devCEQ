@@ -1,7 +1,7 @@
 Package: devCEQ
 Type: Package
 Title: devCEQ serves main function for the CEQ R-Shiny (Title Case)
-Version: 0.0.0.9018
+Version: 0.0.0.9019
 Authors@R: person(given = "Eduard", family = "Bukin", role = c("aut", "cre"),
                   email = "edwardbukin@gmail.com")
 Description: Contains a Shiny app that runs Benin CEQ analysis.
@@ -46,7 +46,8 @@ Imports:
     shinythemes (>= 1.2),
     esquisse (>= 1.1.2),
     patchwork (>= 1.1.1),
-    shinycssloaders (>= 1.0.0)
+    shinycssloaders (>= 1.0.0),
+    diffdf (>= 1.0.0)
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.1

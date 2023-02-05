@@ -54,3 +54,54 @@ testrun_input_ui_page <-
       shinyApp(., server)
   }
 
+
+#' diffdf for local comparisons
+#'
+#' @import diffdf diffdf
+#' @export
+#' @noRd
+#'
+mydiff <- function(dta, dta_compare, key = c("numind", "hhid"), tollerance = 0.01) {
+  dta %>%
+    diffdf::diffdf(dta_compare %>% select(any_of(names(dta))),
+                   tolerance = tollerance,
+                   keys = key)
+}
+
+
+#' diffdf for local comparisons
+#'
+#' @export
+#'
+#' @importFrom purrr imap_dfr
+#' @noRd
+#'
+get_diffdf_sum <- function(dta) {
+  dta %>%
+    purrr::imap_dfr( ~ {
+      if (str_detect(.y, "VarDiff")) {
+        .x %>% get_MAD()
+      }
+    })
+}
+
+
+#' diffdf for local comparisons
+#'
+#' @export
+#' @noRd
+#'
+get_MAD <- function(dta) {
+  dta %>%
+    dplyr::group_by(VARIABLE) %>%
+    # filter()
+    dplyr::summarise(
+      `n diff` = n(),
+      `NA B` = sum(is.na(BASE)),
+      `NA C` = sum(is.na(COMPARE)),
+      `NA B 0 C` = sum(is.na(BASE) & COMPARE == 0),
+      `NA C 0 B` = sum(is.na(COMPARE) & BASE == 0),
+      `NA non 0` = sum((is.na(COMPARE) & round(BASE) != 0) | (is.na(BASE) & round(COMPARE) != 0)),
+      `Mean ABS deviation` = mean(abs(BASE - COMPARE), na.rm = TRUE),
+      `mean(abs(BASE-COMPARE)/BASE)*100` = mean(abs(BASE - COMPARE) / BASE, na.rm = TRUE)*100)
+}

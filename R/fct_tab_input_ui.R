@@ -383,10 +383,12 @@ gen_one_inp_table <- function(inp_ui_str, inp_table_str_one) {
     mutate(col_content = pmap(. , ~ {
       dta <- rlang::dots_list(...)
       out <- NULL
-      if (isTRUE(dta$is_id))
+      if (isTRUE(dta$is_id)) {
         out <- dta$single_ui
-      else {
+      } else if (dta$row_order == 0) {
         out <- tags$p(tags$b(dta$col_content))
+      } else {
+        out <- tags$p(dta$col_content)
       }
       out
     })) %>%

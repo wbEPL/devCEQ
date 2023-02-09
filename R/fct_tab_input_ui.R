@@ -37,6 +37,8 @@ gen_tabinp_ui_front <-
 #' @importFrom dplyr select mutate distinct left_join summarise arrange filter
 #' @importFrom purrr map_dfr pmap
 #' @importFrom stringr str_c
+#' @importFrom forcats fct_reorder as_factor
+#'
 #' @export
 gen_tabinp_ui <-
   function(inp_ui_str,
@@ -87,12 +89,16 @@ gen_tabinp_ui <-
     ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
     panel <-
       inp_ui_str_new %>%
+      # filter(policy_choice == 'policy1') %>% #, group_order  == 7) %>%
       filter(!is.na(group_name)) %>%
       dplyr::left_join(input_cols_spec, by = "policy_choice") %>%
       dplyr::arrange(group_order, order, row) %>%
+      dplyr::mutate(
+        synthetic_order = stringr::str_c(group_order, order, row) %>% as.numeric(),
+        group_name = forcats::as_factor(group_name) %>% forcats::fct_reorder(.x = synthetic_order)
+        ) %>%
       dplyr::group_by(group_order, group_name, policy_choice, style, width) %>%
-      dplyr::summarise(single_col = single_ui %>% shiny::tagList(.),
-                       .groups = "keep") %>%
+      dplyr::summarise(single_col = single_ui %>% shiny::tagList(.), .groups = "keep") %>%
       dplyr::ungroup() %>%
       dplyr::mutate(
         single_col =
@@ -100,13 +106,13 @@ gen_tabinp_ui <-
             dts <- rlang::dots_list(...)
             column(dts$width, style = dts$style,
                    shiny::verticalLayout(dts$single_col, fluid = T))
-      }))%>%
+      })) %>%
       dplyr::group_by(group_order, group_name) %>%
       dplyr::summarise(single_well = shiny::tagList(single_col),
                        .groups = "keep")  %>%
       dplyr::mutate(single_well = purrr::map(single_well, ~ rowwing_fn(.x)))  %>%
       ungroup() %>%
-      arrange(group_order)
+      arrange(group_order, group_name)
 
 
     # Tabs UI header ----------------------------------------------------------
@@ -460,7 +466,7 @@ gen_all_inp_tables <- function(inp_ui_str, inp_table_str) {
         keep_ui = ifelse(!is.na(table_id) & row_number() > 1, FALSE, keep_ui)
       ) %>%
       ungroup() %>%
-      filter(keep_ui) %>%
+      filter(keep_ui) %>% #glimpse()
       left_join(all_policy_ui %>%
                   select(policy_choice, table_id, table_name, table_ui),
                 by = c("policy_choice", "table_id")) %>%
@@ -468,6 +474,7 @@ gen_all_inp_tables <- function(inp_ui_str, inp_table_str) {
       mutate(single_ui = ifelse(!is.na(table_id), table_ui, single_ui),
              group_name = ifelse(!is.na(table_name), table_name, group_name)
       )
+
 
   } else {
     inp_ui_str_new <- inp_ui_str

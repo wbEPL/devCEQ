@@ -693,6 +693,7 @@ mod_check_inp_srv <-
       shiny::eventReactive(#
           checked_inps(),
           {
+            # browser()
             out <- NULL
             out$inp <-
               checked_inps() %>%
@@ -700,7 +701,7 @@ mod_check_inp_srv <-
                             current_value = ifelse(greater, list(max), list(current_value)),
                             current_value = ifelse(na_val & type == "textInput" ,
                                                    list("Specify a name"), list(current_value)),
-                            previous_value = current_value) %>%
+                            previous_value = list(current_value)) %>%
               dplyr::select(-less, -greater, -na_val) %>%
               ungroup()
             out$timestamp <- Sys.time()

@@ -169,6 +169,8 @@ gen_inp_str <-
                 gen_checkbox_inpt_ui(dts, nolable = dts$table_id)
               } else if("radioButtons"  %in% dts$type) {
                 gen_radiobuttons_inpt_ui(dts, nolable = dts$table_id)
+              } else if("md"  %in% dts$type) {
+                gen_md_ui(dts, nolable = dts$table_id)
               } else {
                 list()
               }
@@ -348,10 +350,30 @@ gen_radiobuttons_inpt_ui<- function(..., nolable = FALSE) {
   shiny::radioButtons(inputId = inputs$inputId,
                       choices = inputs_main$choices,
                       label = inputs_main$label,
-                      selected = as.numeric(inputs$value)
+                      selected = as.numeric(inputs$value),
+                      width = inputs$width,
+                      inline = if (is.null(inputs_main$inline)) FALSE else inputs_main$inline
                       )
 }
 
+
+#' Generate text input from the list of arguments
+#'
+#' @noRd
+#' @importFrom rlang dots_list
+#' @importFrom magrittr extract
+#' @importFrom shiny markdown
+#' @importFrom stringr str_c
+#' @export
+gen_md_ui <- function(..., value = NULL, nolable = FALSE) {
+  rlang::dots_list(...) %>%
+    unlist(recursive = T) %>%
+    as.list() %>%
+    magrittr::extract(names(.) %in% c("label", "value")) %>%
+    magrittr::extract(!is.na(.)) %>%
+    str_c(., collapse = "") %>%
+    shiny::markdown(.)
+}
 
 
 

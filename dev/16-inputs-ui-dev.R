@@ -38,6 +38,7 @@ library(tidyverse)
 pkgload::load_all(export_all = TRUE, helpers = FALSE, attach_testthat = FALSE)
 
 path <- "./data-raw/complex-inputs-structure.xlsx"
+path <- "../ivory_coast/civCEQapp/data-app/civ-inputs-structure.xlsx"
 inp_raw_str <- path %>% load_input_xlsx()
 inp_tab_str <- path %>% load_inputtabs_xlsx()
 inp_table_str <- path %>% load_inputtables_xlsx()
@@ -73,31 +74,32 @@ test_gen_inp_front_tabs_file( "./data-raw/simple-inputs-structure.xlsx")
 
 
 
-# # === === === === === === === === === === === === === === === === === === ===
-# # Manual testing if it works  === === === === === === === === === === === ===
-# # === === === === === === === === === === === === === === === === === === ===
-#
-# local_inp_str_fn <- gen_inp_str_front(inp_table_str = inp_table_str)
-# local_tab_ui_fn <- gen_tabinp_ui_front(inp_tab_str, inp_table_str)
-#
-# all_outs <-
-#   local_inp_str_fn(inp_raw_str, n_choices = 5, ns = NS(NULL)) %>%
-#   local_tab_ui_fn()
-#
-# # Running simple static UI part
-# ui <- fluidPage(
-#   all_outs$tabs %>% slice(1) %>% pull(tab_ui)
-# )
-#
-# server <- function(input, output, session) {}
-#
-# shinyApp(ui, server)
-#
-# # gen_inp_str(inp_raw_str, n_choices = 1, ns = NS(NULL))
-# # test_genui_fn(inp_raw_str,
-# #               gen_inp_str = gen_inp_str,
-# #               gen_ui_fn = local_tab_ui_fn,
-# #               full = T)
+# === === === === === === === === === === === === === === === === === === ===
+# Manual testing if it works  === === === === === === === === === === === ===
+# === === === === === === === === === === === === === === === === === === ===
+
+local_inp_str_fn <- gen_inp_str_front(inp_table_str = inp_table_str)
+local_tab_ui_fn <- gen_tabinp_ui_front(inp_tab_str, inp_table_str)
+# debug(gen_one_inp_table)
+# debug(gen_all_inp_tables)
+all_outs <-
+  local_inp_str_fn(inp_raw_str, n_choices = 5, ns = NS(NULL)) %>%
+  local_tab_ui_fn()
+
+# Running simple static UI part
+ui <- fluidPage(
+  all_outs$tabs %>% slice(1) %>% pull(tab_ui)
+)
+
+server <- function(input, output, session) {}
+
+shinyApp(ui, server)
+
+# gen_inp_str(inp_raw_str, n_choices = 1, ns = NS(NULL))
+# test_genui_fn(inp_raw_str,
+#               gen_inp_str = gen_inp_str,
+#               gen_ui_fn = local_tab_ui_fn,
+#               full = T)
 #
 #
 # # === === === === === === === === === === === === === === === === === === ===

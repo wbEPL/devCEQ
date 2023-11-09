@@ -891,6 +891,7 @@ mod_export_inp_srv <-
       ns <- session$ns
       shiny::eventReactive(#
         cur_clean_inp(), {
+          # browser()
           req(cur_clean_inp())
           policy_choice <-
             cur_clean_inp() %>%
@@ -913,11 +914,15 @@ mod_export_inp_srv <-
                   }
                 }),
               label_change = str_detect(label, "^list\\("),
-              label = map2_chr(label, label_change, ~ {
-                out_label <- .x
-                if (.y) {
-                  lab <- eval(parse(text = .x))
+              label = pmap_chr(list(label, label_change, id), ~ {
+                out_label <- ..1
+                if (..2) {
+                  # browser()
+                  lab <- eval(parse(text = ..1))
                   out_label <- lab$label[[1]]
+                  if (is.null(out_label)) {
+                    out_label <- ..3
+                  }
                 }
                 # out_label %>%
                 #   strwrap(width=75, simplify=T) %>%

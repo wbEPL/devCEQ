@@ -4,3 +4,7 @@
 /dev/*
 /data-temp/*
 /data-test/*
+^vignettes/articles$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

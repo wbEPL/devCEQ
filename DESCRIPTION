@@ -58,3 +58,4 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+URL: https://wbepl.github.io/devCEQ/

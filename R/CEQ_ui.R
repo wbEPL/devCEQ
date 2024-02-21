@@ -10,7 +10,6 @@
 #' @importFrom profvis profvis_ui
 #' @importFrom waiter use_waiter
 #' @importFrom bslib bs_theme
-#' @noRd
 #' @export
 CEQ_ui <- function(
     request,

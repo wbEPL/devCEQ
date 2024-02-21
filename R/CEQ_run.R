@@ -1,16 +1,14 @@
-#' Run the Shiny Application
-#'
+#' @title Run the Shiny Application
 #'
 #' @param inputs_str UI inputs structure that is read with `load_input_xlsx` or
 #'   another custom function.
 #' @param presim reactive with the list of pre-simulation parameters relevant
 #'   to the analysis
 #' @param ... arguments to pass to golem_opts.
+#'
 #' @inheritParams mod_inputs_btns_server
-#' See `?golem::get_golem_options` for more details.
 #' @inheritParams CEQ_ui
-#' @inheritParams shiny::shinyApp
-#' @noRd
+#'
 #' @export
 #' @importFrom shiny shinyApp
 #' @importFrom golem with_golem_options
@@ -77,3 +75,13 @@ CEQ_run <- function(
     golem_opts = list(...)
   )
 }
+
+
+#' @describeIn CEQ_run Run example shiny app with an elementary CEQ analysis
+#' @param ... not used
+#' @importFrom shiny runApp
+#' @export
+CEQ_run_example <-
+  function(...) {
+    system.file("examples", "ceq_example_simple", package = "devCEQ") |>  shiny::runApp()
+  }

@@ -4,7 +4,7 @@ This R package contains standardized infrastructure for developing and deploying
 
 There are several apps deployed using the **devCEQ** infrastructure: [Senegal CEQ 2018](https://datanalytics.worldbank.org/senceqapp2018/), [Côte d'Ivoire CEQ](https://datanalytics.worldbank.org/civCEQapp/), [Benin CEQ](https://datanalytics.worldbank.org/benCEQapp/), [Indonesia CEQ](https://datanalytics.worldbank.org/idnCEQ2019/). The **devCEQ** package evolved as a result of developing independent apps for [Armenia v1](https://datanalytics.worldbank.org/armCEQapp/) and [Armenia v2](https://datanalytics.worldbank.org/armenia-ceq/), [El Salvador](https://datanalytics.worldbank.org/el-salvador-fiscal-and-equity-tool/), [Turkey](https://datanalytics.worldbank.org/turkey-tax-simulation-tool/), and [Romania CEQ](https://datanalytics.worldbank.org/romania-sim-tool/), where various aspects and requirements to the application were tested at first.
 
-Esentially, **devCEQ** R Package standardizes the data flow of the microsimulaiton and wraps it in a users interface. With this package, developers can customize the input page. Develop and embed any data and simulation methodology at the core of the microsimulation. Recicle output visualizaation modules or develop own components to better communicate the results. 
+Essentially, **devCEQ** R Package standardizes the data flow within the microsimulaiton and wraps it in a users interface. With this package, developers can customize inputs page. Develop and embed any data and simulation methodology into the core of the microsimulation. And finally built custom visualization either recycling existing modules or developing new ones for better results communication. 
 
 An example of such app is below.
 
@@ -31,15 +31,60 @@ if (!require("remotes")) {
 remotes::install_github("wbEPL/devCEQ", dependencies = TRUE, build_vignettes = FALSE)
 ```
 
-### Run an examplary app
+### Run an example microsimulation app
 
-Now, to launch the exemplary micro simulation app, run the following command:
+Now, to launch an exemplary microsimulation app, run the following command in R console:
 
 ```r
-
+library(devCEQ)
+CEQ_run_example()
 ```
 
-## The process of developing a microsimulation
+This is an example shiny app that is supplied along with the package `devCEQ`. You may explore the content of this app and its structure by navigating to the folder, where it is located.
+
+-   As it is located in the package itself, to check the folder, where the app is, type in the R console.
+
+```r
+system.file("examples", "ceq_example_simple", package = "devCEQ") |> 
+  utils::browseURL()
+```
+
+You can also create a local copy of the microsimulation app on your drive to explore it on your own and modify/develop components. To do so, run the code below. 
+
+-   Make sure that you provide a proper path to the place, where you want this app to be created.
+-   In the path argument specify a folder, where the app should be as well as the name of the app itself ("./FOLDER/AppName"). The function will create all folders automatically. 
+
+```r
+library(devCEQ)
+create_microsim("./microsim_simple_example")
+```
+
+Template microsim app has the following structure, which we explore in detail in specific articles on app's development.
+
+```
+../microsim_simple_example
+├── app.R
+├── data-app
+│   └── simple-inputs-structure.xlsx
+├── DESCRIPTION
+├── inst
+│   └── app
+│       └── info-page.md
+├── LICENSE
+├── microsim_simple_example.Rproj
+├── NAMESPACE
+├── R
+│   ├── app_config.R
+│   ├── fct_simulation.R
+│   ├── fct_variables.R
+│   ├── mod_gini_povertyresults.R
+│   ├── mod_inc_ncp.R
+│   ├── mod_results.R
+│   └── _disable_autoload.R
+└── README.md
+```
+
+## The process of developing a microsimulation and its SHiny app
 
 This guide/website is meant to equip users with the key skills they need for developing the user interface of the microsimulation tools in R Shiny. Follow tutorials in the consecutive order under the [Articles](https://wbepl.github.io/devCEQ/articles/index.html) above. Limited functional documentation is also available in [References](https://wbepl.github.io/devCEQ/reference/index.html). 
 
@@ -49,9 +94,9 @@ Overall, the process of microsimulation development consists of **two broad stag
 
 2.  'Translating' the final Stata microsimulation into R, optimizing the analysis, and building a Shiny dashboard around it.
 
-The first stage is not described here in detail, however, the article [Microsmiulations in Stata](https://wbepl.github.io/devCEQ/articles/microsim-stata.Rmd) contains some best practices for developing such microsimulations in Stata. Users are advised to follow examples from this script in order to set up properly the workflow of translating the microsimulation from Stata to R.
+The first stage is not described here in detail, however, the article [Microsmiulations in Stata](https://wbepl.github.io/devCEQ/articles/microsim-stata.Rmd) contains some best practices for developing such microsimulations in Stata. Users are advised to follow examples from this article in order to set-up properly the workflow of translating the microsimulation from Stata to R.
 
-On the second stage, translation from Stata to R is happening and the App is being created. This translation process has few logical steps outlined below. A number of articles is developed for each step. Please follow them to familiarize with the translation process.
+The second stage is the focus of this guide. At the second stage, translation of Stata methodology into R is happening and the Shiny dashboard is created. This translation process has few logical steps outlined below. A number of articles is developed for each step. Please follow these articles to gradually reproduce examples and familiarize with the translation process.
 
 1.  Converting simulation methodology from Stata to R.
 

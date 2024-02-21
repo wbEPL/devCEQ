@@ -47,10 +47,13 @@ Imports:
     esquisse (>= 1.1.2),
     patchwork (>= 1.1.1),
     shinycssloaders (>= 1.0.0),
-    diffdf (>= 1.0.0)
+    diffdf (>= 1.0.0),
+    yesno (>= 0.1.2),
+    cli (>= 3.6.1),
+    fs (>= 1.6.3)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.1
+RoxygenNote: 7.2.3
 Suggests: 
     knitr,
     rmarkdown

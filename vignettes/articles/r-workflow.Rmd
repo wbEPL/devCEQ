@@ -74,7 +74,7 @@ fs::dir_tree("C:/Users/wb532966/OneDrive - WBG/EPL/devCEQaux/Example_FiscalSim_a
 
 Now, let us create the first scrip in R and save it under the name `example-script.R` in the `dev` folder. Try to follow the steps from the animation.
 
-![](../../man/figures/r-workflow.gif)
+
 
 
 

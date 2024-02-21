@@ -1,93 +1,46 @@
-#' Test n_choices module
+#' (internal) Sub-module for the policy number inputs
 #'
-test_mod_inp_n_choices <- function(id = NULL) {
-  tst_ui <-
-    fluidPage(
-      column(4, mod_inp_n_choices_ui(id)),
-      column(
-        6,
-        numericInput("min", "min", 1),
-        numericInput("max", "max", 3),
-        numericInput("value", "value", 2),
-        numericInput("update_to", "update_to", value = NULL),
-        selectInput(
-          "n_policy_type",
-          "n_policy_type",
-          choices = c("numericInline", "numeric", "slider", "dropdown", "none")
-        ),
-        shiny::verbatimTextOutput("nchoices_out")
-      )
-    )
-  tst_srv <- function(input, output, session) {
-    nc_out <- mod_inp_n_choices_server(
-      id = id,
-      min = reactive(input$min),
-      max = reactive(input$max),
-      value = reactive(input$value),
-      n_policy_type = reactive(input$n_policy_type),
-      n_policy_update = reactive(input$update_to)
-    )
-
-    output$nchoices_out <- renderPrint({
-      nc_out()
-    })
-  }
-
-  shiny::shinyApp(tst_ui, tst_srv)
-}
-
-#' @describeIn test_mod_inp_n_choices test all UI types
-#' @importFrom purrr map
-test_mod_inp_n_choices_all_ui <- function(id = NULL) {
-  tst_ui <-
-    c("numericInline", "numeric", "slider", "dropdown", "none") %>%
-    map(~ {
-      make_n_choice_ui(
-        ns = NS(id),
-        min = 1,
-        max = 5,
-        value = 3,
-        n_policy_type = .x
-      )
-    }) %>%
-    tagList %>%
-    column(width = 4) %>%
-    fluidPage()
-
-  tst_srv <- function(input, output, session) {
-  }
-
-  shiny::shinyApp(tst_ui, tst_srv)
-}
-
-
-
-
-#' inp_n_choices UI Function
+#' @description
 #'
-#' @description A shiny Module.
+#' `mod_inp_n_choices_server()` Server logic
 #'
-#' @param id,input,output,session Internal parameters for {shiny}.
+#' `mod_inp_n_choices_ui()` UI of the module
 #'
-#' @noRd
+#' `get_n_policy_types()` returns valid types of the n-policy input
 #'
-#' @importFrom shiny NS tagList
-mod_inp_n_choices_ui <- function(id) {
-  ns <- NS(id)
-  tagList(shiny::uiOutput(ns("n_policy_ui")))
-}
-
-#' inp_n_choices Server Functions
+#' `make_n_choice_ui()` internal function that creates UI for the n-policy input#'
+#'
+#' `update_n_choice_ui()` internal function used to update the n-policy input.
+#'
+#' `test_mod_inp_n_choices_all_ui()` and `test_mod_inp_n_choices()` miscellaneous
+#' testing functions that rerun shiny apps.
 #'
 #' @param min,max,value,n_policy_type,n_policy_update reactive numeric and
-#'    strings similar to params in `make_n_choice_ui`
+#' strings similar to params in `make_n_choice_ui()`
+#'
+#' @param value,min,max numeric with number of choices selected, minimum
+#' and maximum
+#'
+#' @param n_policy_type reactive string with the type of the n-policy input,
+#' one of "numericInline", "numeric", "slider", "dropdown", and "none".
+#' Use `get_n_policy_types()` to check valid types.
+#'
+#' @param new_n_choices new value of policy choices to update to.
+#'
+#' @param ns namespace function to wrap into IDs around `NS(...)`.
+#'
+#' @param ... not used
+#' @examplesIf interactive()
+#'
+#' test_mod_inp_n_choices()
+#' test_mod_inp_n_choices_all_ui()
 #'
 mod_inp_n_choices_server <-
   function(id,
            min = reactive(1),
            max = reactive(4),
            value = reactive(2),
-           n_policy_type = reactive("slider"),
+           n_policy_type = reactive(get_n_policy_types()[[1]]),
            n_policy_update = reactive(NULL),
            ...) {
     moduleServer(id, function(input, output, session) {
@@ -162,16 +115,22 @@ mod_inp_n_choices_server <-
     })
   }
 
+#' @rdname mod_inp_n_choices_server
+#' @title UI Function
+#'
+#' @description A shiny Module.
+#'
+#' @param id,input,output,session Internal parameters for {shiny}.
+#'
+#' @importFrom shiny NS tagList
+mod_inp_n_choices_ui <- function(id) {
+  ns <- NS(id)
+  tagList(shiny::uiOutput(ns("n_policy_ui")))
+}
 
-#' @describeIn mod_inp_n_choices_server Function for updating the UI with
-#'     number of choices input
-#'
-#' @param value,min,max numeric with number of choices selected, minimum
-#'     and maximum
-#' @param n_policy_type scring with the type of the policy choices input,
-#'     one of: c("numericInline", "numeric", "slider", "dropdown", "none").
-#' @param ns namespace funciton to wrap intou IDs around `NS(...)`.
-#'
+
+#' @rdname mod_inp_n_choices_server
+#' @title Function for updating the UI with number of choices input
 #' @importFrom rlang dots_list
 #' @importFrom magrittr extract
 #' @importFrom shiny numericInput
@@ -251,23 +210,21 @@ make_n_choice_ui <-
     nsim
   }
 
-#' returns valid types for the policy choices
-#'
-#' @noRd
+#' @title returns valid types for the policy choices
+#' @rdname mod_inp_n_choices_server
+#' @export
 get_n_policy_types <- function() {
   c("numericInline", "numeric", "slider", "dropdown", "none")
 }
 
-#' @describeIn make_n_choice_ui update_n_choice_ui
-#' @param new_n_choices new value of policy choices to update to
+#' @rdname mod_inp_n_choices_server
 #' @importFrom shinyWidgets updatePickerInput
-#' @noRd
 update_n_choice_ui <-
   function(input,
            output,
            session,
            new_n_choices = NULL,
-           n_policy_type = "slider",
+           n_policy_type = get_n_policy_types()[[1]],
            ...) {
     if (n_policy_type %in% c("slider")) {
       updateSliderInput(session = session,
@@ -283,3 +240,68 @@ update_n_choice_ui <-
                          value = new_n_choices)
     }
   }
+
+
+#' @title Test n_choices module
+#' @rdname mod_inp_n_choices_server
+#' @export
+test_mod_inp_n_choices <- function(id = NULL) {
+  tst_ui <-
+    fluidPage(
+      column(4, mod_inp_n_choices_ui(id)),
+      column(
+        6,
+        numericInput("min", "min", 1),
+        numericInput("max", "max", 3),
+        numericInput("value", "value", 2),
+        numericInput("update_to", "update_to", value = NULL),
+        selectInput(
+          "n_policy_type",
+          "n_policy_type",
+          choices = get_n_policy_types()
+        ),
+        shiny::verbatimTextOutput("nchoices_out")
+      )
+    )
+  tst_srv <- function(input, output, session) {
+    nc_out <- mod_inp_n_choices_server(
+      id = id,
+      min = reactive(input$min),
+      max = reactive(input$max),
+      value = reactive(input$value),
+      n_policy_type = reactive(input$n_policy_type),
+      n_policy_update = reactive(input$update_to)
+    )
+
+    output$nchoices_out <- renderPrint({
+      nc_out()
+    })
+  }
+
+  shiny::shinyApp(tst_ui, tst_srv)
+}
+
+#' @title another n-policy test function.
+#' @rdname mod_inp_n_choices_server
+#' @export
+#' @importFrom purrr map
+test_mod_inp_n_choices_all_ui <- function(id = NULL) {
+  tst_ui <- get_n_policy_types() %>%
+    map(~ {
+      make_n_choice_ui(
+        ns = NS(id),
+        min = 1,
+        max = 5,
+        value = 3,
+        n_policy_type = .x
+      )
+    }) %>%
+    tagList %>%
+    column(width = 4) %>%
+    fluidPage()
+
+  tst_srv <- function(input, output, session) {
+  }
+
+  shiny::shinyApp(tst_ui, tst_srv)
+}

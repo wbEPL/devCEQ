@@ -40,6 +40,8 @@ library(devCEQ)
 CEQ_run_example()
 ```
 
+![](man/figures/app-local-example.gif)
+
 This is an example shiny app that is supplied along with the package `devCEQ`. You may explore the content of this app and its structure by navigating to the folder, where it is located.
 
 -   As it is located in the package itself, to check the folder, where the app is, type in the R console.
@@ -94,13 +96,13 @@ Overall, the process of microsimulation development consists of **two broad stag
 
 2.  'Translating' the final Stata microsimulation into R, optimizing the analysis, and building a Shiny dashboard around it.
 
-The first stage is not described here in detail, however, the article [Microsmiulations in Stata](https://wbepl.github.io/devCEQ/articles/microsim-stata.Rmd) contains some best practices for developing such microsimulations in Stata. Users are advised to follow examples from this article in order to set-up properly the workflow of translating the microsimulation from Stata to R.
+The first stage is not described here in detail, however, the article [Running microsimulations in Stata](https://wbepl.github.io/devCEQ/articles/microsim-stata.Rmd) contains some best practices for developing such microsimulations in Stata. Users are advised to follow examples from this article in order to set-up properly the workflow of translating the microsimulation from Stata to R.
 
 The second stage is the focus of this guide. At the second stage, translation of Stata methodology into R is happening and the Shiny dashboard is created. This translation process has few logical steps outlined below. A number of articles is developed for each step. Please follow these articles to gradually reproduce examples and familiarize with the translation process.
 
 1.  Converting simulation methodology from Stata to R.
 
-    1.  Running a microsimulation in Stata
+    1.  [Running microsimulations in Stata](./articles/microsim-stata.html)
     2.  Setting up a workflow in R
     3.  Re-saving pre-simulation data in R
     4.  Translating Stata code to R and comparing results between R and Stata

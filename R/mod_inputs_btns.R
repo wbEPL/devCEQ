@@ -1,6 +1,12 @@
-#' test mod_inputs_btn functions
-#'
-#' @noRd
+#' Module: input buttons
+#' @name mod_inp_btns
+#' @title Input buttons module
+NULL
+#> NULL
+
+#' @title test-function for input buttons with the server-generated number of policies
+#' @rdname mod_inp_btns
+#' @export
 test_mod_inputs_btn <-
   function(id = NULL, n_policy_type = "slider") {
     options(golem.app.prod = FALSE)
@@ -32,26 +38,22 @@ test_mod_inputs_btn <-
           })
   }
 
-#' @describeIn test_mod_inputs_btn statisc UI rendering
-#'
-#'
-#' @noRd
+#' @title test-function for the static buttons appearance
+#' @rdname mod_inp_btns
+#' @export
 test_mod_inputs_btn_static_ui <- function(di = NULL) {
   fluidPage(column(3, mod_inputs_btns_ui(NULL))) %>%
     shinyApp(function(input, output, session) {
     })
 }
 
-
-#' inputs_btns UI Function
+#' @title inputs_btns UI part of the module with input buttons
+#' @rdname mod_inp_btns
+#' @order 1
 #'
-#' @description A shiny Module.
+#' @description Generates UI with input buttons.
 #'
-#' @param id,input,output,session Internal parameters for {shiny}.
-#' @param choice_type type of the input UI for number of choices. One of
-#' slider, numeric and none.
-#'
-#' @noRd
+#' @param id namespace id (internal shiny parameter).
 #'
 #' @importFrom shiny NS tagList
 #' @export
@@ -124,7 +126,8 @@ mod_inputs_btns_ui <- function(id = NULL, ...) {
   )
 }
 
-# Function for showing the dev output of UI buttons
+#' @describeIn mod_inputs_btns_ui sub-module with development buttons
+#'
 mod_inputs_btns_devout_ui <- function(id = NULL) {
   ns <- NS(id)
   if (golem::app_dev()) {
@@ -140,14 +143,24 @@ mod_inputs_btns_devout_ui <- function(id = NULL) {
   }
 }
 
-#' inputs_btns Server Functions
+#' @title server side module with input buttons logic
+#' @rdname mod_inp_btns
+#' @order 2
 #'
-#' @param n_policy vector of 3 numeric. First and second are min and max
-#' number of choices. The last is the initialized number of choices.
+#' @param n_policy vector of 3 numeric values c(1,2,1) by default.
+#'    The first and the second are minimum and maximum number of policy choices.
+#'    The numeric is the initialized number of pilicy choices.
 #'
-#' @param n_policy_type character, one of c("numericInline", "numeric", "slider", "dropdown", "none")
+#' @param n_policy_type character that defines types of the the changer of the
+#'    the number of policy scenarios. Could be one of "numericInline" (default),
+#'    "numeric", "slider", "dropdown", and "none".
+#'
+#' @param sim_export_dta Reactive internal with all the simulation data
+#'    that is used by the server to export simulation inputs results.
+#'
+#' @param ... not used
+#'
 #' @import purrr
-#' @noRd
 #' @export
 mod_inputs_btns_server <-
   function(id = NULL,

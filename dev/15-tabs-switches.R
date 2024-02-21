@@ -33,8 +33,17 @@ library(shiny)
 # Testing for different layouts -----------------------------------------------
 pkgload::load_all(export_all = TRUE, helpers = FALSE, attach_testthat = FALSE)
 
+
 # Test one
-"data-raw/ceq-inputs-idn-2022.xlsx" %>%
+"./inst/simple-inputs-structure.xlsx" %>%
+  load_inputtabs_xlsx() %>%
+  fct_inp_tab_order() %>%
+  fct_inp_tab_str() %>%
+  test_mod_inp_tabs_simple(id = NULL, switches = .)
+
+
+# Test one
+"../Senegal/senCEQapp/data-app/sen-inputs-structure-new.xlsx" %>%
   load_inputtabs_xlsx() %>%
   fct_inp_tab_order() %>%
   fct_inp_tab_str() %>%

@@ -1,0 +1,1 @@
+Generic text in the markdown format that **explains what this app does**. It supports anything, including hyperlinks, video embedding, images, and documents. 

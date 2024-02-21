@@ -95,7 +95,8 @@ gen_tabinp_ui <-
       dplyr::arrange(group_order, order, row) %>%
       dplyr::mutate(
         synthetic_order = stringr::str_c(group_order, order, row) %>% as.numeric(),
-        group_name = forcats::as_factor(group_name) %>% forcats::fct_reorder(.x = synthetic_order)
+        group_name = forcats::as_factor(group_name) %>%
+          forcats::fct_reorder(.x = synthetic_order, .na_rm = TRUE)
         ) %>%
       dplyr::group_by(group_order, group_name, policy_choice, style, width) %>%
       dplyr::summarise(single_col = single_ui %>% shiny::tagList(.), .groups = "keep") %>%

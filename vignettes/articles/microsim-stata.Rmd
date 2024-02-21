@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
 
 Microsimulation is a software product that uses micro-level data and input parameters for simulating potential distributional effects of alternative policies. Basic examples of such policies are personal income taxes, indirect taxes, subsidies, and benefits in kind. Usually, economists develop microsimulations in Stata connected with Excel, where the first is used to execute data analysis and the later one is used for providing policy inputs and visualizing the results. [Example_FiscalSim](https://github.com/wbEPL/Example_FiscalSim) is an example of such a microsimulation analysis.
 
-Most microsimulation analyses are developed in Stata. They have several key components that make them efficient, transparent, and reproducible. Such components in the order of their utilization are:
+Most microsimulation analyses are developed in Stata. They have a predetermined structure that makes such Stata-based tools efficient, transparent, and reproducible. Usually, such Stata tools consist of:
 
 1.  **Raw data**. It consists of household or individual-level micro surveys with multiple data files that store different bits of information, e.g. consumption records by goods or groups of commodities for each household or individual, income levels by sources and individuals, and assets owned by households. This data is usually extremely detailed and only a fraction of it is used in the simulation analysis. This data is stored in different formats (CSV, excel, dta, etc.).
 
@@ -23,7 +23,7 @@ Most microsimulation analyses are developed in Stata. They have several key comp
 
 4.  **Simulation** itself. This is a collection of `.do` files that executes the simulation based on pre-simulation data and policy parameters. These are executed consecutively and gradually implement the simulation analysis.
 
-5.  **Simulation results**. A single data file with all variables and income concepts was simulated during the analysis. Based on it, we compute poverty and inequality measures as well as the distributional effect of policies.
+5.  **Results processing**. A single data file with all variables and income concepts was simulated during the analysis. Based on it, we compute poverty and inequality measures as well as the distributional effect of policies.
 
 Once the microsimulation is developed in Stata and it contains clearly defined all five components explained above, we can commence developing the microsimulation in R and subsequently the R Shiny application with the microsimulation dashboard.
 
@@ -98,7 +98,7 @@ To run the Stata pre-simulation, we need to:
 
 1.  Open `/02.Dofile/00_master.do`.
 
-2.  Set global variable `path` in lines 10-30 to `/Example_FiscalSim/` and save it.
+2.  Set the global variable `path` in lines 10-30 to `/Example_FiscalSim/` and save it.
 
 3.  Execute the `/02.Dofile/00_master.do` from the beginning to the `*Simulation stage` (Lines 1-89).
 
@@ -139,15 +139,15 @@ fs::dir_tree("C:/Users/wb532966/OneDrive - WBG/EPL/devCEQaux", recurse = T)
 
 To run the full simulation in Stata, we need to:
 
-1.  Open `/02.Dofile/00_master.do` with previous changes and make sure that pre-simulation step was executed correctly.
+1.  Open `/02.Dofile/00_master.do` with previous changes and make sure that the pre-simulation step was executed correctly.
 
-2.  Comment-out the pre-simulation stage (lines 83-89).
+2. Comment out the pre-simulation stage (lines 83-89).
 
 3.  Execute the full simulation from the beginning to the end (line 1 to the end of the `00_master.do`)
 
-4.  Excel file with the simulation results will open in the end and you will be able explore the simulation results.
+4. An Excel file with the simulation results will open in the end and you will be able to explore the simulation results.
 
-![](images/stata-run-workflow.gif)
+![](man/figures/stata-run-workflow.gif)
 
 ### Saving intermediate results from Stata
 

@@ -6,6 +6,8 @@
 #'
 #' @description A shiny Module.
 #'
+#' @param inp_nav_width width of the left-side panel with tabs switches on the
+#'        input page.
 #' @param id,input,output,session Internal parameters for {shiny}.
 #' @inheritParams mod_inputs_btns_ui
 #' @noRd
@@ -65,7 +67,7 @@ mod_inputs_server <-
            target_tab = NULL,
            source_tab = NULL,
            n_policy = c(1, 2, 1),
-           n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
+           n_policy_type = get_n_policy_types(),
            ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns
@@ -1007,15 +1009,12 @@ mod_key_inp_srv <-
 # Testers -----------------------------------------------------------------
 
 
-
-
-
 #' test_mod_inputs ui side
 #'
 #' @noRd
-test_mod_inputs_ui <- function(id) {
+test_mod_inputs_ui <- function(id, inp_nav_width = 3) {
   fluidPage(
-    mod_inputs_ui_wrapper(id, 3),
+    mod_inputs_ui_wrapper(id, inp_nav_width = inp_nav_width),
     golem_add_external_resources()
   )
 }
@@ -1028,7 +1027,7 @@ test_mod_inputs_server <-
   function(id,
            path,
            n_policy = c(1, 5, 2),
-           n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
+           n_policy_type = get_n_policy_types(),
            ...) {
 
     shiny::moduleServer(id, function(input, output, session) {
@@ -1068,31 +1067,51 @@ test_mod_inputs_server <-
     })
   }
 
-#' Test complete inputs in one
+#' Test complete inputs component of the app
 #'
+#' @inheritParams mod_inputs_server
+#' @param type Which functionality to test "full" - all functionality (default);
 #' @noRd
 #' @export
 test_mod_inputs <-
   function(path,
            n_policy = c(1, 5, 2),
-           n_policy_type = c("dropdown", "numericInline", "numeric", "slider", "dropdown", "none"),
+           n_policy_type = get_n_policy_types(),
            id = NULL,
-           type = c("full", "selected")) {
+           type = c("full", "fullprofile", "selected"),
+           inp_nav_width = 3,
+           ...) {
+
+    if (length(n_policy_type) > 1) n_policy_type <- n_policy_type[[1]]
+    if (length(type) > 1) type <- type[[1]]
+    options(golem.app.prod = TRUE)
+
     uui <-
-      test_mod_inputs_ui(id) %>%
+      test_mod_inputs_ui(id, inp_nav_width = inp_nav_width) %>%
       tagList(profvis::profvis_ui("prof"))
 
+    options(golem.app.prod = TRUE)
     if (type == "selected") {
       sserv <- function(input, output, server) {
 
         callModule(profvis::profvis_server, "prof")
 
-        test_mod_inputs_server(id, path = path, n_policy_type = n_policy_type)
+        test_mod_inputs_server(id,
+                               path = path,
+                               n_policy = n_policy,
+                               n_policy_type = n_policy_type)
       }
     } else {
+
+      if (type == "fullprofile") {
+        options(golem.app.prod = FALSE)
+      }
+
       sserv <- function(input, output, server) {
 
-        callModule(profvis::profvis_server, "prof")
+        if (type == "fullprofile") {
+          callModule(profvis::profvis_server, "prof")
+        }
 
         inp_raw_str <- path %>% load_input_xlsx()
         inp_tab_str <- path %>% load_inputtabs_xlsx()
@@ -1107,7 +1126,8 @@ test_mod_inputs <-
           inp_raw_str = inp_raw_str,
           inp_str_fn = local_inp_str,
           ui_gen_fn = local_ui_fn,
-          n_policy = n_policy
+          n_policy = n_policy,
+          ...
         )
       }
     }

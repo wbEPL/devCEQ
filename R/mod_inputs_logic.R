@@ -67,7 +67,7 @@ mod_inputs_server <-
            target_tab = NULL,
            source_tab = NULL,
            n_policy = c(1, 2, 1),
-           n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
+           n_policy_type = get_n_policy_types(),
            ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns
@@ -1027,7 +1027,7 @@ test_mod_inputs_server <-
   function(id,
            path,
            n_policy = c(1, 5, 2),
-           n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
+           n_policy_type = get_n_policy_types(),
            ...) {
 
     shiny::moduleServer(id, function(input, output, session) {
@@ -1070,14 +1070,13 @@ test_mod_inputs_server <-
 #' Test complete inputs component of the app
 #'
 #' @inheritParams mod_inputs_server
-#' @inheritParams mod_inputs_server
 #' @param type Which functionality to test "full" - all functionality (default);
 #' @noRd
 #' @export
 test_mod_inputs <-
   function(path,
            n_policy = c(1, 5, 2),
-           n_policy_type = c("dropdown", "numericInline", "numeric", "slider", "dropdown", "none"),
+           n_policy_type = get_n_policy_types(),
            id = NULL,
            type = c("full", "fullprofile", "selected"),
            inp_nav_width = 3,

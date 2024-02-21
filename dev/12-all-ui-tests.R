@@ -11,18 +11,10 @@ library(dplyr)
 library(purrr)
 library(tidyr)
 
+# Simple test for users
 
-# UI template
-# path <- "inst/simple-inputs-structure.xlsx"
-# inp_raw_str <- path %>% load_input_xlsx()
-
-# test_mod_inputs(
-#   "inst/simple-inputs-structure.xlsx",
-#   n_policy = c(1,3,1)#,
-#   # n_policy_type = "numeric",
-#   # type = "full"
-# )
-
+## If the UI is generating
+test_mod_inputs("inst/simple-inputs-structure.xlsx")
 
 test_mod_inputs(
   "../Senegal/senCEQapp/data-app/sen-inputs-structure-new.xlsx",
@@ -30,3 +22,11 @@ test_mod_inputs(
   n_policy_type = "slider",
   type = "full"
 )
+
+# Additional UI tests
+
+## Buttons module
+test_mod_inp_n_choices()
+test_mod_inp_n_choices_all_ui()
+test_mod_inputs_btn_static_ui()
+test_mod_inputs_btn()

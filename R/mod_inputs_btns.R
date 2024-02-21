@@ -1,155 +1,22 @@
-#' Module: input buttons
-#' @name mod_inp_btns
-#' @title Input buttons module
-NULL
-#> NULL
-
-#' @title test-function for input buttons with the server-generated number of policies
-#' @rdname mod_inp_btns
-#' @export
-test_mod_inputs_btn <-
-  function(id = NULL, n_policy_type = "slider") {
-    options(golem.app.prod = FALSE)
-    get_n_policy_types() %>%
-      map(~{
-        mod_inputs_btns_ui(id = .x) %>%
-          column(width = 2)
-      }) %>%
-      tagList() %>%
-      fluidPage() %>%
-      shinyApp(
-        server =
-          function(input, output, session) {
-            all_servers <-
-              get_n_policy_types() %>%
-              map(~{
-                mod_inputs_btns_server(
-                  id = .x,
-                  sim_export_dta = reactive(tibble(inp = 1)),
-                  n_policy = c(1, 5, 3),
-                  n_policy_type = .x
-                )
-              })
-
-            observe({
-              all_servers %>% map(~{.x %>% reactiveValuesToList()})
-            })
-
-          })
-  }
-
-#' @title test-function for the static buttons appearance
-#' @rdname mod_inp_btns
-#' @export
-test_mod_inputs_btn_static_ui <- function(di = NULL) {
-  fluidPage(column(3, mod_inputs_btns_ui(NULL))) %>%
-    shinyApp(function(input, output, session) {
-    })
-}
-
-#' @title inputs_btns UI part of the module with input buttons
-#' @rdname mod_inp_btns
-#' @order 1
+#' (internal) Module with buttons logic for the input page
 #'
-#' @description Generates UI with input buttons.
+#' @description
 #'
-#' @param id namespace id (internal shiny parameter).
+#' `mod_inputs_btns_ui()` UI part of the module.
 #'
-#' @importFrom shiny NS tagList
-#' @export
-mod_inputs_btns_ui <- function(id = NULL, ...) {
-  ns <- NS(id)
-
-  run_button <-
-    actionButton(ns("run_sim"),
-                 "Run",
-                 class = "btn-success btn-sm",
-                 width = "100%")
-  reset_button <-
-    actionButton(ns("reset_sim"),
-                 "Reset",
-                 class = "btn-danger btn-sm",
-                 width = "100%")
-  download_sim <-
-    downloadButton(
-      ns("download_sim"),
-      label = "Save inputs",
-      class = "btn-info btn-sm",
-      style = "width:100%;"
-    )
-
-  upload_sim_file <-
-    fileInput(
-      ns("upload_sim"),
-      "Upload inputs",
-      accept = c(".ceqsim"),
-      buttonLabel = "Browse",
-      width = "100%"
-    )
-  upload_sim_file[["children"]][[2]][["children"]][[1]][["children"]][[1]][["attribs"]][["class"]] <-
-    "btn btn-primary btn-file"
-
-  input_tabs <- mod_inp_tab_switches_ui(id = id)
-
-  tagList(
-    ## Number of simulations
-    mod_inp_n_choices_ui(id) %>%
-      div(id = ns("input_sim_number_holder")),
-
-    ## Input tabs switchers
-    input_tabs %>%
-      div(id = ns("input_tabs_nav_holder")) %>%
-      div(id = ns("input_tabs_nav_holder_2")) %>%
-      div(id = ns("input_tabs_nav_holder_3")),
-
-    ## Buttons:
-    tags$hr(),
-
-    ### Run:
-    run_button %>%
-      div(id = ns("run_btn_holder"))%>%
-      div(id = ns("run_btn_holder_2")),
-    # tags$hr(),
-
-    ### Reset:
-    reset_button %>% div(id = ns("reset_btn_0")),
-    # tags$hr(),
-
-    ### Download:
-    download_sim %>% div(id = ns("download_sim_holder")),
-
-    ### Upload:
-    upload_sim_file %>% div(id = ns("upload_sim_holder")),
-
-    ## CEQ dev options:
-    mod_inputs_btns_devout_ui(id)
-  )
-}
-
-#' @describeIn mod_inputs_btns_ui sub-module with development buttons
+#' `mod_inputs_btns_server()` UI part of the module.
 #'
-mod_inputs_btns_devout_ui <- function(id = NULL) {
-  ns <- NS(id)
-  if (golem::app_dev()) {
-    tagList(
-      mod_browser_button_ui(NULL, FALSE),
-      actionButton(ns("run_guide"), "Run guide", class = "btn-info btn-sm"),
-      shiny::verbatimTextOutput(ns("inputs_btns_devout"))
-    )
-  } else {
-    tagList(
-      mod_browser_button_ui(NULL)
-    )
-  }
-}
-
-#' @title server side module with input buttons logic
-#' @rdname mod_inp_btns
-#' @order 2
+#' `test_mod_inputs_btn_static_ui()` test-function for the static buttons
+#' appearance. Launches a simple shiny app that displays a static buttons UI.
+#'
+#' `test_mod_inputs_btn()` test-function for checking buttons with
+#' the server-generated number of policies. Launches a shiny app with
+#'
+#' @param id namespace id (internal shiny parameter) used in the the UI module.
 #'
 #' @param n_policy vector of 3 numeric values c(1,2,1) by default.
 #'    The first and the second are minimum and maximum number of policy choices.
-#'    The numeric is the initialized number of pilicy choices.
+#'    The numeric is the initialized number of policy choices.
 #'
 #' @param n_policy_type character that defines types of the the changer of the
 #'    the number of policy scenarios. Could be one of "numericInline" (default),
@@ -161,7 +28,14 @@ mod_inputs_btns_devout_ui <- function(id = NULL) {
 #' @param ... not used
 #'
 #' @import purrr
-#' @export
+#'
+#' @examplesIf interactive()
+#'
+#' # Launches an app with all the buttons in a static form
+#' test_mod_inputs_btn_static_ui()
+#'
+#' # Launches an app with all types of policy number input and extra diagnostic
+#' test_mod_inputs_btn()
 mod_inputs_btns_server <-
   function(id = NULL,
            sim_export_dta = reactive(NULL),
@@ -275,6 +149,138 @@ mod_inputs_btns_server <-
   })
 }
 
+#' @title test-function for input buttons with the server-generated number of policies
+#' @rdname mod_inputs_btns_server
+#' @export
+test_mod_inputs_btn <-
+  function(id = NULL, n_policy_type = "slider") {
+    options(golem.app.prod = FALSE)
+    get_n_policy_types() %>%
+      map(~{
+        mod_inputs_btns_ui(id = .x) %>%
+          column(width = 2)
+      }) %>%
+      tagList() %>%
+      fluidPage() %>%
+      shinyApp(
+        server =
+          function(input, output, session) {
+            all_servers <-
+              get_n_policy_types() %>%
+              map(~{
+                mod_inputs_btns_server(
+                  id = .x,
+                  sim_export_dta = reactive(tibble(inp = 1)),
+                  n_policy = c(1, 5, 3),
+                  n_policy_type = .x
+                )
+              })
+
+            observe({
+              all_servers %>% map(~{.x %>% reactiveValuesToList()})
+            })
+
+          })
+  }
+
+#' @title test-function for the static buttons appearance
+#' @rdname mod_inputs_btns_server
+#' @export
+test_mod_inputs_btn_static_ui <- function(di = NULL) {
+  fluidPage(column(3, mod_inputs_btns_ui(NULL))) %>%
+    shinyApp(function(input, output, session) {
+    })
+}
+
+#' @title inputs_btns UI part of the module with input buttons
+#' @rdname mod_inputs_btns_server
+#' @importFrom shiny NS tagList actionButton downloadButton fileInput
+mod_inputs_btns_ui <- function(id = NULL, ...) {
+  ns <- NS(id)
+
+  run_button <-
+    actionButton(ns("run_sim"),
+                 "Run",
+                 class = "btn-success btn-sm",
+                 width = "100%")
+  reset_button <-
+    actionButton(ns("reset_sim"),
+                 "Reset",
+                 class = "btn-danger btn-sm",
+                 width = "100%")
+  download_sim <-
+    downloadButton(
+      ns("download_sim"),
+      label = "Save inputs",
+      class = "btn-info btn-sm",
+      style = "width:100%;"
+    )
+
+  upload_sim_file <-
+    fileInput(
+      ns("upload_sim"),
+      "Upload inputs",
+      accept = c(".ceqsim"),
+      buttonLabel = "Browse",
+      width = "100%"
+    )
+
+  upload_sim_file[["children"]][[2]][["children"]][[1]][["children"]][[1]][["attribs"]][["class"]] <-
+    "btn btn-primary btn-file"
+
+  input_tabs <- mod_inp_tab_switches_ui(id = id)
+
+  tagList(
+    ## Number of simulations
+    mod_inp_n_choices_ui(id) %>%
+      div(id = ns("input_sim_number_holder")),
+
+    ## Input tabs switchers
+    input_tabs %>%
+      div(id = ns("input_tabs_nav_holder")) %>%
+      div(id = ns("input_tabs_nav_holder_2")) %>%
+      div(id = ns("input_tabs_nav_holder_3")),
+
+    ## Buttons:
+    tags$hr(),
+
+    ### Run:
+    run_button %>%
+      div(id = ns("run_btn_holder"))%>%
+      div(id = ns("run_btn_holder_2")),
+    # tags$hr(),
+
+    ### Reset:
+    reset_button %>% div(id = ns("reset_btn_0")),
+    # tags$hr(),
+
+    ### Download:
+    download_sim %>% div(id = ns("download_sim_holder")),
+
+    ### Upload:
+    upload_sim_file %>% div(id = ns("upload_sim_holder")),
+
+    ## CEQ dev options:
+    mod_inputs_btns_devout_ui(id)
+  )
+}
+
+#' @title Debugging input buttons activated up on `options("golem.app.prod") <- FALSE`
+#' @noRd
+mod_inputs_btns_devout_ui <- function(id = NULL) {
+  ns <- NS(id)
+  if (golem::app_dev()) {
+    tagList(
+      mod_browser_button_ui(NULL, FALSE),
+      actionButton(ns("run_guide"), "Run guide", class = "btn-info btn-sm"),
+      shiny::verbatimTextOutput(ns("inputs_btns_devout"))
+    )
+  } else {
+    tagList(
+      mod_browser_button_ui(NULL)
+    )
+  }
+}
 
 #' @noRd
 #' @importFrom rlang dots_list

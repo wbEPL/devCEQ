@@ -1,10 +1,26 @@
-
-# UI structure loader from Excel ---------------------------------------------
-#' @noRd
+#' Loads the inputs structure data into R  from an excel file.
+#'
+#' @param path path to a pre-defined excel file
+#'
+#' @returns a data frame with the detailed inputs structure.
+#'
 #'
 #' @export
 #' @importFrom readxl read_excel
 #' @importFrom tidyselect any_of contains
+#' @importFrom dplyr select rename_with mutate across
+#' @examples
+#' \dontrun{
+#' system.file(
+#'   "examples",
+#'   "ceq_example_simple",
+#'   "data-app",
+#'   "simple-inputs-structure.xlsx",
+#'   package = "devCEQ"
+#' ) |> load_input_xlsx()
+#' }
+#'
+#'
 load_input_xlsx <- function(path) {
   readxl::read_excel(path, sheet = 1) %>%
     tidyr::fill(tidyselect::contains("group")) %>%
@@ -16,32 +32,41 @@ load_input_xlsx <- function(path) {
       .fn = ~ stringr::str_replace_all(., "para__", ""),
       .cols = tidyselect::contains("para__")
     ) %>%
-    mutate(
+    dplyr::mutate(
       id = inputId,
       base_value = value,
       row = row_number(),
       label = ifelse(is.na(label), id, label),
-      across(tidyselect::any_of(c("value", "min", "max", "step", "factor")),
+      dplyr::across(tidyselect::any_of(c("value", "min", "max", "step", "factor")),
              ~ suppressWarnings(as.numeric(.))),
       `max` = ifelse(`max` < value, NA_real_, `max`),
       `min` = ifelse(`min`> value, NA_real_, `min`)
-    ) #%>%
-    # group_by(group_name, id, type, factor, base_value)# %>%
-    # nest() %>%
-    # rename(para = data) %>%
-    # ungroup()
+    )
 }
 
 
 
 
-#' Test if RAW inputs structure generate a set of UIs
+#' @describeIn load_input_xlsx Test if RAW inputs structure generate a set of UIs
 #'
-#' @noRd
-#'
-#' @export
+#' @param inp_raw_str inputs structure as returned by `load_input_xlsx()`
+#' @param fn_inp_str,fn_inp_ui,ns internal supporting functions.
 #' @importFrom readxl read_excel
 #' @importFrom purrr transpose
+#' @export
+#' @examples
+#' \dontrun{
+#' system.file(
+#'   "examples",
+#'   "ceq_example_simple",
+#'   "data-app",
+#'   "simple-inputs-structure.xlsx",
+#'   package = "devCEQ"
+#' ) |>
+#'   load_input_xlsx() |>
+#'   inp_str_test()
+#' }
+#'
 inp_str_test <-
   function(inp_raw_str,
            fn_inp_str = gen_inp_str,
@@ -74,13 +99,12 @@ inp_str_test <-
 
 # UI generators -----------------------------------------------------------
 
-
-
-#' @describeIn gen_inp_str
+#' @describeIn load_input_xlsx Wrapper around `gen_inp_str()` used for providing tables structure
 #'
-#' @noRd
+#' @param inp_table_str table with the input structure
+#' @param ... passed to functions within
 #' @export
-gen_inp_str_front <- function(inp_table_str = NULL,...) {
+gen_inp_str_front <- function(inp_table_str = NULL, ...) {
   function(inp_raw_str, n_choices, ns = NS(NULL), ... ) {
     gen_inp_str(inp_raw_str = inp_raw_str,
                 n_choices = n_choices,
@@ -90,9 +114,13 @@ gen_inp_str_front <- function(inp_table_str = NULL,...) {
   }
 }
 
-#' Generate dataframe of the input structure
+#' @describeIn load_input_xlsx Generate a data frame of the inputs UI used in creating the inputs page UI
 #'
-#' @noRd
+#' @param inp_raw_str inputs structure as returned by `load_input_xlsx()`
+#' @param n_choices number of policy choices to generate
+#' @param inp_table_str structure of tables under which inputs are organized (NULL by default)
+#' @param ns namestapce function `NS(NULL)` by default
+#'
 #' @import shiny
 #' @importFrom rlang dots_list
 #' @importFrom dplyr select mutate
@@ -210,8 +238,6 @@ gen_inp_str <-
 
 # UI Generators --------------------------------------------------------------
 
-
-
 #' Generate numeric input from the list of arguments
 #'
 #' @noRd
@@ -220,7 +246,6 @@ gen_inp_str <-
 #' @importFrom shiny numericInput
 #' @importFrom bsplus shinyInput_label_embed shiny_iconlink bs_embed_popover
 #' @importFrom tippy tippy
-#' @export
 gen_num_inpt_ui <- function(..., nolable = FALSE) {
   inputs <-
     rlang::dots_list(...)%>%
@@ -272,7 +297,6 @@ gen_num_inpt_ui <- function(..., nolable = FALSE) {
 #' @importFrom rlang dots_list
 #' @importFrom magrittr extract
 #' @importFrom shiny textInput
-#' @export
 gen_text_inpt_ui<- function(..., value = NULL, nolable = FALSE) {
   rlang::dots_list(...) %>%
     unlist(recursive = T) %>%
@@ -290,7 +314,6 @@ gen_text_inpt_ui<- function(..., value = NULL, nolable = FALSE) {
 #' @importFrom rlang dots_list
 #' @importFrom magrittr extract
 #' @importFrom shiny checkboxInput
-#' @export
 gen_checkbox_inpt_ui<- function(..., nolable = FALSE) {
   inputs <-
     rlang::dots_list(...) %>%
@@ -324,7 +347,6 @@ gen_checkbox_inpt_ui<- function(..., nolable = FALSE) {
 #' @importFrom rlang dots_list
 #' @importFrom magrittr extract
 #' @importFrom shiny radioButtons
-#' @export
 gen_radiobuttons_inpt_ui<- function(..., nolable = FALSE) {
   inputs <-
     rlang::dots_list(...) %>%
@@ -364,7 +386,6 @@ gen_radiobuttons_inpt_ui<- function(..., nolable = FALSE) {
 #' @importFrom magrittr extract
 #' @importFrom shiny markdown
 #' @importFrom stringr str_c
-#' @export
 gen_md_ui <- function(..., value = NULL, nolable = FALSE) {
   rlang::dots_list(...) %>%
     unlist(recursive = T) %>%
@@ -377,12 +398,24 @@ gen_md_ui <- function(..., value = NULL, nolable = FALSE) {
 
 
 
-#   Test functions -----------------------------------------------------------
+# Test functions -----------------------------------------------------------
 
-#' Test input tabs content generation process by providing basic data.
+#' @describeIn load_input_xlsx Test input page content generation in a single tab
 #'
-#' @noRd
+#' @param inp_raw_str,inp_tab_str,inp_table_str,n_choices input layout options
 #' @export
+#' @examples
+#' \dontrun{
+#' a <- system.file(
+#'     "examples",
+#'     "ceq_example_simple",
+#'     "data-app",
+#'     "simple-inputs-structure.xlsx",
+#'     package = "devCEQ"
+#'   ) |> load_input_xlsx()
+#' a |> test_gen_inp_front_simple()
+#' }
+#'
 test_gen_inp_front_simple <-
   function(inp_raw_str,
            inp_tab_str = NULL,
@@ -412,10 +445,19 @@ test_gen_inp_front_simple <-
 
   }
 
-#' Test input tabs content generation process by providing basic data.
-#'
-#' @noRd
+#' @describeIn load_input_xlsx Test input tabs content generation process by providing basic data.
 #' @export
+#' @examples
+#' \dontrun{
+#' a <- system.file(
+#'     "examples",
+#'     "ceq_example_simple",
+#'     "data-app",
+#'     "simple-inputs-structure.xlsx",
+#'     package = "devCEQ"
+#'   ) |> load_input_xlsx()
+#' a |> test_gen_inp_front_tabs()
+#' }
 test_gen_inp_front_tabs <-
   function(inp_raw_str,
            inp_tab_str = NULL,
@@ -438,10 +480,18 @@ test_gen_inp_front_tabs <-
   }
 
 
-#' Test input tabs content generation process by providing basic data.
-#'
-#' @noRd
-#' @export
+#' @describeIn load_input_xlsx Test input tabs content generation process by providing basic data.
+#' @examples
+#' \dontrun{
+#' system.file(
+#'     "examples",
+#'     "ceq_example_simple",
+#'     "data-app",
+#'     "simple-inputs-structure.xlsx",
+#'     package = "devCEQ"
+#'   ) |>
+#'   test_gen_inp_front_tabs_file()
+#' }
 test_gen_inp_front_tabs_file <- function(path) {
   inp_raw_str <- path %>% load_input_xlsx()
   inp_tab_str <- path %>% load_inputtabs_xlsx()

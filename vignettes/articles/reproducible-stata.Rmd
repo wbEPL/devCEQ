@@ -1,0 +1,27 @@
+---
+title: "Making a reproducible simulation in Stata"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(devCEQ)
+```
+
+
+From my experience, reproducing microsimulation results is the key bottleneck of the Stata to R translation, which delays progress substantially, therefore, I suggest the best data exchange strategy. 
+
+Step 1. Make sure that we can reproduce Stata code as is between PCs.
+Step 2. Convert Existing Stata workflow to the GitHub based version control of code + OneDrive for the read-only raw data exchange.
+Step 3. Start modifying Stata routines to make is transparent and translatable:
+1.	Separate pre-simulation data
+2.	Convert policy parameters to “globals”
+3.	Make sure that those globals are not used in the grossing-up.
+Step 4. Reproducing Stata using R.
+Step 5. Creating Shiny App
+

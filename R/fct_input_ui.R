@@ -1,10 +1,6 @@
-#' Loads the inputs structure data into R  from an excel file.
-#'
-#' @param path path to a pre-defined excel file
-#'
-#' @returns a data frame with the detailed inputs structure.
-#'
-#'
+#' Loads the input structure data into R  from an Excel file.
+#' @param path path to a pre-defined Excel file#'
+#' @returns a data frame with the detailed input structure.
 #' @export
 #' @importFrom readxl read_excel
 #' @importFrom tidyselect any_of contains
@@ -44,34 +40,34 @@ load_input_xlsx <- function(path) {
     )
 }
 
-
-
-
-#' @describeIn load_input_xlsx Test if RAW inputs structure generate a set of UIs
-#'
+#' @describeIn load_input_xlsx Test if RAW inputs structure generates a set of UI
+#' elements and returns a very long list with HTML tags and elements used for
+#' building the UI. If it fails, it indicates that the app will likely fail
+#' as well.
 #' @param inp_raw_str inputs structure as returned by `load_input_xlsx()`
 #' @param fn_inp_str,fn_inp_ui,ns internal supporting functions.
+#' @export
 #' @importFrom readxl read_excel
 #' @importFrom purrr transpose
-#' @export
 #' @examples
 #' \dontrun{
-#' system.file(
-#'   "examples",
-#'   "ceq_example_simple",
-#'   "data-app",
-#'   "simple-inputs-structure.xlsx",
-#'   package = "devCEQ"
-#' ) |>
-#'   load_input_xlsx() |>
-#'   inp_str_test()
+# system.file(
+#   "examples",
+#   "ceq_example_simple",
+#   "data-app",
+#   "simple-inputs-structure.xlsx",
+#   package = "devCEQ"
+# ) |>
+#   load_input_xlsx() |>
+#   inp_str_test()
 #' }
 #'
 inp_str_test <-
   function(inp_raw_str,
            fn_inp_str = gen_inp_str,
            fn_inp_ui = gen_tabinp_ui,
-           ns = NS(NULL)) {
+           ns = NS(NULL),
+           ...) {
     all_structures <-
       c(1:3) %>%
       map( ~ {
@@ -99,7 +95,10 @@ inp_str_test <-
 
 # UI generators -----------------------------------------------------------
 
-#' @describeIn load_input_xlsx Wrapper around `gen_inp_str()` used for providing tables structure
+#' @describeIn load_input_xlsx Wrapper around `gen_inp_str()` used for
+#' providing table structure inside other functions. Returns `gen_inp_str()`
+#' function with predefined parameters and data that can be executed for
+#' generating input structure.
 #'
 #' @param inp_table_str table with the input structure
 #' @param ... passed to functions within
@@ -119,7 +118,7 @@ gen_inp_str_front <- function(inp_table_str = NULL, ...) {
 #' @param inp_raw_str inputs structure as returned by `load_input_xlsx()`
 #' @param n_choices number of policy choices to generate
 #' @param inp_table_str structure of tables under which inputs are organized (NULL by default)
-#' @param ns namestapce function `NS(NULL)` by default
+#' @param ns name space function `NS(NULL)` by default
 #'
 #' @import shiny
 #' @importFrom rlang dots_list
@@ -445,18 +444,20 @@ test_gen_inp_front_simple <-
 
   }
 
-#' @describeIn load_input_xlsx Test input tabs content generation process by providing basic data.
+#' @describeIn load_input_xlsx Test input UI generation process by providing
+#' path to the inputs structure Excel file. It Launches a shiny app with
+#' all inputs properly rendered in a single input tab.
 #' @export
 #' @examples
 #' \dontrun{
-#' a <- system.file(
-#'     "examples",
-#'     "ceq_example_simple",
-#'     "data-app",
-#'     "simple-inputs-structure.xlsx",
-#'     package = "devCEQ"
-#'   ) |> load_input_xlsx()
-#' a |> test_gen_inp_front_tabs()
+# a <- system.file(
+#     "examples",
+#     "ceq_example_simple",
+#     "data-app",
+#     "simple-inputs-structure.xlsx",
+#     package = "devCEQ"
+#   ) |> load_input_xlsx()
+# a |> test_gen_inp_front_tabs()
 #' }
 test_gen_inp_front_tabs <-
   function(inp_raw_str,
@@ -480,17 +481,19 @@ test_gen_inp_front_tabs <-
   }
 
 
-#' @describeIn load_input_xlsx Test input tabs content generation process by providing basic data.
+#' @describeIn load_input_xlsx Does the same as `test_gen_inp_front_tabs()`, but
+#' on top of input generation also creates tabs for switching between groups of
+#' inputs.
 #' @examples
 #' \dontrun{
-#' system.file(
-#'     "examples",
-#'     "ceq_example_simple",
-#'     "data-app",
-#'     "simple-inputs-structure.xlsx",
-#'     package = "devCEQ"
-#'   ) |>
-#'   test_gen_inp_front_tabs_file()
+# system.file(
+#     "examples",
+#     "ceq_example_simple",
+#     "data-app",
+#     "simple-inputs-structure.xlsx",
+#     package = "devCEQ"
+#   ) |>
+#   test_gen_inp_front_tabs_file()
 #' }
 test_gen_inp_front_tabs_file <- function(path) {
   inp_raw_str <- path %>% load_input_xlsx()

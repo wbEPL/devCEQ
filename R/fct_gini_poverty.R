@@ -167,11 +167,11 @@ get_dta_gini <- function(
     dplyr::summarise(
       dplyr::across(
         any_of(income_vars_tbl$var),
-        ~ calc_gini(., !!wt_var_sym),
+        ~ calc_gini(., !!wt_var_sym) * 100,
         .names = "Gini_____{.col}"),
       dplyr::across(
         any_of(income_vars_tbl$var),
-        ~ calc_theil(., !!wt_var_sym),
+        ~ calc_theil(., !!wt_var_sym) * 100,
         .names = "Theil_____{.col}"),
       ) %>%
     tidyr::pivot_longer(
@@ -298,7 +298,7 @@ get_dta_pov <- function(
           alpha = 0,
           w = !!wt_var_sym,
           na.rm = TRUE
-        ),
+        ) * 100,
 
         `headcount` = ~ calc_pov_fgt(
           x = .,
@@ -306,7 +306,7 @@ get_dta_pov <- function(
           alpha = 0,
           w = !!wt_var_sym,
           na.rm = TRUE
-        ) * sum(!!wt_var_sym, na.rm = TRUE),
+        ) * sum(!!wt_var_sym, na.rm = TRUE) |> round(),
 
         `gap` = ~ calc_pov_fgt(
           x = .,
@@ -314,7 +314,7 @@ get_dta_pov <- function(
           alpha = 1,
           w = !!wt_var_sym,
           na.rm = TRUE
-        ),
+        ) * 100,
 
         `severity` = ~ calc_pov_fgt(
           x = .,
@@ -322,7 +322,7 @@ get_dta_pov <- function(
           alpha = 2,
           w = !!wt_var_sym,
           na.rm = TRUE
-        )
+        ) * 100
       ),
       .names = "{.fn}"
     ))  %>%

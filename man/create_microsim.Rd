@@ -2,8 +2,7 @@
 % Please edit documentation in R/fct_create_microsim.R
 \name{create_microsim}
 \alias{create_microsim}
-\title{Create a directory with key apps' files and `app.R` needed for development
-and deployment of the microsimulation Shiny app}
+\title{Create a microsimulation app's folder}
 \usage{
 create_microsim(
   path,
@@ -27,7 +26,8 @@ new session, or #' should the current RStudio session switch to that project?}
 The return value, if any, from executing the function.
 }
 \description{
-Copies a template app folder structure to the location/name
-  specified. Creates `app.R` as well as the RStudio project to simplify
-  the  workflow.
+Create a directory with key app's files and `app.R` needed for
+development and deployment of the microsimulation Shiny app Copies a
+template app folder structure to the location/name specified. Creates the
+RStudio project to simplify the  workflow.
 }

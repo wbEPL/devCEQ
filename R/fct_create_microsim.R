@@ -1,9 +1,9 @@
-#' Create a directory with key apps' files and `app.R` needed for development
-#' and deployment of the microsimulation Shiny app
+#' Create a microsimulation app's folder
 #'
-#' @description Copies a template app folder structure to the location/name
-#'   specified. Creates `app.R` as well as the RStudio project to simplify
-#'   the  workflow.
+#' @description Create a directory with key app's files and `app.R` needed for
+#' development and deployment of the microsimulation Shiny app Copies a
+#' template app folder structure to the location/name specified. Creates the
+#' RStudio project to simplify the  workflow.
 #'
 #' @param path full path to the place where the app's folder must be along with
 #'   the not yet existing app folder name. The folder will be created automatically.

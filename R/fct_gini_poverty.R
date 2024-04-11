@@ -210,8 +210,7 @@ get_dta_gini <- function(
 #' Calculate poverty  for a single simulation at the national poverty line
 #'
 #' @inheritParams get_dta_gini
-#' @param poverty_line numeric, indicating the poverty line in Indonesian Rupiah
-#'     per person per day.
+#' @param poverty_line numeric, indicating the poverty line in the  currency used.
 #'
 #' @importFrom tidyr pivot_longer
 #' @importFrom tidyselect any_of

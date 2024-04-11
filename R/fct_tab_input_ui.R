@@ -10,7 +10,7 @@ gen_tabinp_ui_front <-
   function(inp_tab_str = NULL,
            inp_table_str = NULL,
            scroll_panel_style =
-             "max-height: calc(100vh - 12rem); overflow-y: scroll; overflow-x: hidden;",
+             "max-height: calc(100vh - 15rem); overflow-y: scroll; overflow-x: hidden;",
            ...) {
     function(inp_ui_str, ns = NS(NULL), type = "fixed", add_rest_btn = TRUE, ... ) {
     gen_tabinp_ui(inp_ui_str,
@@ -43,7 +43,7 @@ gen_tabinp_ui <-
            type = "fixed",
            add_rest_btn = T,
            scroll_panel_style =
-             "max-height: calc(100vh - 12rem); overflow-y: scroll; overflow-x: hidden;" ,
+             "max-height: calc(100vh - 15rem); overflow-y: scroll; overflow-x: hidden;" ,
            ...) {
 
 

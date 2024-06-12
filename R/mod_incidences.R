@@ -28,6 +28,7 @@ mod_incidences_server <-
            make_bar_fn = make_bar_dta,
            n_dec_label = "Number of deciles",
            dec_by_label = "Deciles by:",
+           tab_title = NULL,
            ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns
@@ -142,7 +143,11 @@ mod_incidences_server <-
       output$title <-
         renderUI({
           req(incidence_esimates())
-          incidence_esimates()$title %>% h3()
+          if (is.null(tab_title)) {
+            incidence_esimates()$title %>% h3()
+          } else {
+            tab_title |> h3()
+          }
         })
 
 

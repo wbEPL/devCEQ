@@ -33,7 +33,7 @@ mod_dev_res_ui <- function(id){
 #'
 #' @noRd
 #' @export
-mod_dev_res_server <- function(id, sim_res = reactive(NULL)){
+mod_dev_res_server <- function(id, sim_res = reactive(NULL), ...){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 

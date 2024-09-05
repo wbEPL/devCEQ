@@ -1,22 +1,17 @@
-
-
-
-# UI generaors  -----------------------------------------------------------
-
-
-
 #' Generates a function based on `gen_tabinp_ui` for generating tabs UI
 #'
 #' @param inp_tab_str is a tibble with the structure of tabs in the app.
 #' Requires two columns: `tab_name` and `group_order`. The first one indicates
 #' the name of the tab. The second one indicates the order of a well-group for
 #' for including under this tab.
+#'
 #' @export
 gen_tabinp_ui_front <-
   function(inp_tab_str = NULL,
            inp_table_str = NULL,
            scroll_panel_style =
-             "max-height: calc(100vh - 12rem); overflow-y: scroll; overflow-x: hidden;") {
+             "max-height: calc(100vh - 15rem); overflow-y: scroll; overflow-x: hidden;",
+           ...) {
     function(inp_ui_str, ns = NS(NULL), type = "fixed", add_rest_btn = TRUE, ... ) {
     gen_tabinp_ui(inp_ui_str,
                   inp_tab_str = inp_tab_str,
@@ -48,7 +43,7 @@ gen_tabinp_ui <-
            type = "fixed",
            add_rest_btn = T,
            scroll_panel_style =
-             "max-height: calc(100vh - 12rem); overflow-y: scroll; overflow-x: hidden;" ,
+             "max-height: calc(100vh - 15rem); overflow-y: scroll; overflow-x: hidden;" ,
            ...) {
 
 
@@ -218,7 +213,6 @@ gen_tabinp_ui <-
 
 # Helpers -----------------------------------------------------------------
 
-
 #' Clean excel-red structure of the tabs
 #'
 #' @noRd
@@ -299,18 +293,15 @@ fct_inp_tab_str <- function(dta) {
 }
 
 
-
 # Supporting UI -----------------------------------------------------------
 
-
-#' Generate rest buttons for each policy scenario
+#' Generate reset buttons for each policy scenario
 #'
 #' @noRd
-#'
-#' @export
 gen_policy_reset <- function(inp_ui_str,
                              input_cols_spec = tibble(),
-                             ns = NS(NULL)) {
+                             ns = NS(NULL),
+                             ...) {
   inp_ui_str %>%
     dplyr::distinct(policy_choice) %>%
     mutate(single_ui = map(policy_choice, ~ {
@@ -320,11 +311,9 @@ gen_policy_reset <- function(inp_ui_str,
     dplyr::left_join(input_cols_spec, by = "policy_choice")
 }
 
-#' Generate UI for policyu names header
+#' Generate UI for policy names header
 #'
 #' @noRd
-#'
-#' @export
 gen_header_ui <- function(heads, resets = NULL) {
 
   if (isTruthy(resets)) {
@@ -487,8 +476,6 @@ gen_all_inp_tables <- function(inp_ui_str, inp_table_str) {
 #' Wrap structured data frame into columns
 #'
 #' @noRd
-#'
-#' @export
 wrap_in_cols <-
   function(dta, ...) {
     dta %>%
@@ -511,9 +498,8 @@ wrap_in_cols <-
 # Loaders -----------------------------------------------------------------
 
 
-
-#' @noRd
-#'
+#' @describeIn load_input_xlsx Loads RAW structure of the tabs that should be
+#' used for structuring inputs
 #' @export
 #' @importFrom readxl read_excel excel_sheets
 load_inputtabs_xlsx <- function(path) {
@@ -529,8 +515,8 @@ load_inputtabs_xlsx <- function(path) {
   }
 }
 
-#' @noRd
-#'
+#' @describeIn load_input_xlsx Loads RAW structure of the tables for organizing
+#' inputs on the input page.
 #' @export
 #' @importFrom readxl read_excel excel_sheets
 #' @importFrom tidyr pivot_longer pivot_longer

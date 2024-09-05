@@ -1,5 +1,11 @@
 ---
 title: "Running microsimulations in Stata"
+author: "Eduard Bukin"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{RunStata}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
@@ -141,13 +147,13 @@ To run the full simulation in Stata, we need to:
 
 1.  Open `/02.Dofile/00_master.do` with previous changes and make sure that the pre-simulation step was executed correctly.
 
-2. Comment out the pre-simulation stage (lines 83-89).
+2.  Comment out the pre-simulation stage (lines 83-89).
 
 3.  Execute the full simulation from the beginning to the end (line 1 to the end of the `00_master.do`)
 
-4. An Excel file with the simulation results will open in the end and you will be able to explore the simulation results.
+4.  An Excel file with the simulation results will open in the end and you will be able to explore the simulation results.
 
-![](man/figures/stata-run-workflow.gif)
+![](images/stata-run-workflow.gif)
 
 ### Saving intermediate results from Stata
 

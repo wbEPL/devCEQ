@@ -11,6 +11,6 @@ data-temp/
 data-test/
 docs
 inst/doc
-*.Rd
+
 *.dcf
 *.Rprof

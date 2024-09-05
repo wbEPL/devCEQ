@@ -105,7 +105,9 @@ CEQ_server <- function(
     sim_res = sim_results,
     postsim_res = postsim_results,
     ceq_progress = ceq_progress,
-    active_tab = active_tab
+    active_tab = active_tab,
+    presim = presim_dta,
+    ...
   )
 
   # Dev results display  ==================================================

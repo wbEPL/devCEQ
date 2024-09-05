@@ -36,7 +36,9 @@ mod_inp_tabs_content_ui <- function(id) {
         DT::DTOutput(ns("inputs_summary_dt"))
       )
     ) %>%
-      div(id = ns("policy_choices_holder")),
+      div(id = ns("policy_choices_holder")) %>%
+      div(id = ns("policy_choices_holder_1"))%>%
+      div(id = ns("policy_choices_holder_2")),
 
     # Place for the footer just in case
     mod_inp_tab_footer_ui(id),

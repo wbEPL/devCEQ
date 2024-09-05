@@ -305,9 +305,17 @@ compile_guides <- function(ns = NS(NULL)) {
       position = "bottom",
       show_btns = TRUE,
       on_highlight_started = str_c(
-        'function() {
-        $("#main_sidebar a[data-value=\'Results\']").tab(\'show\');
-      }')
+        'function() {$("#main_sidebar a[data-value=\'Results\']").tab(\'show\');}')
+    )$
+
+    step(
+      el = ns("policy_choices_holder_2"),
+      is_id = TRUE,
+      title = "Return to the Policy Choices page",
+      position = "left-center",
+      show_btns = TRUE,
+      on_highlight_started = str_c(
+        'function() {$("#main_sidebar a[data-value=\'pc2019\']").tab(\'show\');}')
     )
 
 

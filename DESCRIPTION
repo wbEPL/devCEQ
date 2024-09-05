@@ -1,7 +1,7 @@
 Package: devCEQ
 Type: Package
 Title: Development platform for Shiny fiscal microsimulations
-Version: 0.0.0.9028
+Version: 0.0.0.9029
 Authors@R: person(given = "Eduard", family = "Bukin", role = c("aut", "cre"),
                   email = "edwardbukin@gmail.com")
 Description: Contains a instrastrucute for developing R Shiny apps with CEQ microsimulations.

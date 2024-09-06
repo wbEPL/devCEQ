@@ -175,7 +175,7 @@ compile_guides <- function(ns = NS(NULL)) {
     step(
       el = ns("inputs_controls_holder"),
       is_id = TRUE,
-      title = "Here you can manipulate different policy options.",
+      title = "Here you can change the different policy options.",
       # description = shiny::markdown(
       #   "More elaborate description of the step or some visual aid in form of a GIF images."
       # ),
@@ -195,7 +195,7 @@ compile_guides <- function(ns = NS(NULL)) {
     step(
       el = ns("policy_choices_tabs_1"),
       is_id = TRUE,
-      title = "Then, modify relevant policy choices one by one.",
+      title = "Then, modify relevant policy parameters one by one.",
       position = "left",
       show_btns = TRUE
     )$
@@ -203,7 +203,7 @@ compile_guides <- function(ns = NS(NULL)) {
     step(
       el = ns("policy_names_holder"),
       is_id = TRUE,
-      title = "Provide self-explaining titles of the simulated scenarios.",
+      title = "Provide self-explanatory titles of the simulated scenarios.",
       position = "bottom",
       show_btns = TRUE
     )$
@@ -213,7 +213,7 @@ compile_guides <- function(ns = NS(NULL)) {
       is_id = TRUE,
       title = "Revise inputs.",
       description =
-        shiny::markdown("Watch out for limitations within which policy choices
+        shiny::markdown("Be mindful of limitations within which policy choices
                         could be modified. Scroll down to see all policy options."),
       position = "left-center",
       show_btns = TRUE
@@ -243,10 +243,10 @@ compile_guides <- function(ns = NS(NULL)) {
       el = ns("input_tabs_nav_holder_3"),
       is_id = TRUE,
       title =
-        "'Summary' tab contains a table with all policy inputs compared side-by side.",
+        "'Summary' tab contains a table with all policy parameters compared side-by side.",
       description =
         shiny::markdown("It compares provided values with the baseline and
-                        highlights inputs that are different from each other"),
+                        highlights inputs that are different from the baseline"),
       position = "right-bottom",
       show_btns = TRUE#,
       # on_highlight_started = str_c(
@@ -260,7 +260,7 @@ compile_guides <- function(ns = NS(NULL)) {
       is_id = TRUE,
       title = "Press Run to execute simulations.",
       description =
-        shiny::markdown("'Run' must be pressed every time when we've updated desired policy choices."),
+        shiny::markdown("'Run' must be pressed every time when the desired policy choices are updated."),
       position = "right",
       show_btns = TRUE
     )$
@@ -272,7 +272,7 @@ compile_guides <- function(ns = NS(NULL)) {
       description =
         shiny::markdown("Such file can be used to restore old policy choices
                         and continue modifying them. This file has an
-                        app-specific extencion `.ceqsim`"),
+                        app-specific extension `.ceqsim`"),
       position = "right",
       show_btns = TRUE
     )$

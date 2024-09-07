@@ -213,7 +213,7 @@ compile_guides <- function(ns = NS(NULL)) {
       is_id = TRUE,
       title = "Revise inputs.",
       description =
-        shiny::markdown("Be mindful of limitations within which policy choices
+        shiny::markdown("Be mindful of limitations within which policy parameters
                         could be modified. Scroll down to see all policy options."),
       position = "left-center",
       show_btns = TRUE
@@ -230,7 +230,7 @@ compile_guides <- function(ns = NS(NULL)) {
     step(
       el = ns("input_tabs_nav_holder"),
       is_id = TRUE,
-      title = "Navigate across all policy choices using these tabs.",
+      title = "Navigate across all policy parameters using these tabs.",
       position = "right-center",
       show_btns = TRUE#,
       # on_highlight_started = str_c(
@@ -260,7 +260,7 @@ compile_guides <- function(ns = NS(NULL)) {
       is_id = TRUE,
       title = "Press Run to execute simulations.",
       description =
-        shiny::markdown("'Run' must be pressed every time when the desired policy choices are updated."),
+        shiny::markdown("'Run' must be pressed every time when the desired policy parameters are updated."),
       position = "right",
       show_btns = TRUE
     )$
@@ -270,7 +270,7 @@ compile_guides <- function(ns = NS(NULL)) {
       is_id = TRUE,
       title = "Download simulaiton inputs in a single file for later use",
       description =
-        shiny::markdown("Such file can be used to restore old policy choices
+        shiny::markdown("Such file can be used to restore old policy parameters
                         and continue modifying them. This file has an
                         app-specific extension `.ceqsim`"),
       position = "right",

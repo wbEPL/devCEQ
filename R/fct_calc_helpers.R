@@ -1,5 +1,10 @@
 
-#' Calculate N qualtiles of a variables from the CEQ results
+#' @title Calculate N quantiles of a variable
+#' @name deciles
+#' 
+NULL 
+
+#' @describeIn deciles Calculate N qualtiles of a variables from the CEQ results
 #'
 #' @inheritParams get_dta_gini
 #' @param var character of a single variable name or an unnamed
@@ -21,13 +26,25 @@
 #' @importFrom glue glue
 calc_deciles <-
   function(dta,
-           dec_var, #= get_inc_nm()$var,
+           dec_var, #get_inc_nm()$var,
            n_dec = 10,
-           wt_var = get_wt_nm(),
+           wt_var = NULL, #get_wt_nm(),
            dec_var_name = "{.col}_decile",
-           dec_min_level = NULL,
-           dec_max_level = NULL,
            ...) {
+
+    # Check if any of the dec_var are missing in the data
+    missing_vars <- dec_var[!dec_var %in% names(dta)]
+    if (length(missing_vars) > 0) {
+      cli::cli_warn(
+        "Variable(s) {.var {missing_vars}} not found in the data. Skipping these variable(s)."
+      )
+    }
+
+    if (length(missing_vars) == length(dec_var)) {
+      cli::cli_abort(
+        "None of the specified {.var {missing_vars}} variables are present in the data."
+      )
+    }
 
     if (is.null(wt_var)) {
       warning("`wt_var` was not specified. ",
@@ -45,51 +62,35 @@ calc_deciles <-
     }
 
     wt_var_sym <- sym(wt_var)
-    dta <-
-      dta %>%
+    dta %>%
       mutate(
-        across(any_of(dec_var),
-               ~ statar::xtile(., n = n_dec, wt = !!wt_var_sym) %>%
-                 factor() #%>%
-               # fct_reorder(., ., .fun = as.numeric)
-               ,
-               .names = dec_var_name
+        across(
+          any_of(dec_var),
+          ~ get_quantiles_stata(., n = n_dec, wt = !!wt_var_sym),
+          .names = dec_var_name
         )
       ) %>%
       select(-any_of("dummy_weighting_variable")) %>%
       select(contains("decile"), everything())
-
-
-    dec_var_name_dta <- glue::glue(dec_var_name, .col = dec_var)
-    if (!is.null(dec_min_level)) {
-      dta <-
-        dta %>%
-        mutate(
-          across(
-            any_of(dec_var_name_dta),
-            ~ fct_relabel(., ~ case_when(.x == .x[[1]] ~ dec_min_level,
-                                         TRUE ~ .x))
-          )
-        )
-    }
-
-    if (!is.null(dec_max_level)) {
-      dta <-
-        dta %>%
-        mutate(
-          across(
-            any_of(dec_var_name_dta),
-            ~ fct_relabel(., ~ case_when(.x == .x[[length(.x)]] ~ dec_max_level,
-                                         TRUE ~ .x))
-          )
-        )
-    }
-    dta
   }
 
+#' @describeIn deciles Helper function to get quantiles using statar::xtile
+#' @importFrom statar xtile
+get_quantiles_stata <- function(x, n = 10, wt = NULL) {
+  statar::xtile(x, n = n, wt = wt) |> factor()
+}
 
 
-#' Aggregates all relevant CEQ results by variable.
+#' @describeIn deciles Helper function to get quantiles using collapse::fquantile
+#' 
+#' @importFrom collapse fquantile
+get_quantiles <- function(x, n = 10, wt = NULL, labels = NULL, type = 7) {
+  probs <- seq(0, 1, length.out = n + 1)
+  q <- collapse::fquantile(x, probs = probs, type = type, w = wt)
+  cut(x, breaks = q, include.lowest = TRUE, labels = FALSE) |> factor()
+}
+
+#' @describeIn Aggregates all relevant CEQ results by variable.
 #'
 #' @inheritParams calc_deciles
 #' @param by_var character name of the grouping variable
@@ -141,7 +142,7 @@ calc_agg_by <-
 
 
 
-#'  aggregate cariables of a single simulaiton by decile
+#' @describeIn aggregate cariables of a single simulaiton by decile
 #'
 #' @importFrom forcats fct_relevel fct_drop
 #' @export
@@ -194,7 +195,7 @@ agg_by_deciles <-
       )
   }
 
-#' aggregates specific variables from the simulation resutls.
+#' @describeIn aggregates specific variables from the simulation resutls.
 #' @noRd
 #' @export
 #' @importFrom purrr map

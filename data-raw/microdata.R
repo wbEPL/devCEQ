@@ -103,40 +103,44 @@ ink_total <- ink_helth + ink_education
 yf <- yc + ink_helth + ink_education
 
 # Micro dta
-dta_hh <- 
-tibble(
-  hhid = 1:n_hh,
-  hhwt = runif(n_hh, 0.5, 2),
-  hhsize = hh_size,
-  group_1 = group_1,
-  group_2 = group_2,
-  group_3 = group_3,
-  ym = ym,
-  yn = yn,
-  yp = yp,
-  yg = yg,
-  yd = yd,
-  yc = yc,
-  yf = yf,
-  ben_pension = ben_pen,
-  ben_unemployment = ben_unemp,
-  ben_total = ben_pen + ben_unemp,
-  dtx_prog1 = dtx_prog1,
-  dtx_prog2 = dtx_prog2,
-  dtx_prog3 = dtx_prog3,
-  dtx_total = dtx_total,
-  dtr_prog1 = dtr_prog1,
-  dtr_prog2 = dtr_prog2,
-  sub_energy = sub_energy,
-  sub_food = sub_food,
-  sub_total = sub_total,
-  itx_vat = itx_vat,
-  itx_excise = itx_excise,
-  itx_total = itx_total,
-  ink_helth = ink_helth,
-  ink_education = ink_education,
-  ink_total = ink_total
-)
+dta_hh <-
+  tibble(
+    hhid = 1:n_hh,
+    hhwt = runif(n_hh, 0.5, 2),
+    hhsize = hh_size,
+    group_1 = group_1,
+    group_2 = group_2,
+    group_3 = group_3,
+    ym = ym,
+    yn = yn,
+    yp = yp,
+    yg = yg,
+    yd = yd,
+    yc = yc,
+    yf = yf,
+    ben_pension = ben_pen,
+    ben_unemployment = ben_unemp,
+    ben_total = ben_pen + ben_unemp,
+    dtx_prog1 = dtx_prog1,
+    dtx_prog2 = dtx_prog2,
+    dtx_prog3 = dtx_prog3,
+    dtx_total = dtx_total,
+    dtr_prog1 = dtr_prog1,
+    dtr_prog2 = dtr_prog2,
+    sub_energy = sub_energy,
+    sub_food = sub_food,
+    sub_total = sub_total,
+    itx_vat = itx_vat,
+    itx_excise = itx_excise,
+    itx_total = itx_total,
+    ink_helth = ink_helth,
+    ink_education = ink_education,
+    ink_total = ink_total
+  )
+
+# using data in the package
+usethis::use_data(dta_hh, overwrite = TRUE)
+
 
 # Sim direct taxes --------------------------------------------------------
 

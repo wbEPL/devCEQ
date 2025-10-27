@@ -47,7 +47,7 @@ get_inc_nm <- function(suffix = "_pc") {
     inc_vars <- f_var_inc()
   } 
   inc_vars |>
-    str_c(., suffix) %>%
+    str_c(suffix) %>%
     get_var_nm(suffix = suffix)
 }
 

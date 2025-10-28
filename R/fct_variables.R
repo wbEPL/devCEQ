@@ -87,8 +87,8 @@ f_var_dic_default <- function() {
       ~factor,  ~ var                , ~var_title,
 
       # Benefits
-      1, "ben_pension"   , "Pension benefits",
-      1, "ben_unemployment", "Unemployment benefits",
+      1, "ben_pen"   , "Pension benefits",
+      1, "ben_unemp", "Unemployment benefits",
       1, "ben_total"     , "Benefits total",
 
       # Direct Transfers

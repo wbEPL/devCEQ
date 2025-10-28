@@ -25,7 +25,6 @@ ym[sample(1:n, n * 0.01)] <- max(ym) * 5
 
 
 ## Simlate benefits --------------------------------------------------------
-
 sim_ben_share_value <- function(n, base_value, share_ben = 0.3, min_share = 0.1, max_share = 0.5,  if_zero = rep(FALSE, n)) {
   ben_values <- rep(0, n)
   ben_idx <- sample(1:n, n * share_ben)
@@ -35,11 +34,15 @@ sim_ben_share_value <- function(n, base_value, share_ben = 0.3, min_share = 0.1,
 }
 
 # Pension benefits:
-ben_pen <- sim_ben_share_value(n, ym, 0.3, 0.6, 1.7)
-ben_unemp <- sim_ben_share_value(n, ym, 0.2, 0.3, 0.8, ben_pen == 0)
+ben_pen <- gen_var_from_var(ym, corr = 0.25, probs = c(.7, .6, .5, .5), share_eligile = 0.9, min_share = 0.2, max_share = 0.6)
+ben_unemp <- gen_var_from_var(ym, corr = -0.015, probs = c(.8, .5, .1, .075, .025), share_eligile = 0.4, min_share = 0.2, max_share = 0.5)
+
 
 # Market income plys pension benefits ---------------------------------------------
 yp = ym + ben_pen
+
+check_vars_by_deciles(ym, ben_pen, ben_unemp, yp)
+
 
 # Direct taxes ----------------------------------------------------------------
 
@@ -66,33 +69,85 @@ dtx_total <- dtx_prog1 + dtx_prog2 + dtx_prog3
 yn <- ym - dtx_prog1 - dtx_prog2 - dtx_prog3
 yn[yn < 0] <- 0
 
+check_vars_by_deciles(ym, ben_pen, ben_unemp, yp, dtx_prog1, dtx_prog2, dtx_prog3, yn)
+
 # Direct transfers ---------------------------------------------------------
 
-dtr_prog1 <- sim_ben_share_value(n, ym, 0.5, 0.6, 1.7, yn < quantile(yn, 0.15))
-dtr_prog2 <- sim_ben_share_value(n, ym, 0.75, 0.3, 0.4, yn < quantile(yn, 0.15))
+dtr_prog1 <- gen_var_from_var(
+  yn,
+  corr = -0.05,
+  probs = c(0.9, 0.8, 0.25, 0.1, 0, 0, 0, 0),
+  share_eligile = 0.75,
+  min_share = 0.2,
+  max_share = 0.5
+)
+
+dtr_prog2 <-
+  gen_var_from_var(
+    yn,
+    corr = -0.05,
+    probs = c(0.9, 0.2, 0.1, 0, 0, 0,  0, 0, 0, 0),
+    share_eligile = 0.50,
+    min_share = 0.6,
+    max_share = 0.8
+  )
 
 # Direct subsidies ----------------------------------------------------------
-dsu_unempl <- ben_unemp
 
 # Gross income  ---------------------------------------------------------
-yg <- yp  +  dtr_prog1 + dtr_prog2 + dsu_unempl
+yg <- yp  +  dtr_prog1 + dtr_prog2 + ben_unemp
+
+check_vars_by_deciles(
+  ym,
+  ben_pen,
+  ben_unemp,
+  yp,
+  dtx_prog1,
+  dtx_prog2,
+  dtx_prog3,
+  yn,
+  dtr_prog1,
+  dtr_prog2,
+  yg
+)
 
 # Disposable income ---------------------------------------------------------
 yd <- yg - dtx_prog1 - dtx_prog2 - dtx_prog3
 
 # Indirect subsidies and taxes ---------------------------------------------
-sub_energy <- sim_ben_share_value(n, hh_size, 0.75, 0.5, 0.7)
-sub_food <- sim_ben_share_value(n, hh_size, 0.15, 0.5, 0.7, yd < quantile(yd, 0.25))
+sub_energy <- gen_var_from_var(
+  hh_size,
+  corr = 10.1,
+  probs = c(0.7, 0.6, 0.8, 0.9),
+  share_eligile = 0.7,
+  min_share = .2,
+  max_share = .3
+)
+
+sub_food <- gen_var_from_var(
+  hh_size,
+  corr = 10.1,
+  probs = c(0.5, 0.4, 0, 0, 0),
+  share_eligile = 0.7,
+  min_share = .5,
+  max_share = .75
+)
 sub_total <- sub_energy + sub_food
 
+check_vars_by_deciles(ym, ben_pen, ben_unemp, yp, dtx_prog1, dtx_prog2, dtx_prog3, yn,
+                       dtr_prog1, dtr_prog2, yg, yd, sub_energy, sub_food)
+
 # Consumption ----------------------------------------------------------
-itx_vat <- sim_ben_share_value(n, yd, 0.80, 0.07, 0.12, yd > 0)
-itx_excise <-sim_ben_share_value(n, yd, 0.70, 0.07, 0.12, yd > 0)
+itx_vat <- sim_ben_share_value(n, yd, 0.70, 0.07, 0.12)
+itx_excise <- sim_ben_share_value(n, yd, 0.70, 0.07, 0.12)
 itx_total <- itx_vat + itx_excise
 
 # Consumable income ---------------------------------------------------------
 yc <- yd - itx_vat - itx_excise + sub_energy + sub_food
 
+check_vars_by_deciles(ym, ben_pen, ben_unemp, yp, dtx_prog1, dtx_prog2, dtx_prog3, yn,
+                       dtr_prog1, dtr_prog2, yg, yd, sub_energy, sub_food,
+                       itx_vat, itx_excise, yc)
 
 # In kind ---------------------------------------------------------------
 ink_helth <- sim_ben_share_value(n, hh_size, 0.90, 0.5, 0.75) * mean(yg) / 10
@@ -101,6 +156,11 @@ ink_total <- ink_helth + ink_education
 
 # Final income ------------------------------------------------------------
 yf <- yc + ink_helth + ink_education
+
+check_vars_by_deciles(ym, ben_pen, ben_unemp, yp, dtx_prog1, dtx_prog2, dtx_prog3, yn,
+                       dtr_prog1, dtr_prog2, yg, yd, sub_energy, sub_food,
+                       itx_vat, itx_excise, yc,
+                       ink_helth, ink_education, yf)
 
 # Micro dta
 dta_hh <-
@@ -118,8 +178,8 @@ dta_hh <-
     yd = yd,
     yc = yc,
     yf = yf,
-    ben_pension = ben_pen,
-    ben_unemployment = ben_unemp,
+    ben_pen = ben_pen,
+    ben_unemp = ben_unemp,
     ben_total = ben_pen + ben_unemp,
     dtx_prog1 = dtx_prog1,
     dtx_prog2 = dtx_prog2,
@@ -127,6 +187,7 @@ dta_hh <-
     dtx_total = dtx_total,
     dtr_prog1 = dtr_prog1,
     dtr_prog2 = dtr_prog2,
+    dtr_total = dtr_prog1 + dtr_prog2,
     sub_energy = sub_energy,
     sub_food = sub_food,
     sub_total = sub_total,
@@ -138,8 +199,65 @@ dta_hh <-
     ink_total = ink_total
   )
 
-# using data in the package
+# Using data in the package --------------------------------------------
 usethis::use_data(dta_hh, overwrite = TRUE)
+
+# Generating simulation results data  --------------------------------------------
+
+dta_hh_sim1 <- dta_hh |> 
+  mutate(
+    across(
+      where(is.numeric) & any_of(get_inc_nm(suffix = NULL)$var),
+      ~ .x * runif(n(), 0.9, 1.1)
+    )
+  )
+
+dta_sim <-
+  list(
+    list(
+      policy_sim_raw = dta_hh,
+      policy_name = "Baseline"
+    ),
+    list(
+      policy_sim_raw = dta_hh_sim1,
+      policy_name = "Sim 1"
+    )
+  )
+
+
+usethis::use_data(dta_sim, overwrite = TRUE)
+
+
+dta_sim |> agg_sims_by_deciles(
+
+  dec_by = get_inc_nm(suffix = NULL)$var[1],
+  dec_vars = get_var_nm(suffix = NULL)$var,
+  wt_var = get_wt_nm()
+)
+
+
+# Checking by deciles data ---------------------------------------------
+
+dta_hh_agg <- 
+  dta_hh |>
+  calc_deciles(
+    dec_var = get_inc_nm(suffix = NULL)$var,
+    wt_var = get_wt_nm(),
+    n_dec = 10
+  ) |>
+  calc_agg_by(
+    vars = get_var_nm(suffix = NULL)$var,
+    by_var = "ym_decile",
+    wt_var = get_wt_nm()
+  ) 
+
+
+
+# # Varaibles missing from the aggregated data
+# setdiff(get_var_nm(suffix = NULL)$var, names(dta_hh))
+# setdiff(names(dta_hh), get_var_nm(suffix = NULL)$var)
+
+# using data in the package
 
 
 # Sim direct taxes --------------------------------------------------------
@@ -176,4 +294,5 @@ dta_hh |>
   ggplot() +
   geom_density(aes(x = value, colour = var)) +
   scale_x_log10()
+
 

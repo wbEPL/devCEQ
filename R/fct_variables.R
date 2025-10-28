@@ -6,7 +6,7 @@
 #' @importFrom dplyr mutate select filter
 #'
 #' @export
-get_var_nm <- function(vars = NULL, suffix = "_pc") {
+get_var_nm <- function(vars = NULL, suffix = NULL) {
   
   var_dic_local <- f_var_dic_default()
 
@@ -41,7 +41,7 @@ get_var_nm <- function(vars = NULL, suffix = "_pc") {
 #' @returns a data frame with variables names
 #'
 #' @export
-get_inc_nm <- function(suffix = "_pc") {
+get_inc_nm <- function(suffix = NULL) {
   inc_vars <- f_var_inc_default()
   if (exists("f_var_inc", mode = "function")) {
     inc_vars <- f_var_inc()
@@ -67,6 +67,21 @@ get_wt_nm <- function(suffix = NULL) {
     get_var_nm(suffix = suffix) %>%
     pull(var)
 }
+
+
+#' @describeIn get_var_nm Grouping variables IDs and labels in a data frame
+#' @returns a data frame with variables names
+#' @export
+get_group_nm <- function(suffix = NULL) {
+  group_vars <- f_var_group_default()
+  if (exists("f_var_group", mode = "function")) {
+    group_vars <- f_var_group()
+  } 
+  group_vars |>
+    str_c(suffix) %>%
+    get_var_nm(suffix = suffix)
+}
+
 
 #' @describeIn get_var_nm Helper to label duplicated variable names as different factors levels.
 #' 
@@ -155,4 +170,11 @@ f_var_wt_default <- function() {
 #'
 f_var_inc_default <- function() {
     c("ym", "yp", "yg", "yd", "yc", "yf")
+}
+
+
+#' @describeIn get_var_nm Income variables names
+#'
+f_var_group_default <- function() {
+    c("group_1", "group_2", "group_3")
 }

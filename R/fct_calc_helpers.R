@@ -101,6 +101,15 @@ calc_agg_by <-
            vars,
            by_var,
            wt_var = get_wt_nm()) {
+    
+    vars_1 <- vars[vars %in% names(dta)]
+    non_numeric_vars <- vars_1[!sapply(dta[vars_1], is.numeric)]
+    if (length(non_numeric_vars) > 0) {
+      warning("The following non-numeric variables will be excluded from aggregation: ",
+              paste(non_numeric_vars, collapse = ", "))
+      vars_1 <- setdiff(vars_1, non_numeric_vars)
+      vars_1 <- setdiff(vars_1, wt_var)
+    }
 
     if (is.null(wt_var)) {
       warning("`wt_var` was not specified. ",
@@ -123,21 +132,9 @@ calc_agg_by <-
     dta %>%
       group_by(!!by_var_sym) %>%
       summarise(
-        across(any_of(vars), ~ sum(. *  {{wt_var_sym}}, na.rm = TRUE))
+        across(any_of(vars_1), ~ sum(. * {{ wt_var_sym }}, na.rm = TRUE))
       ) %>%
       ungroup()
-    # %>%
-    #   mutate(
-    #     pc_totSA = pcpkh + pcbpnt + pcrastra + pcpip,
-    #     pcnetsub =  -pcpkh - pcbpnt - pcrastra - pcpip + pc_totenergysub + pcedu +
-    #       pcoopeduc + pchealth + pcoophealth + pctotvat + pcexcise
-    #   ) %>%
-    #   mutate(across(starts_with("pc"), ~ .  /  ym_SA2 * 100, .names = "RI_{.col}")) %>%
-    #   mutate(across(starts_with("pc"),
-    #                 ~ .  /  sum(., na.rm = TRUE) * 100,
-    #                 .names = "AI_{.col}")) %>%
-    #   mutate(RI_pc_totSA = -RI_pc_totSA)
-    #
   }
 
 
@@ -153,9 +150,7 @@ agg_by_deciles <-
            dec_vars,
            n_dec = 10,
            wt_var = NULL,
-           get_var_fn = get_var_nm,
-           dec_min_level = NULL,
-           dec_max_level = NULL, ...) {
+           get_var_fn = get_var_nm, ...) {
     # policy_name = NA_character_
     # dec_by = "yp_pc"
     # dec_vars =  get_inc_nm()$var
@@ -165,9 +160,7 @@ agg_by_deciles <-
       calc_deciles(dec_var = dec_by,
                    dec_var_name = "Decile",
                    n_dec = n_dec,
-                   wt_var = wt_var,
-                   dec_min_level = dec_min_level,
-                   dec_max_level = dec_max_level, ...) %>%
+                   wt_var = wt_var, ...) %>%
       calc_agg_by(by_var = "Decile",
                   vars = c(dec_by, dec_vars) %>% unique(),
                   wt_var = wt_var) %>%
@@ -207,8 +200,6 @@ agg_sims_by_deciles <-
            get_var_fn = get_var_nm,
            n_dec = 10,
            wt_var = NULL,
-           dec_min_level = NULL,
-           dec_max_level = NULL,
            ...)  {
     sim_res %>%
       purrr::map( ~ {
@@ -220,8 +211,6 @@ agg_sims_by_deciles <-
           n_dec = n_dec,
           wt_var = wt_var,
           get_var_fn = get_var_fn,
-          dec_min_level = NULL,
-          dec_max_level = NULL,
           ...
         )
       })

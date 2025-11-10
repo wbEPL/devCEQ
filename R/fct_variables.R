@@ -178,3 +178,9 @@ f_var_inc_default <- function() {
 f_var_group_default <- function() {
     c("group_1", "group_2", "group_3")
 }
+
+#' Var nems to vector
+#' 
+f_var_names_vector <- function(var_nms = get_inc_nm()) {
+  set_names(var_nms$var, var_nms$var_title)
+}

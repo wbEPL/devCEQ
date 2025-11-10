@@ -1,4 +1,4 @@
-
+testthat::skip()
 
 # library(bslib)
 # library(shiny)
@@ -14,6 +14,7 @@
 #   fig_content
 # )
 
+pkgload::load_all()
 library(shiny)
 library(shinyWidgets)
 library(bslib)
@@ -22,24 +23,17 @@ library(bslib)
 # test_m_res_switches()
 
 # Insidences results module --------------------------------------------
-
-incid_tab <-
-  function(id, ...) {
-    ns <- NS(id)
-    list(
-      m_title_ui(id),
-      layout_columns(
-        uiOutput(ns("page_plot_controls")),
-        uiOutput(ns("page_plot_choices"))
-      ),
-      uiOutput(ns("page_card"))
-    )
-  }
-
 pages <-
-  bslib::nav_panel_hidden(value = "tab_incid", mod_incidences_ui("tab_incid")) |> list() |> 
+  bslib::nav_panel_hidden(
+    value = "tab_incid",
+    mod_incidences_ui("tab_incid")
+  ) |>
+  list() |>
   append(
-    list(bslib::nav_panel_hidden(value = "tab_incid2", mod_incidences_ui("tab_incid2")))
+    list(bslib::nav_panel_hidden(
+      value = "tab_incid2",
+      mod_incidences_ui("tab_incid2")
+    ))
   )
 
 
@@ -60,6 +54,7 @@ page_srv <-
     m_incidences_srv("tab_incid2", title = "Incidence 2")
   }
 
+devmode()
 
 shiny::runApp(shinyApp(page_ui, page_srv))
 

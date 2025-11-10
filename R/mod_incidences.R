@@ -25,29 +25,126 @@ m_incidences_srv <-
     id,
     sim_res,
     page_ui = function(id) {
-      taglist(
+      ns <- NS(id)
+      tagList(
         m_title_ui(id),
         layout_columns(
-          uiOutput(ns("page_plot_controls")),
-          uiOutput(ns("page_plot_choices"))
+          uiOutput(ns("page_ndec")),
+          uiOutput(ns("page_incomes")),
+          uiOutput(ns("page_groups"))
         ),
-        uiOutput(ns("page_card"))
+        layout_columns(
+          uiOutput(ns("page_plotchoices"))
+        ),
+        uiOutput(ns("page_card")),
+        uiOutput(ns("dev_info"))
       )
     },
     # dec_vars = get_var_nm()$var,
     # make_bar_fn = make_bar_dta,
-    # n_dec_label = "Number of deciles",
-    # dec_by_label = "Deciles by:",
+    ndec_label = "Number of deciles",
+    ndec_range = c(5, 50),
+    bydec_label = "Deciles by:",
+    bydec_choices = f_var_names_vector(get_inc_nm()),
+    bygroup_label = "Compare by:",
+    bygroup_choices = c("Simulation" = "sim_id", f_var_names_vector(get_var_nm(c("group_1", "group_2", "group_3")))) , # c("Simulation" = "sim_id"),
     tab_title = NULL,
     ...
   ) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns
 
+      # Step 1. Page structure -------------------------------------------------------
       output$incidences_ui <- renderUI(page_ui(id))
+
+      # Step 2.a Title
       m_title_srv(NULL, title_reactive = reactive(tab_title))
 
+      # Step 2.b Number of deciles
+      output$page_ndec <- renderUI(f_numericInput_ui(
+        id,
+        label = ndec_label,
+        range = ndec_range
+      ))
+      ndec <- m_numericInput_srv(NULL)
       
+      # Step 2.c Income concept selection
+      output$page_incomes <- renderUI(
+        f_selectInput_ui(
+          ns("incby"),
+          label = bydec_label,
+          choices = bydec_choices
+        )
+      )
+      incby <- m_selectInput_srv("incby", choices = bydec_choices)
+
+      # Step 2.d Grouping variables selection
+      output$page_groups <- renderUI({
+        req(length(bygroup_choices) > 1)
+        f_selectInput_ui(
+          ns("grpby"),
+          label = bygroup_label,
+          choices = bygroup_choices
+        )
+      })
+      grpby <- m_selectInput_srv("grpby", choices = bygroup_choices)
+
+      # Step 3 Generating plots ------------------------------------------------
+      #TODO
+
+      fig <- reactiveVal(
+        list(
+          id = c("Fig 1", "Fig 2", "Fig 3"),
+          title = c("Figure 1", "Figure 2", "Figure 3"),
+          ly = list(),
+          gg = list(fig_gg_random(), fig_gg_random(), fig_gg_random()) |> 
+            set_names(c("Fig 1", "Fig 2", "Fig 3")),
+          tbl_dt = tibble(1:10)
+        )
+      )
+
+
+      # Step 4. Updating plots choices -----------------------------------------
+      output$page_plotchoices <- renderUI({
+        f_radioGroupButtons_ui(ns("plotchoices"), choices = fig()$title)
+      })
+      plot_choice <- m_radioGroupButtons_srv("plotchoices", choices = fig()$title)
+
+      # Step 10. Card with plot and data table --------------------------------
+      #TODO
+
+      # Step 20. Results export modal ----------------------------------------
+      #TODO
+
+      # Step 80. Development context info ----------------------------------------
+      output$dev_info <- renderUI({
+        if (in_devmode()) {
+          verbatimTextOutput(ns("page_dev"))
+        }
+      })
+
+      output$page_dev <- renderPrint({
+        if (in_devmode()) {
+          str(
+            list(
+              ndec = ndec(), 
+              incby = incby(),
+              grpby = grpby(),
+              plot_choice = plot_choice()
+            )
+          )
+        }
+      })
+
+      # Step 90. Return reactive values ----------------------------------------
+      list(
+        ndec = ndec,
+        incby = incby,
+        grpby = grpby,
+        plot_choice = plot_choice,
+        # fig = fig,
+      )
+
     })
   }
 

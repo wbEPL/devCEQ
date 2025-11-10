@@ -1,5 +1,6 @@
 
-#' @title Calculate N quantiles of a variable
+#' Calculate N quantiles of a variable
+#' 
 #' @name deciles
 #' 
 NULL 
@@ -90,7 +91,7 @@ get_quantiles <- function(x, n = 10, wt = NULL, labels = NULL, type = 7) {
   cut(x, breaks = q, include.lowest = TRUE, labels = FALSE) |> factor()
 }
 
-#' @describeIn Aggregates all relevant CEQ results by variable.
+#' @describeIn deciles Aggregates all relevant CEQ results by variable.
 #'
 #' @inheritParams calc_deciles
 #' @param by_var character name of the grouping variable
@@ -139,7 +140,7 @@ calc_agg_by <-
 
 
 
-#' @describeIn aggregate cariables of a single simulaiton by decile
+#' @describeIn decilse Aggregate cariables of a single simulaiton by decile
 #'
 #' @importFrom forcats fct_relevel fct_drop
 #' @export
@@ -188,7 +189,7 @@ agg_by_deciles <-
       )
   }
 
-#' @describeIn aggregates specific variables from the simulation resutls.
+#' @describeIn deciles aggregates specific variables from the simulation resutls.
 #' @noRd
 #' @export
 #' @importFrom purrr map

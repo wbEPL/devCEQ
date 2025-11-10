@@ -137,6 +137,19 @@ get_dta_gini <- function(
 
   if (is.null(income_vars_tbl)) income_vars_tbl <- get_inc_nm()
 
+  # Check if any "income_vars_tbl$var" are present in dta
+  if (!all(income_vars_tbl$var %in% names(dta))) {
+    cli::cli_abort(
+      "All variables from `income_vars_tbl` are NOT in `dta`:  ({.var {income_vars_tbl$var}})"
+    )
+  }
+
+  if (!any(income_vars_tbl$var %in% names(dta))) {
+    cli::cli_warn(
+      "Some variables from `income_vars_tbl` are NOT in `dta`:  {.var {income_vars_tbl$var}}"
+    )
+  }
+
   if (is.null(wt_var)) {
     warning("`wt_var` was not specified. ",
             "Non-weighted statistics is computed.")

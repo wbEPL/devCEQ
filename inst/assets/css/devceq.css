@@ -1,0 +1,85 @@
+#img-logo-navbar{
+  position: fixed;
+  right: 6rem;
+  padding-top: 0.3125rem;
+  padding-bottom: 0.3125rem;
+  top: 5px;
+  z-index: 1;
+}
+
+#logo-style{
+  width: auto;
+  height: 3rem;
+}
+
+
+#generic_inputs-policy_tabs{height:0px;}
+
+.pull-right {
+    float: right !important;
+}
+
+.inline label{
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+
+}
+
+.inline .form-group { display: table-row;}
+
+.tippy-tooltip {
+     font-size: 14px !important;
+}
+
+.hr-small-line {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.btn.radiobtn.btn-default {
+  text-align: left;
+  padding-left: 25px;
+}
+
+
+.btn.radiobtn.btn-default.disabled {
+  padding-left: 10px;
+  cursor: auto;
+}
+
+.btn.radiobtn.btn-default.active {
+  font-weight: bold;
+}
+
+
+/* tooltip styles */
+
+.tooltip-disabled {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-enabled {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltiptext {visibility: hidden;}
+.tooltip-disabled .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip-disabled:hover .tooltiptext {
+  visibility: visible;
+}

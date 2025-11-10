@@ -140,7 +140,7 @@ calc_agg_by <-
 
 
 
-#' @describeIn decilse Aggregate cariables of a single simulaiton by decile
+#' @describeIn deciles Aggregate cariables of a single simulaiton by decile
 #'
 #' @importFrom forcats fct_relevel fct_drop
 #' @export

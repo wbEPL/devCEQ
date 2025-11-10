@@ -1,20 +1,55 @@
-#' insidences UI Function
+#' Insidences module
+#' 
+#' @name mod_incidences
+#' 
+NULL
+
+#' @describeIn mod_incidences New incidences UI placeholder
+#' 
+#' @importFrom shiny NS uiOutput
+#' @importFrom shinycssloaders withSpinner
+#' 
+mod_incidences_ui <- 
+  function(id) {
+    ns <- NS(id)
+    uiOutput(ns("incidences_ui")) |> shinycssloaders::withSpinner() 
+    # tags$div(style = "overflow-y: auto; height: calc(100vh - 8rem); overflow-x: hidden;") %>%
+    # tagList()
+  }
+
+
+#' @describeIn mod_incidences New incidence server logic
 #'
-#' @description A shiny Module.
-#'
-#' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
-#' @importFrom shiny NS tagList
-#' @export
-mod_incidences_ui <- function(id) {
-  ns <- NS(id)
-  uiOutput(ns("incidence_ui")) %>%
-    shinycssloaders::withSpinner() %>%
-    tags$div(style = "overflow-y: auto; height: calc(100vh - 8rem); overflow-x: hidden;") %>%
-    tagList()
-}
+m_incidences_srv <-
+  function(
+    id,
+    sim_res,
+    page_ui = function(id) {
+      taglist(
+        m_title_ui(id),
+        layout_columns(
+          uiOutput(ns("page_plot_controls")),
+          uiOutput(ns("page_plot_choices"))
+        ),
+        uiOutput(ns("page_card"))
+      )
+    },
+    # dec_vars = get_var_nm()$var,
+    # make_bar_fn = make_bar_dta,
+    # n_dec_label = "Number of deciles",
+    # dec_by_label = "Deciles by:",
+    tab_title = NULL,
+    ...
+  ) {
+    moduleServer(id, function(input, output, session) {
+      ns <- session$ns
+
+      output$incidences_ui <- renderUI(page_ui(id))
+      m_title_srv(NULL, title_reactive = reactive(tab_title))
+
+      
+    })
+  }
 
 #' insidences Server Functions
 #'

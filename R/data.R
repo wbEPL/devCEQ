@@ -1,4 +1,4 @@
-#' Exemplary microsimulation results data
+#' Exemplary HH-level data 
 #'
 #' @description
 #' This is a fictitious data set meant to show what the ideal misro-simulation
@@ -13,4 +13,10 @@
 #'   ...
 #' }
 #' @source data-raw/DATASETS.R
-"microsim_dta"
+"dta_hh"
+
+
+
+#' Example data with the microsimulation results (not HH-level data)
+#' 
+"dta_sim"

@@ -214,11 +214,11 @@ dta_hh_sim1 <- dta_hh |>
 
 dta_sim <-
   list(
-    list(
+    policy0 = list(
       policy_sim_raw = dta_hh,
       policy_name = "Baseline"
     ),
-    list(
+    policy0 = list(
       policy_sim_raw = dta_hh_sim1,
       policy_name = "Sim 1"
     )

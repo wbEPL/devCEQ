@@ -20,6 +20,8 @@ mod_incidences_ui <-
 
 #' @describeIn mod_incidences New incidence server logic
 #'
+#' @param ndec_type Type of input for number of deciles: "numericInput" or "selectInput"
+#' 
 m_incidences_srv <-
   function(
     id,
@@ -29,7 +31,7 @@ m_incidences_srv <-
       tagList(
         m_title_ui(id),
         layout_columns(
-          uiOutput(ns("page_ndec")),
+          m_input_ui(ns("n_dec")),
           uiOutput(ns("page_incomes")),
           uiOutput(ns("page_groups"))
         ),
@@ -42,8 +44,10 @@ m_incidences_srv <-
     },
     # dec_vars = get_var_nm()$var,
     # make_bar_fn = make_bar_dta,
-    ndec_label = "Number of deciles",
-    ndec_range = c(5, 50),
+    ndec_type = "selectInput", #"numericInput"
+    ndec_label = "Number of deciles:",
+    ndec_choices = c(5, 10, 25, 50, 100) |> as.integer(),
+    ndec_default = 10 |> as.integer(),
     bydec_label = "Deciles by:",
     bydec_choices = f_var_names_vector(get_inc_nm()),
     bygroup_label = "Compare by:",
@@ -61,33 +65,35 @@ m_incidences_srv <-
       m_title_srv(NULL, title_reactive = reactive(tab_title))
 
       # Step 2.b Number of deciles
-      output$page_ndec <- renderUI(f_numericInput_ui(
-        id,
+      ndec <- m_input_srv(
+        "n_dec",
+        type = ndec_type,
         label = ndec_label,
-        range = ndec_range
-      ))
-      ndec <- m_numericInput_srv(NULL)
+        value = ndec_default,
+        choices = ndec_choices
+      )
+
       
       # Step 2.c Income concept selection
-      output$page_incomes <- renderUI(
-        f_selectInput_ui(
-          ns("incby"),
-          label = bydec_label,
-          choices = bydec_choices
-        )
-      )
-      incby <- m_selectInput_srv("incby", choices = bydec_choices)
+      # output$page_incomes <- renderUI(
+      #   f_selectInput_ui(
+      #     ns("incby"),
+      #     label = bydec_label,
+      #     choices = bydec_choices
+      #   )
+      # )
+      # incby <- m_selectInput_srv("incby", choices = bydec_choices)
 
       # Step 2.d Grouping variables selection
-      output$page_groups <- renderUI({
-        req(length(bygroup_choices) > 1)
-        f_selectInput_ui(
-          ns("grpby"),
-          label = bygroup_label,
-          choices = bygroup_choices
-        )
-      })
-      grpby <- m_selectInput_srv("grpby", choices = bygroup_choices)
+      # output$page_groups <- renderUI({
+      #   req(length(bygroup_choices) > 1)
+      #   f_selectInput_ui(
+      #     ns("grpby"),
+      #     label = bygroup_label,
+      #     choices = bygroup_choices
+      #   )
+      # })
+      # grpby <- m_selectInput_srv("grpby", choices = bygroup_choices)
 
       # Step 3 Generating plots ------------------------------------------------
       #TODO
@@ -128,8 +134,9 @@ m_incidences_srv <-
           str(
             list(
               ndec = ndec(), 
-              incby = incby(),
-              grpby = grpby(),
+              # ndec2 = ndec2(), 
+              # incby = incby(),
+              # grpby = grpby(),
               plot_choice = plot_choice()
             )
           )
@@ -139,9 +146,9 @@ m_incidences_srv <-
       # Step 90. Return reactive values ----------------------------------------
       list(
         ndec = ndec,
-        incby = incby,
-        grpby = grpby,
-        plot_choice = plot_choice,
+        # incby = incby,
+        # grpby = grpby,
+        plot_choice = plot_choice#,
         # fig = fig,
       )
 

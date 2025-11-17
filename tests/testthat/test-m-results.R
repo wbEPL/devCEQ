@@ -36,7 +36,6 @@ pages <-
     ))
   )
 
-
 page_ui <-
   page_fluid(
     theme = bs_theme(),

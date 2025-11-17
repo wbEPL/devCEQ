@@ -3,8 +3,6 @@
 #' @name m_helpers
 NULL
 
-
-
 #' @describeIn m_helpers Title generation module
 #' 
 #' @importFrom shiny NS uiOutput renderUI
@@ -30,42 +28,89 @@ m_title_srv <- function(id, title_reactive = reactive(title)) {
   })
 }
 
-
-
 #' @describeIn m_helpers mNumber of deciles selection UI + server
+#' 
 #' @param id Module id
 #' @param label Label for the numeric input
-#' @param range Range for the numeric input
+#' @param value Default value for the numeric input
+#' @inheritParams shiny::numericInput
 #' @param ... Additional arguments passed to `numericInput()`
 #' 
 #' @importFrom shiny NS numericInput
 #' @export
 #' 
-
-f_numericInput_ui <- function(id, label = "Number of deciles", range = c(5, 50), ...) {
+f_numericInput_ui <- function(id, label = NULL, value = NULL, ...) {
   ns <- NS(id)
-  numericInput(
-    ns("n_dec"),
-    label = label,
-    value = 10,
-    min = range[1],
-    max = range[2],
-    ...
+  
+  # # Check if label is provided
+  # if (missing(label) || is.null(label)) {
+  #   label <- "Number of deciles:"
+  # }
+
+  # # Check if value is provided
+  # if (missing(value) || is.null(value)) {
+  #   value <- 5
+  # }
+
+  # Remove from ... any arguments not accepted in shiny::numericInput
+  valid_args <- c("min", "max", "step", "width")
+  args <- list(...)
+  args <- args[names(args) %in% valid_args]
+  
+  do.call(
+    shiny::numericInput,
+    c(
+      list(
+        inputId = ns("n_dec"),
+        label = label,
+        value = value
+      ),
+      args
+    )
   )
+
 }
 
 #' @describeIn m_helpers mNumber of deciles selection server
 #' @param id Module id
 #' @export
 #' 
-m_numericInput_srv <- function(id) {
+m_numericInput_srv <- function(id, label = NULL, value = NULL, ...) {
   moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+    # Generate the UI of input
+    output$ui <- renderUI(f_numericInput_ui(ns(NULL), label, value, ...))
     
-    reactive({
-      input$n_dec
-    })
+    # Collect the value as reactive
+    reactive(input$n_dec)
   })
 }
+
+#' @describeIn m_helpers Income deciles by selection UI wrapper
+#' @param id Module id
+#' @export
+#' 
+m_input_ui <- function(id) {
+  ns <- NS(id)
+  uiOutput(ns("ui"))
+}
+
+#' @describeIn m_helpers Income deciles by selection server wrapper
+#' @param id Module id
+#' @export
+#' 
+m_input_srv <- function(id, type = "numericInput", ...) {  
+  fn_mod <- switch(
+    type,
+    "numericInput" = m_numericInput_srv,
+    "selectInput" = m_selectInput_srv,
+    "radioGroupButtons" = m_radioGroupButtons_srv,
+    stop("Unknown module type")
+  )
+  fn_mod(id, ...)  
+}
+
 
 
 #' @describeIn m_helpers Income deciles by selection UI
@@ -77,23 +122,31 @@ m_numericInput_srv <- function(id) {
 #'
 f_selectInput_ui <- function(
   id,
-  label = "Deciles by:",
-  choices = f_var_names_vector(get_inc_nm()),
+  label = NULL, #"Deciles by:",
+  choices = NULL, #f_var_names_vector(get_inc_nm()),
+  selected = choices[1],
   ...
 ) {
   ns <- NS(id)
-  # is is not reactive
+
+  valid_args <- c("multiple", "width", "size", "selectize")
+  args <- list(...)
+  args <- args[names(args) %in% valid_args]
 
   if (!isTruthy(choices) || is.null(choices)) {
     return(NULL)
   } else {
-    selectInput(
-      ns("sel_imp"),
-      label = label,
-      choices = choices,
-      selected = choices[1],
-      width = "350px",
-      ...
+    do.call(
+      shiny::selectInput,
+      c(
+        list(
+          inputId = ns("sel_imp"),
+          label = label,
+          choices = choices,
+          selected = selected
+        ),
+        args
+      )
     )
   }
 }
@@ -101,17 +154,51 @@ f_selectInput_ui <- function(
 #' @describeIn m_helpers Income deciles by selection server
 #' @param id Module id
 #' @export
-m_selectInput_srv <- function(id, choices = NULL) {
+m_selectInput_srv <- function(id, label = NULL, choices = NULL, ...) {
   moduleServer(id, function(input, output, session) {
-    out <- reactiveVal(choices[[1]])
+    ns <- session$ns
+
+    # Check if choices is not a reactive and make it reactive
+    choices_reactive <- reactive({
+      req(choices)
+      if (!is.reactive(choices)) {
+        return(choices)
+      } else {
+        return(choices())
+      }
+    })
+
+    # Collect the value as reactive
+    out <- reactiveVal()
+    
+    # Set initial value
+    observe(out(choices_reactive()[1]))
+    
+    # Generate the UI of input
+    output$ui <- renderUI(f_selectInput_ui(
+      ns(NULL),
+      label,
+      choices = choices_reactive(),
+      ...
+    ))
+
+    # Collect the value as reactive
     observeEvent(
       input$sel_imp,
       {
-        out(input$sel_imp)
+        new_out <- input$sel_imp
+        if (class(choices_reactive()) == "numeric") {
+          new_out <- as.numeric(new_out)
+        }        
+        if (class(choices_reactive()) == "integer") {
+          new_out <- as.numeric(new_out)
+        }
+        out(new_out)
       },
       ignoreNULL = TRUE,
       ignoreInit = TRUE
     )
+
     out
   })
 }

@@ -26,23 +26,7 @@ m_incid_srv <-
   function(
     id,
     sim_res,
-    page_ui = function(id) {
-      ns <- NS(id)
-      tagList(
-        # m_title_ui(id),
-        m_input_ui(ns("title")),
-        layout_columns(
-          m_input_ui(ns("ndec")),
-          m_input_ui(ns("decby")),
-          m_input_ui(ns("grpby"))
-        ),
-        layout_columns(
-          m_input_ui(ns("pltby"))
-        ),
-        uiOutput(ns("page_card")),
-        m_diagnostics_ui(ns("dev_info"))
-      )
-    },
+    page_ui = f_incid_ui_linear,
     # dec_vars = get_var_nm()$var,
     # make_bar_fn = make_bar_dta,
 
@@ -77,7 +61,7 @@ m_incid_srv <-
       ndec <- m_input_srv("ndec", ndec_type, ndec_title, ndec_choices)
       decby <- m_input_srv("decby", "selectInput", decby_title, decby_choices)
       grpby <- m_input_srv("grpby", grpby_type, grpby_title, grpby_choices)
-      pltby <- m_input_srv("pltby", pltby_type, pltby_title, reactive(fig()$title))
+      pltby <- m_input_srv("pltby", pltby_type, pltby_title, reactive(names(fig()$ggs)))
 
       # Step 3 Generating plots ------------------------------------------------
       #TODO
@@ -86,14 +70,15 @@ m_incid_srv <-
         list(
           id = c("Fig 1", "Fig 2", "Fig 3"),
           title = c("Figure 1", "Figure 2", "Figure 3"),
-          ly = list(),
-          gg = list(fig_gg_random(), fig_gg_random(), fig_gg_random()) |> 
+          lys = list(),
+          ggs = list(fig_gg_random(), fig_gg_random(), fig_gg_random()) |> 
             set_names(c("Fig 1", "Fig 2", "Fig 3")),
-          tbl_dt = tibble(1:10)
+          dta = tibble(1:10)
         )
       )
 
       # Step 10. Card with plot and data table --------------------------------
+      m_figure_server("fig1", figures = reactive({fig()$ggs}), selected = pltby)
       #TODO
 
       # Step 20. Results export modal ----------------------------------------
@@ -110,9 +95,9 @@ m_incid_srv <-
               grpby = grpby(),
               pltby = pltby()
             ),
-            ggs = list(),
+            ggs = fig()$ggs,
             fts = list(),
-            dta = list()
+            dta = fig()$dta
           )
         })
 
@@ -124,3 +109,107 @@ m_incid_srv <-
 
     })
   }
+
+#' @describeIn m_incid Incidence page template for output in a results layout
+#' @export
+#'
+f_incid_ui_linear <- function(id) {
+  ns <- NS(id)
+  tagList(
+    m_input_ui(ns("title")),
+    layout_columns(
+      m_input_ui(ns("ndec")),
+      m_input_ui(ns("decby")),
+      m_input_ui(ns("grpby"))
+    ),
+    layout_columns(
+      m_input_ui(ns("pltby"))
+    ),
+    # Figure
+    m_figure_ui(ns("fig1")),
+
+    # Table
+    uiOutput(ns("table_card")),
+
+    # Diagnostics
+    m_diagnostics_ui(ns("dev_info"))
+  )
+}
+
+
+#' @describeIn m_incid Incidence card template with multiple tabs (Figures and Data) and a sidebar with key input components
+#' @export
+#'
+f_incid_ui_card <- function(id, ...) {
+  ns <- NS(id)
+  navset_card_tab(
+    full_screen = TRUE,
+    title = m_input_ui(ns("title")),
+    sidebar = sidebar(
+      m_input_ui(ns("ndec")),
+      m_input_ui(ns("decby")),
+      m_input_ui(ns("grpby")),
+      m_input_ui(ns("pltby"))
+    ),
+
+    nav_panel(
+      "Plot",
+      m_figure_ui(ns("fig1")),
+      card_footer("Footer placeholder")
+    ),
+
+    nav_panel(
+      "Data",
+      # card_title(),
+      # card_header("Header placeholder"),
+      h4("Data placeholder"),
+      # card_footer("Footer placeholder")
+    ),
+
+    if (in_devmode()) {
+      nav_panel(
+        "Dignostics",
+        m_diagnostics_ui(ns("dev_info"))
+      )
+    },
+    
+    nav_spacer(),
+
+    # nav_item(
+    #   actionButton(ns("download_excel"), "Download Excel")
+    #   # m_download_ui(
+    #   #   id,
+    #   #   "Save Excel",
+    #   #   ui_fn = downloadButton,
+    #   #   icon = icon("file-excel"),
+    #   #   class = "btn btn-light btn-sm"
+    #   # )
+    # )
+  )
+}
+
+
+
+#' @describeIn m_incid Test app for m_incid module
+#'
+test_m_incid <- function(
+  page_ui = f_incid_ui_linear,
+  ...
+) {
+  library(shiny)
+  library(shinyWidgets)
+  library(bslib)
+
+  ui <- page_fluid(
+    m_incid_ui("incid1")
+  )
+
+  server <- function(input, output, session) {
+    sim_res <- reactive({
+      NULL
+    })
+    m_incid_srv("incid1", sim_res = sim_res, page_ui = page_ui, ...)
+  }
+
+  shinyApp(ui, server)
+}

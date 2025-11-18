@@ -97,41 +97,75 @@ m_numericInput_srv <- function(id, label = NULL, value = NULL, ...) {
 
 #' @describeIn m_helpers Income deciles by selection UI
 #' @param id Module id
-#' @param dec_by_label Label for the select input
-#' @param choices Reactive expression returning a character vector of choices
-#' @importFrom shiny NS selectInput
+#' @inheritParams f_numericInput_ui
+#' @param selected Default selected value. Usually the first value of choices.
+#' @param ... Additional arguments passed to `selectInput()`
 #' @export
 #'
 f_selectInput_ui <- function(
   id,
-  label = NULL, #"Deciles by:",
+  title = NULL, #"Deciles by:",
   choices = NULL, #f_var_names_vector(get_inc_nm()),
   selected = choices[1],
   ...
 ) {
   ns <- NS(id)
 
+  if (!isTruthy(choices) || is.null(choices)) {
+    return(NULL)
+  }
+
+  if (length(choices) <= 1) {
+    return(NULL)
+  }
+
   valid_args <- c("multiple", "width", "size", "selectize")
   args <- list(...)
   args <- args[names(args) %in% valid_args]
+  args <- c(
+    list(
+      inputId = ns("inputId"),
+      label = title,
+      choices = choices,
+      selected = selected
+    ),
+    args
+  )
+  do.call(shiny::selectInput, args)
+}
+
+f_selectizeInput_ui <- function(
+  id,
+  title = NULL, 
+  choices = NULL, 
+  selected = choices[1],
+  ...
+) {
+  ns <- NS(id)
 
   if (!isTruthy(choices) || is.null(choices)) {
     return(NULL)
-  } else {
-    do.call(
-      shiny::selectInput,
-      c(
-        list(
-          inputId = ns("sel_imp"),
-          label = label,
-          choices = choices,
-          selected = selected
-        ),
-        args
-      )
-    )
   }
+
+  if (length(choices) <= 1) {
+    return(NULL)
+  }
+
+  valid_args <- c("multiple", "width", "size", "options")
+  args <- list(...)
+  args <- args[names(args) %in% valid_args]
+  args <- c(
+    list(
+      inputId = ns("inputId"),
+      label = title,
+      choices = choices,
+      selected = selected
+    ),
+    args
+  )
+  do.call(shiny::selectizeInput, args)
 }
+
 
 #' @describeIn m_helpers Income deciles by selection server
 #' @param id Module id
@@ -191,21 +225,33 @@ m_selectInput_srv <- function(id, label = NULL, choices = NULL, ...) {
 #'
 f_radioGroupButtons_ui <- function(
   id,
-  label = NULL,
-  choices = c("Bar" = "bar", "Line" = "line", "Scatter" = "scatter"),
+  title = NULL,
+  choices = NULL, #c("Bar" = "bar", "Line" = "line", "Scatter" = "scatter"),
+  selected = choices[1],
+  status = "primary",
+  size = "sm",
+  individual = TRUE,
+  direction = "horizontal",
   ...
 ) {
   ns <- NS(id)
+
+  # Skip is choices are missing or length less than 2
+  if (is.null(choices) || length(choices) <= 1) {
+    return(NULL)
+  }
+
   if (!is.null(choices) && length(choices) > 1) {
     shinyWidgets::radioGroupButtons(
-      inputId = ns("plot_var"),
-      label = label,
+      inputId = ns("inputId"),
+      label = title,
       choices = choices,
-      selected = choices[[1]],
-      status = "primary",
-      size = "sm",
-      individual = TRUE,
-      direction = "horizontal",
+      selected = selected,
+      status = status,
+      size = size,
+      individual = individual,
+      direction = direction,
+      ...
     )
   }
 }

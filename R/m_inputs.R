@@ -41,7 +41,7 @@ m_input_srv <- function(
         # "titleInput" = f_numericInput_ui,
         "numericInput" = f_numericInput_ui,
         "selectInput" = f_selectInput_ui,
-        "selectizeInput" = f_selectInput_ui,
+        "selectizeInput" = f_selectizeInput_ui,
         "radioGroupButtons" = f_radioGroupButtons_ui,
         stop("Unknown module type")
       )
@@ -148,7 +148,35 @@ test_m_input <- function() {
       m_input_ui("num2"),
       m_input_ui("num3")
     ),
-    verbatimTextOutput("num")
+    verbatimTextOutput("num"),
+
+    h3("selectInput"),
+    layout_columns(
+      m_input_ui("sel0"),
+      m_input_ui("sel1"),
+      m_input_ui("sel2"),
+      m_input_ui("sel3")
+    ),
+    verbatimTextOutput("sel"),
+
+    h3("selectizeInput"),
+    layout_columns(
+      m_input_ui("selz0"),
+      m_input_ui("selz1"),
+      m_input_ui("selz2"),
+      m_input_ui("selz3")
+    ),
+    verbatimTextOutput("selz"),
+
+    h3("radioGroupButtons"),
+    layout_columns(
+      m_input_ui("rad0"),
+      m_input_ui("rad1"),
+      m_input_ui("rad2"),
+      m_input_ui("rad3")
+    ),
+    verbatimTextOutput("rad")
+
   )
   
   server <- function(input, output, session) {
@@ -162,11 +190,38 @@ test_m_input <- function() {
 
     num1 <- m_input_srv("num1", "numericInput", title = reactive("Choices (react):"), choices = choice_react)
     num2 <- m_input_srv("num2", "numericInput", title = reactive("Choices (value):"), choices = reactive(c("A" = 99, "B" = 2, "C" = 3)))
-    num3 <- m_input_srv("num3", "numericInput", title = reactive("Choices (NA):"), choices = reactive("NULL REACTIVE"), value = 10)
+    num3 <- m_input_srv("num3", "numericInput", title = reactive("Choices (NA):"), choices = reactive("NULL REACTIVE"))
     
     output$num <- renderPrint({
       list(num1 = num1(), num2 = num2(), num3 = num3())
     })
+
+    
+    sel0 <- m_input_srv("sel0", "selectInput", reactive("One choice:"), choice_react)
+    sel1 <- m_input_srv("sel1", "selectInput", reactive("Reactive:"), reactive(c(str_c(choice_react(), "1"), choice_react())))
+    sel2 <- m_input_srv("sel2", "selectInput", reactive("Constant (numeric):"), reactive(c("A" = 1, "B" = 2, "C" = 3)))
+    sel3 <- m_input_srv("sel3", "selectInput", reactive("Constant (character):"), reactive(c("A" = "1", "B" = "2", "C" = "3")), multiple = TRUE)
+    
+    output$sel <- renderPrint({
+      list(sel0 = sel0(), sel1 = sel1(), sel2 = sel2(), sel3 = sel3())
+    })
+
+    selz0 <- m_input_srv("selz0", "selectizeInput", reactive("One choice:"), choice_react)
+    selz1 <- m_input_srv("selz1", "selectizeInput", reactive("Reactive:"), reactive(c(str_c(choice_react(), "1"), choice_react())), multiple = TRUE)
+    selz2 <- m_input_srv("selz2", "selectizeInput", reactive("Constant (numeric):"), reactive(c("A" = 1, "B" = 2, "C" = 3)))
+    selz3 <- m_input_srv("selz3", "selectizeInput", reactive("Constant (character):"), reactive(c("A" = "1", "B" = "2", "C" = "3")), multiple = TRUE)
+    output$selz <- renderPrint({
+      list(selz0 = selz0(), selz1 = selz1(), selz2 = selz2(), selz3 = selz3())
+    })
+
+    rad0 <- m_input_srv("rad0", "radioGroupButtons", reactive(NULL), choice_react)
+    rad1 <- m_input_srv("rad1", "radioGroupButtons", reactive("Reactive (with title):"), reactive(c(str_c(choice_react(), "1"), choice_react())))
+    rad2 <- m_input_srv("rad2", "radioGroupButtons", reactive(NULL), reactive(c("A" = 1, "B" = 2, "C" = 3)))
+    rad3 <- m_input_srv("rad3", "radioGroupButtons", reactive(NULL), reactive(c("A" = "1", "B" = "2", "C" = "3")))
+    output$rad <- renderPrint({
+      list(rad0 = rad0(), rad1 = rad1(), rad2 = rad2(), rad3 = rad3())
+    })
+
   }
   
   shinyApp(ui, server)

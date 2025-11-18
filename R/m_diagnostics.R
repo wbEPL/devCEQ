@@ -24,7 +24,7 @@ m_diagnostics_ui <-
 
 #' @describeIn m_diagnostics Diagnostics server logic
 #' @param out A reactive expression returning the object to diagnose
-#' 
+#'
 m_diagnostics_srv <-
   function(
     id,
@@ -50,14 +50,24 @@ m_diagnostics_srv <-
           if (in_devmode()) {
             out <- out()
             out$ggs <- names(out$ggs)
+            out$fts <- names(out$fts)
+
+            out <-
+              out |>
+              map(
+                ~ {
+                  .x$ggs <- names(.x$ggs)
+                  .x$fts <- names(.x$fts)
+                  .x
+                }
+              )
+
             str(out, max.level = 3)
-          } 
+          }
         })
       }
     )
   }
-
-
 
 
 #' @describeIn m_diagnostics Test app for m_diagnostics module

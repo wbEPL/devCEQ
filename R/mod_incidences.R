@@ -29,14 +29,15 @@ m_incidences_srv <-
     page_ui = function(id) {
       ns <- NS(id)
       tagList(
-        m_title_ui(id),
+        # m_title_ui(id),
+        m_input_ui(ns("title")),
         layout_columns(
-          m_input_ui(ns("n_dec")),
-          uiOutput(ns("page_incomes")),
-          uiOutput(ns("page_groups"))
+          m_input_ui(ns("ndec")),
+          m_input_ui(ns("decby")),
+          m_input_ui(ns("grpby"))
         ),
         layout_columns(
-          uiOutput(ns("page_plotchoices"))
+          m_input_ui(ns("pltby"))
         ),
         uiOutput(ns("page_card")),
         uiOutput(ns("dev_info"))
@@ -44,15 +45,23 @@ m_incidences_srv <-
     },
     # dec_vars = get_var_nm()$var,
     # make_bar_fn = make_bar_dta,
+
+    page_title = "Incidences",
+
     ndec_type = "selectInput", #"numericInput"
-    ndec_label = "Number of deciles:",
+    ndec_title = "Number of deciles:",
     ndec_choices = c(5, 10, 25, 50, 100) |> as.integer(),
-    ndec_default = 10 |> as.integer(),
-    bydec_label = "Deciles by:",
-    bydec_choices = f_var_names_vector(get_inc_nm()),
-    bygroup_label = "Compare by:",
-    bygroup_choices = c("Simulation" = "sim_id", f_var_names_vector(get_var_nm(c("group_1", "group_2", "group_3")))) , # c("Simulation" = "sim_id"),
-    tab_title = NULL,
+    
+    decby_type = "selectInput",
+    decby_title = "Deciles by:",
+    decby_choices = f_var_names_vector(get_inc_nm()),
+
+    grpby_type = "selectizeInput", #"numericInput"
+    grpby_title = "Compare by:",
+    grpby_choices = c("Simulation" = "sim_id", f_var_names_vector(get_var_nm(c("group_1", "group_2", "group_3")))) , # c("Simulation" = "sim_id"),
+
+    pltby_type = "radioGroupButtons",
+    pltby_title = NULL,
     ...
   ) {
     moduleServer(id, function(input, output, session) {
@@ -62,38 +71,13 @@ m_incidences_srv <-
       output$incidences_ui <- renderUI(page_ui(id))
 
       # Step 2.a Title
-      m_title_srv(NULL, title_reactive = reactive(tab_title))
+      ptitle <- m_input_srv("title", "title", title = reactive(page_title), choices = reactive(page_title))
 
       # Step 2.b Number of deciles
-      ndec <- m_input_srv(
-        "n_dec",
-        type = ndec_type,
-        label = ndec_label,
-        value = ndec_default,
-        choices = ndec_choices
-      )
-
-      
-      # Step 2.c Income concept selection
-      # output$page_incomes <- renderUI(
-      #   f_selectInput_ui(
-      #     ns("incby"),
-      #     label = bydec_label,
-      #     choices = bydec_choices
-      #   )
-      # )
-      # incby <- m_selectInput_srv("incby", choices = bydec_choices)
-
-      # Step 2.d Grouping variables selection
-      # output$page_groups <- renderUI({
-      #   req(length(bygroup_choices) > 1)
-      #   f_selectInput_ui(
-      #     ns("grpby"),
-      #     label = bygroup_label,
-      #     choices = bygroup_choices
-      #   )
-      # })
-      # grpby <- m_selectInput_srv("grpby", choices = bygroup_choices)
+      ndec <- m_input_srv("ndec", ndec_type, ndec_title, ndec_choices)
+      decby <- m_input_srv("decby", "selectInput", decby_title, decby_choices)
+      grpby <- m_input_srv("grpby", grpby_type, grpby_title, grpby_choices)
+      pltby <- m_input_srv("pltby", pltby_type, pltby_title, reactive(fig()$title))
 
       # Step 3 Generating plots ------------------------------------------------
       #TODO
@@ -108,13 +92,6 @@ m_incidences_srv <-
           tbl_dt = tibble(1:10)
         )
       )
-
-
-      # Step 4. Updating plots choices -----------------------------------------
-      output$page_plotchoices <- renderUI({
-        f_radioGroupButtons_ui(ns("plotchoices"), choices = fig()$title)
-      })
-      plot_choice <- m_radioGroupButtons_srv("plotchoices", choices = fig()$title)
 
       # Step 10. Card with plot and data table --------------------------------
       #TODO
@@ -133,11 +110,16 @@ m_incidences_srv <-
         if (in_devmode()) {
           str(
             list(
-              ndec = ndec(), 
-              # ndec2 = ndec2(), 
-              # incby = incby(),
-              # grpby = grpby(),
-              plot_choice = plot_choice()
+              inputs = list(
+                ptitle = ptitle(),
+                ndec = ndec(),
+                decby = decby(),
+                grpby = grpby(),
+                pltby = pltby()
+              ),
+              ggs = list(),
+              fts = list(),
+              dta = list()
             )
           )
         }
@@ -146,16 +128,15 @@ m_incidences_srv <-
       # Step 90. Return reactive values ----------------------------------------
       list(
         ndec = ndec,
-        # incby = incby,
-        # grpby = grpby,
-        plot_choice = plot_choice#,
-        # fig = fig,
+        decby = decby,
+        grpby = grpby,
+        pltby = pltby
       )
 
     })
   }
 
-#' insidences Server Functions
+#' insidences Server Functions OLD
 #'
 #' @noRd
 #' @importFrom shinyWidgets radioGroupButtons

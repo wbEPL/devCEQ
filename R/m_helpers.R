@@ -28,47 +28,53 @@ m_title_srv <- function(id, title_reactive = reactive(title)) {
   })
 }
 
+f_title_ui <- function(id, title = NULL, ...) {
+  ns <- NS(id)
+  if (isTruthy(title) && !is.null(title_reactive())) {
+    title
+  } else {
+    if (in_devmode()) ns("Incidences tab title") |> h3()
+  }
+}
+
 #' @describeIn m_helpers mNumber of deciles selection UI + server
 #' 
 #' @param id Module id
-#' @param label Label for the numeric input
-#' @param value Default value for the numeric input
-#' @inheritParams shiny::numericInput
+#' @param title Title/Label for the input
+#' @param choices A name vector of choices for input. If all values are numeric, the first one is used as default value.
 #' @param ... Additional arguments passed to `numericInput()`
+#' @inheritParams shiny::numericInput
 #' 
 #' @importFrom shiny NS numericInput
 #' @export
 #' 
-f_numericInput_ui <- function(id, label = NULL, value = NULL, ...) {
-  ns <- NS(id)
-  
-  # # Check if label is provided
-  # if (missing(label) || is.null(label)) {
-  #   label <- "Number of deciles:"
-  # }
+f_numericInput_ui <- function(id, title = NULL, choices = NULL, ...) {
+  ns <- NS(id)  
 
-  # # Check if value is provided
-  # if (missing(value) || is.null(value)) {
-  #   value <- 5
-  # }
+  # Skip if choices and value is not provided, or all choises are not numeric
+  if (
+    (!isTruthy(choices) || is.null(choices))) {
+    return(NULL)
+  }
+
+  # Skip if choices are provided but not numeric and no value is provided
+  if (isTruthy(choices) && !is.null(choices) && !all(is.numeric(choices))) {
+    return(NULL)
+  }
+
+  # Set value from choices if choices are numeric and provided. Default 10 otherwise
+  if (isTruthy(choices) && !is.null(choices) && all(is.numeric(choices))) {
+    value <- as.numeric(choices[1])
+  } else {
+    return(NULL)
+  }
 
   # Remove from ... any arguments not accepted in shiny::numericInput
   valid_args <- c("min", "max", "step", "width")
   args <- list(...)
   args <- args[names(args) %in% valid_args]
-  
-  do.call(
-    shiny::numericInput,
-    c(
-      list(
-        inputId = ns("n_dec"),
-        label = label,
-        value = value
-      ),
-      args
-    )
-  )
-
+  args <- c(inputId = ns("inputId"), label = title, value = value, args)
+  do.call(shiny::numericInput, args)
 }
 
 #' @describeIn m_helpers mNumber of deciles selection server
@@ -83,32 +89,8 @@ m_numericInput_srv <- function(id, label = NULL, value = NULL, ...) {
     output$ui <- renderUI(f_numericInput_ui(ns(NULL), label, value, ...))
     
     # Collect the value as reactive
-    reactive(input$n_dec)
+    reactive(input$inputId)
   })
-}
-
-#' @describeIn m_helpers Income deciles by selection UI wrapper
-#' @param id Module id
-#' @export
-#' 
-m_input_ui <- function(id) {
-  ns <- NS(id)
-  uiOutput(ns("ui"))
-}
-
-#' @describeIn m_helpers Income deciles by selection server wrapper
-#' @param id Module id
-#' @export
-#' 
-m_input_srv <- function(id, type = "numericInput", ...) {  
-  fn_mod <- switch(
-    type,
-    "numericInput" = m_numericInput_srv,
-    "selectInput" = m_selectInput_srv,
-    "radioGroupButtons" = m_radioGroupButtons_srv,
-    stop("Unknown module type")
-  )
-  fn_mod(id, ...)  
 }
 
 

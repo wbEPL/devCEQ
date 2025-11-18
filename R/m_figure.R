@@ -21,7 +21,7 @@ m_figure_ui <- function(id){
 #' @importFrom shiny moduleServer NS uiOutput renderUI plotOutput renderPlot tableOutput renderTable
 #' @importFrom shinycssloaders withSpinner
 #' @importFrom plotly plotlyOutput renderPlotly
-#' @importFrom DT dataTableOutput renderDataTable
+#' @importFrom DT renderDT DTOutput
 #' @importFrom flextable flextable htmltools_value
 #' @export
 #'
@@ -94,17 +94,15 @@ m_figure_server <- function(
       req(last_fig_class())
       switch(
         last_fig_class(),
-        "ggplot" = plotOutput(ns("fig_gg")) |> shinycssloaders::withSpinner(),
-        "plotly" = plotly::plotlyOutput(ns("fig_ly")) |>
-          shinycssloaders::withSpinner(),
-        "flextable" = uiOutput(ns("fig_ft")) |> shinycssloaders::withSpinner(),
-        "datatables" = DT::dataTableOutput(ns("fig_dt")) |>
-          shinycssloaders::withSpinner(),
-        "tbl" = tableOutput(ns("fig_tbl")) |> shinycssloaders::withSpinner()
+        "ggplot" = plotOutput(ns("fig_gg")) ,
+        "plotly" = plotly::plotlyOutput(ns("fig_ly")),
+        "flextable" = uiOutput(ns("fig_ft")),
+        "datatables" = DT::DTOutput(ns("fig_dt")),
+        "tbl" = tableOutput(ns("fig_tbl"))
       )
     })
 
-    output$figure_ui <- renderUI(fn_figui())
+    output$figure_ui <- renderUI(fn_figui() |> shinycssloaders::withSpinner())
 
     # Rendering figure based on its class
     output$fig_gg <- renderPlot({
@@ -125,7 +123,7 @@ m_figure_server <- function(
       flextable::htmltools_value(fig_show())
     })
 
-    output$fig_dt <- DT::renderDataTable({
+    output$fig_dt <- DT::renderDT({
       req(fig_show())
       req(inherits(fig_show(), "datatables"))
       fig_show()
@@ -181,7 +179,7 @@ test_m_figure <- function() {
 
 
 
-#' @descibeIn m_figure Helper function to generate random gg plot
+#' @describeIn m_figure Helper function to generate random gg plot
 #' @export
 #' 
 fig_gg_random <- function() {

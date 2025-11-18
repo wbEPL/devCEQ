@@ -26,50 +26,18 @@ library(bslib)
 # test_m_diagnostics()
 
 # Figure module --------------------------------------------
-test_m_figure()
+# test_m_figure()
 
 # Incidences module --------------------------------------------
 test_m_incid(page_ui = f_incid_ui_linear)
 test_m_incid(page_ui = f_incid_ui_card)
 
-
 # Page switching --------------------------------------------
 # test_m_res_switches()
 
-# Insidences results module --------------------------------------------
-pages <-
-  bslib::nav_panel_hidden(
-    value = "tab_incid",
-    m_incid_ui("tab_incid")
-  ) |>
-  list() |>
-  append(
-    list(bslib::nav_panel_hidden(
-      value = "tab_incid2",
-      m_incid_ui("tab_incid2")
-    ))
-  )
+# Insidences results module with switches and all results collection ----------
+test_m_incid_switches()
 
-page_ui <-
-  page_fluid(
-    theme = bs_theme(),
-    layout_columns(
-      col_widths = c(3, 9),
-      m_res_switches_ui("res-srv", panels_choices = c("Incidences" = "tab_incid", "Incidences2" = "tab_incid2")),
-      m_res_content_ui("res-srv", panle_ui = pages)
-    )
-  )
-
-page_srv <-
-  function(input, output, session) {
-    m_res_switches_srv("res-srv")
-    m_incid_srv("tab_incid", title = "Incidence 1")
-    m_incid_srv("tab_incid2", title = "Incidence 2")
-  }
-
-devmode(F, F)
-
-shiny::runApp(shinyApp(page_ui, page_srv))
 
 # page_fluid(
 

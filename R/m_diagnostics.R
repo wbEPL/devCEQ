@@ -56,8 +56,12 @@ m_diagnostics_srv <-
               out |>
               map(
                 ~ {
-                  .x$ggs <- names(.x$ggs)
-                  .x$fts <- names(.x$fts)
+                  if ("ggs" %in% names(.x)) {
+                    .x$ggs <- names(.x$ggs)
+                  }
+                  if ("fts" %in% names(.x)) {
+                    .x$fts <- names(.x$fts)
+                  }
                   .x
                 }
               )

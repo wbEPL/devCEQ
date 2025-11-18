@@ -147,6 +147,7 @@ f_incid_ui_card <- function(id, ...) {
   navset_card_tab(
     full_screen = TRUE,
     title = m_input_ui(ns("title")),
+
     sidebar = sidebar(
       m_input_ui(ns("ndec")),
       m_input_ui(ns("decby")),
@@ -156,13 +157,13 @@ f_incid_ui_card <- function(id, ...) {
 
     nav_panel(
       "Plot",
-      m_figure_ui(ns("fig1")),
+      card_body(m_figure_ui(ns("fig1")), min_height = "350px", max_height = "500px"),
       card_footer("Footer placeholder")
     ),
 
     nav_panel(
       "Data",
-      m_figure_ui(ns("tbl1"))
+      card_body(m_figure_ui(ns("tbl1")), min_height = "350px", max_height = "450px")
     ),
 
     if (in_devmode()) {
@@ -190,7 +191,8 @@ f_incid_ui_card <- function(id, ...) {
 
 
 #' @describeIn m_incid Test app for m_incid module
-#'
+#' @export
+#' 
 test_m_incid <- function(
   page_ui = f_incid_ui_linear,
   ...
@@ -211,4 +213,91 @@ test_m_incid <- function(
   }
 
   shinyApp(ui, server)
+}
+
+
+#' @describeIn m_incid Test app for m_incid module within a results switching layout
+#' @export
+#' 
+test_m_incid_switches <- function() {
+  library(shiny)
+  library(shinyWidgets)
+  library(bslib)
+
+  figures <- c(
+    "pov" = "Poverty",
+    "gini" = "Inquality",
+    "ncp" = "Net Cash Position",
+    "other" = "Other"
+  )
+
+  pages <-
+    bslib::nav_panel_hidden(
+      value = "tab_incid",
+      map(names(figures), m_incid_ui)
+      # m_incid_ui("pov"),
+      # m_incid_ui("gini"),
+      # m_incid_ui("ncp")
+    ) |>
+    list() |>
+    append(
+      list(bslib::nav_panel_hidden(
+        value = "tab_incid2",
+        m_incid_ui("tab_incid2")
+      ))
+    ) |>
+    append(
+      list(bslib::nav_panel_hidden(
+        value = "Diagnostics",
+        m_diagnostics_ui("diag1")
+      ))
+    )
+
+  page_ui <-
+    page_fluid(
+      theme = bs_theme(),
+      layout_columns(
+        col_widths = c(3, 9),
+        m_res_switches_ui(
+          "res-srv",
+          panels_choices = c(
+            "Poverty" = "tab_incid",
+            "Incidences2" = "tab_incid2",
+            "Diagnostics" = "Diagnostics"
+          )
+        ),
+        m_res_content_ui("res-srv", panle_ui = pages)
+      )
+    )
+
+  page_srv <-
+    function(input, output, session) {
+      m_res_switches_srv("res-srv")
+
+
+      all_figs <-
+        figures |> 
+        imap(~{
+          m_incid_srv(
+            .y,
+            page_ui = f_incid_ui_card,
+            page_title = .x
+          )
+        })
+      # m_incid_srv("pov", page_ui = f_incid_ui_card, page_title = "Poverty")
+      # m_incid_srv("gini", page_ui = f_incid_ui_card, page_title = "Inquality")
+      # m_incid_srv("ncp", page_ui = f_incid_ui_card, page_title = "Net Cash Position")
+      all_figs$tab_incid2 <- m_incid_srv("tab_incid2", title = "Incidence 2")
+
+      all_figs_r <- reactive({
+        all_figs |> map(~ .x())
+      })
+
+      m_diagnostics_srv("diag1", out = all_figs_r)
+    }
+
+  # devmode(F, F)
+  # devmode()
+
+  shiny::runApp(shinyApp(page_ui, page_srv))
 }

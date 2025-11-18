@@ -19,20 +19,34 @@ library(shiny)
 library(shinyWidgets)
 library(bslib)
 
-# Example page with switching UI --------------------------------------
+# Inputs module --------------------------------------------
+# test_m_input()
+
+# Diagnostic module --------------------------------------------
+# test_m_diagnostics()
+
+# Figure module --------------------------------------------
+# test_m_figure()
+
+# Incidences module --------------------------------------------
+test_m_incid(page_ui = f_incid_ui_linear)
+test_m_incid(page_ui = f_incid_ui_card)
+
+
+# Page switching --------------------------------------------
 # test_m_res_switches()
 
 # Insidences results module --------------------------------------------
 pages <-
   bslib::nav_panel_hidden(
     value = "tab_incid",
-    mod_incidences_ui("tab_incid")
+    m_incid_ui("tab_incid")
   ) |>
   list() |>
   append(
     list(bslib::nav_panel_hidden(
       value = "tab_incid2",
-      mod_incidences_ui("tab_incid2")
+      m_incid_ui("tab_incid2")
     ))
   )
 
@@ -49,11 +63,11 @@ page_ui <-
 page_srv <-
   function(input, output, session) {
     m_res_switches_srv("res-srv")
-    m_incidences_srv("tab_incid", title = "Incidence 1")
-    m_incidences_srv("tab_incid2", title = "Incidence 2")
+    m_incid_srv("tab_incid", title = "Incidence 1")
+    m_incid_srv("tab_incid2", title = "Incidence 2")
   }
 
-devmode()
+devmode(F, F)
 
 shiny::runApp(shinyApp(page_ui, page_srv))
 

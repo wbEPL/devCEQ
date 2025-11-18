@@ -141,25 +141,3 @@ f_radioGroupButtons_ui <- function(
   }
 }
           
-
-# Generate random data based gg plot also choosing between bar, line and scatter randomly
-fig_gg_random <- function() {
-  
-  type <- sample(c("bar", "line", "scatter"), 1)
-  n <- sample(5:15, 1)
-  dta <- data.frame(x = 1:n, y = sample(1:100, n))
-  dta |> 
-    ggplot(aes(x = x, y = y)) +
-    {
-      if (type == "bar") {
-        geom_bar(stat = "identity")
-      } else if (type == "line") {
-        geom_line()
-      } else {
-        geom_point()
-      }
-    } +
-    theme_minimal()
-}
-
-

@@ -17,22 +17,35 @@ m_figure_ui <- function(id){
 #' @param id Module id
 #' @param figures A reactive expression returning a named list of figures (ggplot or plotly objects)
 #' @param selected A reactive expression returning the name of the selected figure to display
-#' @export
 #' 
+#' @importFrom shiny moduleServer NS uiOutput renderUI plotOutput renderPlot tableOutput renderTable
+#' @importFrom shinycssloaders withSpinner
+#' @importFrom plotly plotlyOutput renderPlotly
+#' @importFrom DT dataTableOutput renderDataTable
+#' @importFrom flextable flextable htmltools_value
+#' @export
+#'
 m_figure_server <- function(
   id,
   figures = reactive(
-    list(`Figure 1` = fig_gg_random(), `Figure 1` = fig_gg_random())
+    list(
+      `Figure 1` = fig_gg_random(),
+      `Figure 2` = fig_gg_random(),
+      `Figure 3` = fig_gg_random() |> plotly::ggplotly(),
+      `DT` = DT::datatable(head(mtcars)),
+      `Flextable` = flextable::flextable(head(mtcars)),
+      `DF` = head(mtcars)
+    )
   ),
   selected = reactive(
     "Figure 1"
   ),
   ...
-){
-  moduleServer(id, function(input, output, session){
+) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    fig_show <- reactive({      
+    fig_show <- reactive({
       figs <- figures()
       sel <- selected()
       if (!is.null(figs) && sel %in% names(figs)) {
@@ -46,11 +59,33 @@ m_figure_server <- function(
     last_fig_class <- reactiveVal(NULL)
     observe({
       req(fig_show())
-      if (inherits(fig_show(), "ggplot") && !identical(last_fig_class(), "ggplot")) {
+
+      if (
+        inherits(fig_show(), "ggplot") && !identical(last_fig_class(), "ggplot")
+      ) {
         isolate(last_fig_class("ggplot"))
       }
+
       if (inherits(fig_show(), "plotly")) {
         isolate(last_fig_class("plotly"))
+      }
+
+      if (
+        inherits(fig_show(), "flextable") &&
+          !identical(last_fig_class(), "flextable")
+      ) {
+        isolate(last_fig_class("flextable"))
+      }
+
+      if (
+        inherits(fig_show(), "datatables") &&
+          !identical(last_fig_class(), "datatables")
+      ) {
+        isolate(last_fig_class("datatables"))
+      }
+
+      if (is.data.frame(fig_show()) && !identical(last_fig_class(), "tbl")) {
+        isolate(last_fig_class("tbl"))
       }
     })
 
@@ -60,7 +95,12 @@ m_figure_server <- function(
       switch(
         last_fig_class(),
         "ggplot" = plotOutput(ns("fig_gg")) |> shinycssloaders::withSpinner(),
-        "plotly" = plotly::plotlyOutput(ns("fig_ly"))  |> shinycssloaders::withSpinner()
+        "plotly" = plotly::plotlyOutput(ns("fig_ly")) |>
+          shinycssloaders::withSpinner(),
+        "flextable" = uiOutput(ns("fig_ft")) |> shinycssloaders::withSpinner(),
+        "datatables" = DT::dataTableOutput(ns("fig_dt")) |>
+          shinycssloaders::withSpinner(),
+        "tbl" = tableOutput(ns("fig_tbl")) |> shinycssloaders::withSpinner()
       )
     })
 
@@ -76,10 +116,26 @@ m_figure_server <- function(
     output$fig_ly <- plotly::renderPlotly({
       req(fig_show())
       req(inherits(fig_show(), "plotly"))
-      fig_show() %>%
-        plotly_config()
+      fig_show() |> plotly_config()
     })
 
+    output$fig_ft <- renderUI({
+      req(fig_show())
+      req(inherits(fig_show(), "flextable"))
+      flextable::htmltools_value(fig_show())
+    })
+
+    output$fig_dt <- DT::renderDataTable({
+      req(fig_show())
+      req(inherits(fig_show(), "datatables"))
+      fig_show()
+    })
+
+    output$fig_tbl <- renderTable({
+      req(fig_show())
+      req(is.data.frame(fig_show()))
+      fig_show()
+    })
   })
 }
 
@@ -94,12 +150,12 @@ test_m_figure <- function() {
   library(bslib)
 
   ui <- page_fixed(
-    m_figure_ui("fig_mod"),
     selectInput(
       inputId = "fig_select",
       label = "Select figure:",
-      choices = c("Figure 1", "Figure 2")
-    )
+      choices = c("Figure 1", "Figure 2", "Figure 3", "DT", "Flextable", "DF"),
+    ),
+    m_figure_ui("fig_mod")
   )
 
   server <- function(input, output, session) {
@@ -108,7 +164,11 @@ test_m_figure <- function() {
       figures = reactive(
         list(
           `Figure 1` = fig_gg_random(),
-          `Figure 2` = fig_gg_random() |> plotly::ggplotly()
+          `Figure 2` = fig_gg_random(),
+          `Figure 3` = fig_gg_random() |> plotly::ggplotly(),
+          `DT` = DT::datatable(head(mtcars)),
+          `Flextable` = flextable::flextable(head(mtcars)),
+          `DF` = head(mtcars)
         )
       ),
       selected = reactive(input$fig_select)

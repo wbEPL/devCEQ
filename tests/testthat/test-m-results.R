@@ -26,7 +26,7 @@ library(bslib)
 # test_m_diagnostics()
 
 # Figure module --------------------------------------------
-# test_m_figure()
+test_m_figure()
 
 # Incidences module --------------------------------------------
 test_m_incid(page_ui = f_incid_ui_linear)

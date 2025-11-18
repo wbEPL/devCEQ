@@ -73,13 +73,15 @@ m_incid_srv <-
           lys = list(),
           ggs = list(fig_gg_random(), fig_gg_random(), fig_gg_random()) |> 
             set_names(c("Fig 1", "Fig 2", "Fig 3")),
+          fts = map(1:3, ~ sample_n(mtcars, 5) |> flextable()) |> 
+            set_names(c("Fig 1", "Fig 2", "Fig 3")),
           dta = tibble(1:10)
         )
       )
 
       # Step 10. Card with plot and data table --------------------------------
       m_figure_server("fig1", figures = reactive({fig()$ggs}), selected = pltby)
-      #TODO
+      m_figure_server("tbl1", figures = reactive({fig()$fts}), selected = pltby)
 
       # Step 20. Results export modal ----------------------------------------
       #TODO
@@ -96,7 +98,7 @@ m_incid_srv <-
               pltby = pltby()
             ),
             ggs = fig()$ggs,
-            fts = list(),
+            fts = fig()$fts,
             dta = fig()$dta
           )
         })
@@ -129,7 +131,7 @@ f_incid_ui_linear <- function(id) {
     m_figure_ui(ns("fig1")),
 
     # Table
-    uiOutput(ns("table_card")),
+    m_figure_ui(ns("tbl1")),
 
     # Diagnostics
     m_diagnostics_ui(ns("dev_info"))
@@ -160,10 +162,7 @@ f_incid_ui_card <- function(id, ...) {
 
     nav_panel(
       "Data",
-      # card_title(),
-      # card_header("Header placeholder"),
-      h4("Data placeholder"),
-      # card_footer("Footer placeholder")
+      m_figure_ui(ns("tbl1"))
     ),
 
     if (in_devmode()) {
@@ -172,7 +171,7 @@ f_incid_ui_card <- function(id, ...) {
         m_diagnostics_ui(ns("dev_info"))
       )
     },
-    
+
     nav_spacer(),
 
     # nav_item(

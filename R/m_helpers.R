@@ -3,41 +3,22 @@
 #' @name m_helpers
 NULL
 
-#' @describeIn m_helpers Title generation module
+#' @describeIn m_helpers Title generation UI function
 #' 
-#' @importFrom shiny NS uiOutput renderUI
-#' 
-m_title_ui <- function(id, ...) {
-  ns <- NS(id)
-  uiOutput(ns("title"))
-}
-
-#' @describeIn m_helpers Title server module
-#' @importFrom shiny moduleServer reactive renderUI
-m_title_srv <- function(id, title_reactive = reactive(title)) {
-  moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-    output$title <-
-      renderUI({
-        if (isTruthy(title_reactive()) && !is.null(title_reactive())) {
-          title_reactive()
-        } else {
-          if (in_devmode()) ns("Incidences tab title") |> h3()
-        }
-      })
-  })
-}
-
+#' @param id Module id
+#' @param title Title/Label for the input
+#' @param ... not used
+#' @export
 f_title_ui <- function(id, title = NULL, ...) {
   ns <- NS(id)
-  if (isTruthy(title) && !is.null(title_reactive())) {
+  if (isTruthy(title) && !is.null(title)) {
     title
   } else {
     if (in_devmode()) ns("Incidences tab title") |> h3()
   }
 }
 
-#' @describeIn m_helpers mNumber of deciles selection UI + server
+#' @describeIn m_helpers Number of deciles selection UI + server
 #' 
 #' @param id Module id
 #' @param title Title/Label for the input
@@ -77,148 +58,52 @@ f_numericInput_ui <- function(id, title = NULL, choices = NULL, ...) {
   do.call(shiny::numericInput, args)
 }
 
-#' @describeIn m_helpers mNumber of deciles selection server
-#' @param id Module id
+
+#' @describeIn m_helpers Income deciles by selection UI generator factory
+#' @param fn Function to use for input generation. Either `shiny::selectInput` or `shiny::selectizeInput`
+#' @return A function generating the desired input UI
 #' @export
 #' 
-m_numericInput_srv <- function(id, label = NULL, value = NULL, ...) {
-  moduleServer(id, function(input, output, session) {
-    ns <- session$ns
+f_selegenInput_ui <- function(fn = shiny::selectizeInput) {
+  function(
+    id,
+    title = NULL,
+    choices = NULL,
+    selected = choices[1],
+    ...
+  ) {
+    ns <- NS(id)
 
-    # Generate the UI of input
-    output$ui <- renderUI(f_numericInput_ui(ns(NULL), label, value, ...))
-    
-    # Collect the value as reactive
-    reactive(input$inputId)
-  })
-}
+    if (!isTruthy(choices) || is.null(choices)) {
+      return(NULL)
+    }
 
+    if (length(choices) <= 1) {
+      return(NULL)
+    }
 
-
-#' @describeIn m_helpers Income deciles by selection UI
-#' @param id Module id
-#' @inheritParams f_numericInput_ui
-#' @param selected Default selected value. Usually the first value of choices.
-#' @param ... Additional arguments passed to `selectInput()`
-#' @export
-#'
-f_selectInput_ui <- function(
-  id,
-  title = NULL, #"Deciles by:",
-  choices = NULL, #f_var_names_vector(get_inc_nm()),
-  selected = choices[1],
-  ...
-) {
-  ns <- NS(id)
-
-  if (!isTruthy(choices) || is.null(choices)) {
-    return(NULL)
-  }
-
-  if (length(choices) <= 1) {
-    return(NULL)
-  }
-
-  valid_args <- c("multiple", "width", "size", "selectize")
-  args <- list(...)
-  args <- args[names(args) %in% valid_args]
-  args <- c(
-    list(
-      inputId = ns("inputId"),
-      label = title,
-      choices = choices,
-      selected = selected
-    ),
-    args
-  )
-  do.call(shiny::selectInput, args)
-}
-
-f_selectizeInput_ui <- function(
-  id,
-  title = NULL, 
-  choices = NULL, 
-  selected = choices[1],
-  ...
-) {
-  ns <- NS(id)
-
-  if (!isTruthy(choices) || is.null(choices)) {
-    return(NULL)
-  }
-
-  if (length(choices) <= 1) {
-    return(NULL)
-  }
-
-  valid_args <- c("multiple", "width", "size", "options")
-  args <- list(...)
-  args <- args[names(args) %in% valid_args]
-  args <- c(
-    list(
-      inputId = ns("inputId"),
-      label = title,
-      choices = choices,
-      selected = selected
-    ),
-    args
-  )
-  do.call(shiny::selectizeInput, args)
-}
-
-
-#' @describeIn m_helpers Income deciles by selection server
-#' @param id Module id
-#' @export
-m_selectInput_srv <- function(id, label = NULL, choices = NULL, ...) {
-  moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-
-    # Check if choices is not a reactive and make it reactive
-    choices_reactive <- reactive({
-      req(choices)
-      if (!is.reactive(choices)) {
-        return(choices)
-      } else {
-        return(choices())
-      }
-    })
-
-    # Collect the value as reactive
-    out <- reactiveVal()
-    
-    # Set initial value
-    observe(out(choices_reactive()[1]))
-    
-    # Generate the UI of input
-    output$ui <- renderUI(f_selectInput_ui(
-      ns(NULL),
-      label,
-      choices = choices_reactive(),
-      ...
-    ))
-
-    # Collect the value as reactive
-    observeEvent(
-      input$sel_imp,
-      {
-        new_out <- input$sel_imp
-        if (class(choices_reactive()) == "numeric") {
-          new_out <- as.numeric(new_out)
-        }        
-        if (class(choices_reactive()) == "integer") {
-          new_out <- as.numeric(new_out)
-        }
-        out(new_out)
-      },
-      ignoreNULL = TRUE,
-      ignoreInit = TRUE
+    valid_args <- c("multiple", "width", "size", "options")
+    args <- list(...)
+    args <- args[names(args) %in% valid_args]
+    args <- c(
+      list(
+        inputId = ns("inputId"),
+        label = title,
+        choices = choices,
+        selected = selected
+      ),
+      args
     )
-
-    out
-  })
+    do.call(fn, args)
+  }
 }
 
+#' @describeIn m_helpers Income deciles by selection UI using selectInput
+#'
+f_selectInput_ui <- f_selegenInput_ui(shiny::selectInput)
+
+#' @describeIn m_helpers Income deciles by selection UI using selectizeInput
+f_selectizeInput_ui <- f_selegenInput_ui(shiny::selectizeInput)
 
 #' @describeIn m_helpers generate radiogroup buttons UI
 #'
@@ -255,29 +140,9 @@ f_radioGroupButtons_ui <- function(
     )
   }
 }
-
-m_radioGroupButtons_srv <- function(id, choices = NULL, ...) {
-  moduleServer(id, function(input, output, session) {
-    # reactive(input$plot_var)
-    out <- reactiveVal(NULL)
-    observeEvent(choices[[1]], {
-      out(choices[[1]])
-    }, ignoreNULL = TRUE)
-    observeEvent(
-      input$plot_var,
-      {
-        out(input$plot_var)
-      },
-      ignoreNULL = TRUE,
-      ignoreInit = TRUE
-    )
-    out    
-  })
-}
-              
+          
 
 # Generate random data based gg plot also choosing between bar, line and scatter randomly
-
 fig_gg_random <- function() {
   
   type <- sample(c("bar", "line", "scatter"), 1)

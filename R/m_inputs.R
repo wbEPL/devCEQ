@@ -38,7 +38,7 @@ m_input_srv <- function(
     f_ui <-
       switch(
         type,
-        # "titleInput" = f_numericInput_ui,
+        "title" = f_title_ui,
         "numericInput" = f_numericInput_ui,
         "selectInput" = f_selectInput_ui,
         "selectizeInput" = f_selectizeInput_ui,
@@ -48,12 +48,15 @@ m_input_srv <- function(
 
     choices <- f_make_reactive(choices)
     title <- f_make_reactive(title)
-    args_ui <- reactive(c(
-      list(id = ns(NULL), title = title(), choices = choices()),
-      list(...)
-    ))
+    ui <- reactive({
+      args <- c(
+        list(id = ns(NULL), title = title(), choices = choices()),
+        list(...)
+      )
+      do.call(f_ui, args)
+    })
 
-    output$ui <- renderUI(do.call(f_ui, args_ui()))
+    output$ui <- renderUI(ui())
 
     # Update module function (Not used for now)
 
@@ -92,13 +95,13 @@ f_safe_numeric <- function(x) {
 #' @describeIn m_inputs Collect input providing default choices value
 #' @param id Module id
 #' @param choices Reactive expression with the named list of default choices
-#' @param ... Additional parameters passed to m_input_srv
+#' @param ... Additional namd parameters to add to  to m_input_srv
 #' @export 
 f_collect_input <- function(id, choices = reactive(NULL), ...) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     choices <- f_make_reactive(choices)
-    out <- reactiveVal()
+    out <- reactiveVal(label = ns(NULL))
 
     # Default value before input is initialized
     observe({
@@ -142,6 +145,12 @@ test_m_input <- function() {
       textInput("value", "Value", "item_1"),
     ),
     verbatimTextOutput("inp_r"),
+
+    h3("Title"),
+    layout_columns(
+      m_input_ui("title1"),
+      m_input_ui("title2")
+    ),
     h3("numerciInput"),
     layout_columns(
       m_input_ui("num1"),
@@ -188,7 +197,10 @@ test_m_input <- function() {
 
     output$inp_r <- renderPrint({choice_react()})
 
-    num1 <- m_input_srv("num1", "numericInput", title = reactive("Choices (react):"), choices = choice_react)
+    m_input_srv("title1", "title", title = "Static title")
+    m_input_srv("title2", "title", title = reactive(names(choice_react())))
+
+    num1 <- m_input_srv("num1", "numericInput", title = reactive("Choices (react):"), choices = 1:10)
     num2 <- m_input_srv("num2", "numericInput", title = reactive("Choices (value):"), choices = reactive(c("A" = 99, "B" = 2, "C" = 3)))
     num3 <- m_input_srv("num3", "numericInput", title = reactive("Choices (NA):"), choices = reactive("NULL REACTIVE"))
     
@@ -197,7 +209,7 @@ test_m_input <- function() {
     })
 
     
-    sel0 <- m_input_srv("sel0", "selectInput", reactive("One choice:"), choice_react)
+    sel0 <- m_input_srv("sel0", "selectInput", reactive("One choice:"), 1:10)
     sel1 <- m_input_srv("sel1", "selectInput", reactive("Reactive:"), reactive(c(str_c(choice_react(), "1"), choice_react())))
     sel2 <- m_input_srv("sel2", "selectInput", reactive("Constant (numeric):"), reactive(c("A" = 1, "B" = 2, "C" = 3)))
     sel3 <- m_input_srv("sel3", "selectInput", reactive("Constant (character):"), reactive(c("A" = "1", "B" = "2", "C" = "3")), multiple = TRUE)

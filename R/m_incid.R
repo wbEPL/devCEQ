@@ -119,39 +119,7 @@ m_incid_srv <-
       # Step 80. Development context info ----------------------------------------
       m_diagnostics_srv("dev_info", out = mod_out)
 
-      
-      # output$dev_info <- renderUI({
-      #   if (in_devmode()) {
-      #     verbatimTextOutput(ns("page_dev"))
-      #   }
-      # })
-
-      # output$page_dev <- renderPrint({
-      #   if (in_devmode()) {
-      #     str(
-      #       list(
-      #         inputs = list(
-      #           ptitle = ptitle(),
-      #           ndec = ndec(),
-      #           decby = decby(),
-      #           grpby = grpby(),
-      #           pltby = pltby()
-      #         ),
-      #         ggs = list(),
-      #         fts = list(),
-      #         dta = list()
-      #       )
-      #     )
-      #   }
-      # })
-
       # Step 90. Return reactive values ----------------------------------------
-      # list(
-      #   ndec = ndec,
-      #   decby = decby,
-      #   grpby = grpby,
-      #   pltby = pltby
-      # )
       mod_out
 
     })

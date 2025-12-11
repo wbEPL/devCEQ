@@ -81,26 +81,32 @@ m_incid_srv <-
       })
 
       observeEvent(fig$dta, {
+        req(fig$dta)
         fig$ggs <- f_plot_pov_by(fig$dta , fig_by = fig_by, x_lab = "Income concepts")
+        req(fig$ggs)
         fig$id <- names(fig$ggs)
         fig$title <- names(fig$ggs)
       })
       
       observeEvent(fig$dta, {
-        fig$rt <- fig$dta |> f_format_tbl() |> f_format_rt(col_min_groups = 1)
+        req(fig$dta)
+        fig$dta_out <- fig$dta |> f_format_tbl() 
+      })
+      
+      observeEvent(fig$dta_out, {
+        req(fig$dta_out)
+        fig$rt <- fig$dta_out |> f_format_rt(col_min_groups = 1)
       })
    
       # Step 3 Generating plots ------------------------------------------------
-      #TODO
-
       fig <- reactiveValues(
           id = c("Fig 1", "Fig 2", "Fig 3"),
           title = c("Figure 1", "Figure 2", "Figure 3"),
           lys = list(),
           ggs = NULL,
-          fts = map(1:3, ~ sample_n(mtcars, 5) |> flextable()) |> 
-            set_names(c("Fig 1", "Fig 2", "Fig 3")),
+          fts = NULL,
           rt = NULL,
+          dta_out = NULL,
           dta = NULL
       )
       
@@ -122,9 +128,12 @@ m_incid_srv <-
               grpby = grpby(),
               pltby = pltby()
             ),
+            id = fig$id,
+            title = fig$title,
             ggs = fig$ggs,
             fts = fig$fts,
-            dta = fig$dta
+            dta = fig$dta,
+            dta_out = fig$dta_out
           )
         })
 
@@ -220,6 +229,7 @@ f_incid_ui_card <- function(id, ...) {
 #' 
 test_m_incid <- function(
   page_ui = f_incid_ui_card,
+  sim_res = reactive(dta_sim),
   ...
 ) {
   library(shiny)
@@ -231,9 +241,6 @@ test_m_incid <- function(
   )
 
   server <- function(input, output, session) {
-    sim_res <- reactive({
-      dta_sim
-    })
     m_incid_srv("incid1", sim_res = sim_res, page_ui = page_ui, ...)
   }
 

@@ -19,12 +19,25 @@ library(shiny)
 library(shinyWidgets)
 library(bslib)
 
+dta_sim_local <- 
+  dta_sim |> 
+  map(~{
+    .x$policy_sim_raw <-
+      .x$policy_sim_raw |>
+      mutate(
+        pl_nat = median(ym) * 0.4,
+        pl_190 = median(ym) * 0.6,
+        pl_500 = median(ym) * 0.8
+      )
+    .x
+  }) 
+
 ## Poverty aggregation logic --------------------------------------------
 f_calc_povineq(
-  dta = dta_sim$policy1$policy_sim_raw,
-  var_inc = c("ym", "yn", "yp", "yg", "yd", "yc", "yf"),
+  dta = dta_sim_local$policy1$policy_sim_raw,
+  var_inc = c("ym"),
   var_wt = "hhwt",
-  pl_var = "pl_nat",
+  pl_var = "pl_190",
   group_var = "total"
 )
 
@@ -69,31 +82,19 @@ dta_fig |>
     color_var = "group_val",
     facet_var = "sim",
     type = "bar"
-  )
+  ) |> 
+  plotly::ggplotly(tooltip = "text")
 
 
 dta_sim |> f_calc_pov_stats() |> f_plot_pov_by(fig_by = "measure") |> names()
 
-# Building a poverty module --------------------------------------------
-
-dta_fig |>
-  pivot_wider(
-    names_from = any_of(unname(f_get_colname(c("group_var", "group_val")))),
-    values_from = any_of(unname(f_get_colname(c("value")))),
-    names_sep = "__"
-  ) |>
-  f_reactable(separator = "__")
-
-
-
-# Apply formatting of numbers by type of the measure -------------------------------------
+# Formattin tables  -------------------------------------
 
 dta_fig |> f_format_tbl() |> f_format_rt(col_min_groups = 1)
 
 
-
-
+# Testing the module --------------------------------------------
 devmode()
-test_m_incid(page_ui = f_incid_ui_linear)
+test_m_pov(sim_res = reactive(dta_sim_local))
 
 

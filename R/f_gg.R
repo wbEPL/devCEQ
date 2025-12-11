@@ -34,6 +34,7 @@ f_plot_gg <- function(
   } else {
     NULL
   }
+
   facet_var <- if (!is.null(facet_var)) {
     ifelse(facet_var %in% colnames(dta), facet_var, f_get_colname(facet_var))
   } else {
@@ -52,6 +53,37 @@ f_plot_gg <- function(
     dta <- dta |> mutate(across(any_of(x_var), as_factor))
   }
 
+  # Add appropriate labels
+  if (!is.null(color_var) && !color_var %in% names(dta)) {
+    dta <- dta |> mutate(!!sym(color_var) := "")
+  }
+  
+  if (!is.null(facet_var) && !facet_var %in% names(dta)) {
+    dta <- dta |> mutate(!!sym(facet_var) := "")
+  }
+
+  col_measure <- f_get_colname("measure")
+  if (!col_measure %in% colnames(dta)) {
+    dta <- dta |> mutate(!!sym(col_measure) := "")
+  }
+
+  col_group_var <- f_get_colname("group_var")
+  if (!col_group_var %in% colnames(dta)) {
+    dta <- dta |> mutate(!!sym(col_group_var) := "")
+  }
+
+  dta <-
+    dta |>
+    mutate(
+      tooltip = glue::glue(
+        "{.data[[col_measure]]}
+        {.data[[x_var]]}: {scales::number(.data[[y_var]])}
+        {.data[[col_group_var]]}: {.data[[color_var]]}
+        {.data[[facet_var]]}"
+      )
+    ) 
+
+
   # If x axis has text and it is long, break it
   if (is.character(dta[[x_var]]) || is.factor(dta[[x_var]])) {
     dta <- dta |> mutate(across(any_of(x_var), ~ str_wrap(as.character(.), width = 15)))
@@ -65,7 +97,8 @@ f_plot_gg <- function(
       y = .data[[y_var]],
       color = .data[[color_var]],
       fill = .data[[color_var]],
-      group = .data[[color_var]]
+      group = .data[[color_var]],
+      text = tooltip
     )
 
   # Geom based on type

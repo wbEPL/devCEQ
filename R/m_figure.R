@@ -68,7 +68,7 @@ m_figure_server <- function(
         out <- figures()[[1]]
       } 
       if (force_ly) {
-        out <- plotly::ggplotly(out)
+        out <- plotly::ggplotly(out, tooltip = "text")
       }
       out
     })

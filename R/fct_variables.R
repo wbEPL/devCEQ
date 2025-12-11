@@ -35,6 +35,21 @@ get_var_nm <- function(vars = NULL, suffix = NULL) {
   return(dta)
 }
 
+#' @describeIn get_var_nm All measures IDs and labels returned in a data frame
+#' @returns a data frame with measures names
+#' @export
+get_measure_nm <- function(x = NULL) {
+  measure_nm <- f_measure_dic_default()
+  if (exists("f_measure_dic", mode = "function")) {
+    measure_nm <- f_measure_dic()
+  } 
+  if (is.null(x)) {
+    return(measure_nm)
+  } else {
+    measure_nm %>% filter(measure %in% x)
+  }
+}
+
 
 #' @describeIn get_var_nm Income Concepts variables IDs and labels returned in a data frame
 #'
@@ -183,4 +198,27 @@ f_var_group_default <- function() {
 #' 
 f_var_names_vector <- function(var_nms = get_inc_nm()) {
   set_names(var_nms$var, var_nms$var_title)
+}
+
+f_get_measure <- function(x) {
+  measure_nm <- get_measure_nm()
+  measure_nm %>%
+    filter(measure == x) %>%
+    pull(measure_title)
+}
+
+#' @describeIn get_var_nm Poverty and inequality measures names
+#' 
+f_measure_dic_default <- function() {
+  tribble(
+    ~measure, ~measure_title,
+    "hc",     "Number of poor",
+    "fgt0",   "Poverty headcount ratio (FGT0)",
+    "fgt1",   "Poverty gap index (FGT1)",
+    "fgt2",   "Poverty severity index (FGT2)",
+    "gini",   "Gini coefficient",
+    "theil",  "Theil index",
+    "n",      "N observations",
+    "pop",    "Population"
+  )
 }

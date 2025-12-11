@@ -1,0 +1,128 @@
+#' Plotting helpers
+#' @name f_gg
+NULL
+
+
+##' @describeIn f_gg General ggplot2 plotting function for line and bar plots
+#' @param dta Data frame containing the data to plot
+#' @param x_var Name of the variable for the x-axis (string)
+#' @param y_var Name of the variable for the y-axis (string)
+#' @param type Type of plot: "line" or "bar" (default: "line")
+#' @param color_var Name of the variable for coloring lines/bars (string, optional)
+#' @param facet_var Name of the variable for faceting the plot (string, optional)
+#' @param ... Additional arguments (currently unused)
+#' @return A ggplot2 object representing the plot
+#' @export
+#' 
+f_plot_gg <- function(
+  dta, 
+  x_var,
+  y_var,
+  type = "line",
+  color_var = NULL,
+  facet_var = NULL,
+  ...
+) {
+
+  # Check if the columns are as specified or they are in their names
+  x_var <- ifelse(x_var %in% colnames(dta), x_var, f_get_colname(x_var))
+  y_var <- ifelse(y_var %in% colnames(dta), y_var, f_get_colname(y_var))
+  color_var <- if (!is.null(color_var)) {
+    ifelse(color_var %in% colnames(dta), color_var, f_get_colname(color_var))
+  } else {
+    NULL
+  }
+  facet_var <- if (!is.null(facet_var)) {
+    ifelse(facet_var %in% colnames(dta), facet_var, f_get_colname(facet_var))
+  } else {
+    NULL
+  }
+
+  # Check if columns exist
+  required_cols <- c(x_var, y_var, color_var, facet_var) |> na.omit()
+  missing_cols <- setdiff(required_cols, colnames(dta))
+  if (length(missing_cols) > 0) {
+    cli::cli_abort("Missing columns in data: {missing_cols}")
+  }
+
+  # Check if X is factor an convert it to one is not
+  if (!is.factor(dta[[x_var]])) {
+    dta <- dta |> mutate(across(any_of(x_var), as_factor))
+  }
+
+  # If x axis has text and it is long, break it
+  if (is.character(dta[[x_var]]) || is.factor(dta[[x_var]])) {
+    dta <- dta |> mutate(across(any_of(x_var), ~ str_wrap(as.character(.), width = 20)))
+  }
+
+  # Base plot
+  p <- dta |>
+    ggplot() +
+    aes(
+      x = .data[[x_var]],
+      y = .data[[y_var]],
+      color = .data[[color_var]],
+      fill = .data[[color_var]],
+      group = .data[[color_var]]
+    )
+
+  # Geom based on type
+  if (type == "line") {
+    p <- p +
+      geom_line() +
+      geom_point()
+  } else if (type == "bar") {
+    p <- p +
+      geom_col(stat = "identity", position = "dodge")
+  } else {
+    cli::cli_abort("Unsupported plot type: {type}")
+  }
+
+  # Facet if specified
+  if (!is.null(facet_var)) {
+    p <- p + facet_wrap(vars(.data[[facet_var]]))
+  }
+
+  p <- p + theme_minimal()
+
+  # Y scale in % if % is present in the y_var name
+  if (grepl("%", y_var)) {
+    p <- p + scale_y_continuous(labels = scales::percent_format(scale = 1))
+  } else {
+    p <- p + scale_y_continuous(labels = scales::label_number(scale_cut = scales::cut_short_scale()))
+  }
+
+  # Apply custom colour and fill scales
+  p <- p + f_scale_color_custom() + f_scale_fill_custom()
+
+  # Return plot
+  p 
+
+}
+
+#' @describeIn f_gg Default colour palette
+#' @return A character vector of hex colour codes
+#' @export
+f_default_colours <- function() {
+  c(
+    "#1b9e77", "#d95f02", "#7570b3", "#e7298a",
+    "#66a61e", "#e6ab02", "#a6761d", "#666666"
+  )
+}
+
+#' Custom palette function for colour and fill scales Infinite length based on the initial set of colors
+#' @describeIn f_gg Custom ggplot2 colour scale using a predefined palette
+#' @param ... Additional arguments passed to \code{scale_color_manual}
+#' @export
+#' 
+f_scale_color_custom <- function(...) {
+  scale_color_manual(values = rep(f_default_colours(), length.out = 100), ...)
+}
+
+#' @describeIn f_gg Custom ggplot2 fill scale using a predefined palette
+#' @param ... Additional arguments passed to \code{scale_fill_manual}
+#' @export
+#' 
+f_scale_fill_custom <- function(...) {
+  scale_fill_manual(values = rep(f_default_colours(), length.out = 100), ...)
+}

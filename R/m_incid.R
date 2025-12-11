@@ -61,7 +61,21 @@ m_incid_srv <-
       ndec <- m_input_srv("ndec", ndec_type, ndec_title, ndec_choices)
       decby <- m_input_srv("decby", "selectInput", decby_title, decby_choices)
       grpby <- m_input_srv("grpby", grpby_type, grpby_title, grpby_choices)
+
+      # Step 2.c Plot selection
       pltby <- m_input_srv("pltby", pltby_type, pltby_title, reactive(names(fig()$ggs)))
+
+      # Step 3.A Data preparation ------------------------------------------------
+      plot_dta <- reactive({
+        f_calc_pov_stats(
+          dta = sim_res(),
+          var_inc = get_inc_nm()$var,
+          var_wt = get_wt_nm(),
+          group_vars = get_group_nm()$var,
+          pl_var = NULL,
+          pl_val = NULL
+        ) 
+      })
 
       # Step 3 Generating plots ------------------------------------------------
       #TODO
@@ -75,13 +89,13 @@ m_incid_srv <-
             set_names(c("Fig 1", "Fig 2", "Fig 3")),
           fts = map(1:3, ~ sample_n(mtcars, 5) |> flextable()) |> 
             set_names(c("Fig 1", "Fig 2", "Fig 3")),
-          dta = tibble(1:10)
+          dta = reactive(plot_dta() |> flextable())
         )
       )
 
       # Step 10. Card with plot and data table --------------------------------
       m_figure_server("fig1", figures = reactive({fig()$ggs}), selected = pltby)
-      m_figure_server("tbl1", figures = reactive({fig()$fts}), selected = pltby)
+      m_figure_server("tbl1", figures = reactive({fig()$dta()}), selected = pltby)
 
       # Step 20. Results export modal ----------------------------------------
       #TODO
@@ -194,7 +208,7 @@ f_incid_ui_card <- function(id, ...) {
 #' @export
 #' 
 test_m_incid <- function(
-  page_ui = f_incid_ui_linear,
+  page_ui = f_incid_ui_card,
   ...
 ) {
   library(shiny)
@@ -207,7 +221,7 @@ test_m_incid <- function(
 
   server <- function(input, output, session) {
     sim_res <- reactive({
-      NULL
+      dta_sim
     })
     m_incid_srv("incid1", sim_res = sim_res, page_ui = page_ui, ...)
   }

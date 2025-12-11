@@ -19,194 +19,103 @@ library(shiny)
 library(shinyWidgets)
 library(bslib)
 
-# Inputs module --------------------------------------------
+## Inputs module --------------------------------------------
 # test_m_input()
 
-# Diagnostic module --------------------------------------------
+## Diagnostic module --------------------------------------------
 # test_m_diagnostics()
 
-# Figure module --------------------------------------------
+## Figure module --------------------------------------------
 # test_m_figure()
 
-# Incidences module --------------------------------------------
-test_m_incid(page_ui = f_incid_ui_linear)
-test_m_incid(page_ui = f_incid_ui_card)
+## Incidences module --------------------------------------------
+# test_m_incid(page_ui = f_incid_ui_linear)
+# test_m_incid(page_ui = f_incid_ui_card)
 
-# Page switching --------------------------------------------
+## Page switching --------------------------------------------
 # test_m_res_switches()
 
-# Insidences results module with switches and all results collection ----------
-test_m_incid_switches()
+## Insidences results module with switches and all results collection ----------
+# test_m_incid_switches()
 
 
-# page_fluid(
+## Sim results aggregation logic --------------------------------------------
+
+dta <- dta_sim$policy1$policy_sim_raw |> mutate(pl_nat = median(ym) * 0.4)
+
+f_calc_povineq(
+  dta = dta,
+  var_inc = c("ym", "yn", "yp", "yg", "yd", "yc", "yf"),
+  var_wt = "hhwt",
+  pl_var = "pl_nat",
+  group_var = "total"
+)
+
+f_calc_povineq_by(
+  dta = dta,
+  var_inc = c("ym", "yn", "yp", "yg", "yd", "yc", "yf"),
+  var_wt = "hhwt",
+  pl_var = "pl_nat",
+  group_vars = c("total", "group_1", "group_2")
+) |> 
+  count(group_var, group_val )
 
 
-  #   )
-  #  tagList(
-  #         uiOutput(ns("title")),
-  #         fluidRow(
-  #           #
-  #           column(
-  #             2,
-  #             numericInput(
-  #               ns("n_dec"),
-  #               label = n_dec_label,
-  #               value = 10,
-  #               min = 5,
-  #               max = 50
-  #             )
-  #           ),
+# Calculating for all simulations and plotting ----------------------------
 
-  #           column(
-  #             3,
-  #             selectInput(
-  #               ns("by_income"),
-  #               label = dec_by_label,
-  #               choices = set_names(get_inc_nm()$var, get_inc_nm()$var_title),
-  #               selected = NULL,
-  #               width = "350px"
-  #             )
-  #           ),
 
-  #           column(#
-  #             7,
-  #             uiOutput(#
-  #               ns(
-  #                 "radioGroupButtons"
-  #               )))
-  #         ),
-
-  #         tags$div(
-  #           tags$div(
-  #             shinyWidgets::dropMenu(
-  #               shinyWidgets::actionBttn(
-  #                 inputId = ns("ddmenue"),
-  #                 style = "simple",
-  #                 size = "xs",
-  #                 color = "primary",
-  #                 icon = icon("bars")
-  #               ),
-  #               actionButton(
-  #                 inputId = ns("more"),
-  #                 label = "Save plot",
-  #                 icon = icon("download"),
-  #                 #ph("download-simple"),
-  #                 class = "btn-sm"
-  #               )
-  #             ),
-  #             style = htmltools::css(
-  #               position = "absolute",
-  #               top = 0,
-  #               left = "5px",
-  #               zIndex = 30
-  #             )
-  #           ),
-
-  #           shinycssloaders::withSpinner(plotly::plotlyOutput(ns(
-  #             "incidence_ly"
-  #           ))),
-
-  #           style = htmltools::css(
-  #             position = "relative",
-  #             width = htmltools::validateCssUnit("100%"),
-  #             height = htmltools::validateCssUnit("400px")
-  #           )
-  #         ),
-  #         tags$hr(),
-  #         column(12, shinycssloaders::withSpinner(DT::DTOutput(
-  #           ns("incidence_dt")
-  #         ))),
-  #         tags$hr()
-  #       )
+dta_sim |> 
+  f_calc_pov_stats()
 
 
 
+dta_fig <-
+  f_calc_povineq_by_sims(
+    dta_sim = dta_sim,
+    var_inc = c("ym", "yn", "yp", "yg", "yd", "yc", "yf"),
+    var_wt = "hhwt",
+    pl_var = "pl_nat",
+    group_vars = c("total", "group_1")
+  ) |> 
+  f_add_measure_labels() |> 
+  f_add_var_labels() |> 
+  f_add_var_labels(to_var = "group_var") |> 
+  f_rename_cols()
 
 
-  
+x_var <- "var" |> f_get_colname()
+y_var <- "value"  |> f_get_colname()
+color_var <- "group_val"  |> f_get_colname()
+facet_var <- "sim" |> f_get_colname()
 
-mod_res_ui <- function(id) {
-    ns <- NS(id)
-    res_content <-
-      tagList(
-        shiny::actionButton(ns("browse"), label = "Browse the visualisation"),
-        shiny::actionButton(ns("save"), label = "Save simulation raw data")
+measure_fltr <- get_measure_nm("fgt1")$measure_title
+fig_by <- "measure" |> f_get_colname()
+
+
+# dta_fig1 <-
+dta_fig |>
+  filter(if_any(any_of(f_get_colname(fig_by)), ~ . == measure_fltr)) |>
+  f_plot_gg(
+    x_var = "var",
+    y_var = "value",
+    color_var = "group_val",
+    facet_var = "sim",
+    type = "bar"
+  )
+
+dta_fig |>
+  group_by(across(any_of(fig_by))) |>
+  nest() |> 
+  mutate(
+    gg = map(
+      data,
+      ~ f_plot_gg(
+        dta = .x,
+        x_var = "var",
+        y_var = "value",
+        color_var = "group_val",
+        facet_var = "sim",
+        type = "bar"
       )
-
-    left_col <-
-      list(
-        shinyWidgets::radioGroupButtons(
-          inputId = ns("results_tab_choice"),
-          label = NULL,
-          choices = c(
-            "DEV/TEST" = "dev_test",
-            "Poverty" = "tab_pov",
-            "Inequality" = "tab_ineq",
-            "Net Cash Position" = "tab_ncp",
-            "Marginal contributions" = "tab_margins",
-
-            "<hr class=\"hr-small-line\"/>" = "hr1",
-            "Incidences:" = "ins",
-            "Direct transfers" = "tab_dtr",
-            "Subsidies  " = "tab_sub",
-            "In-kind transfers" = "tab_ink",
-            "<hr class=\"hr-small-line\"/>" = "hr2",
-            "Direct taxes" = "tab_dtx",
-            "Indirect taxes" = "tab_itx",
-            "Contributions" = "tab_con" #,
-          ),
-          direction = "vertical",
-          justified = TRUE,
-          width = "100%"
-        ) #,
-        # mod_results_btns_ui(id)
-      ) %>%
-      wellPanel() %>%
-      column(width = 3)
-
-    right_col <-
-      column(
-        9,
-        tabsetPanel(
-          # tabPanelBody(value = "dev_test", developer_ui(ns("dev-srv"))),
-          tabPanelBody(
-            value = "tab_pov",
-            local_gini_pov_ui1(ns("gin-pov-srv"))
-          ),
-          tabPanelBody(
-            value = "tab_ineq",
-            local_gini_pov_ui2(ns("gin-pov-srv"))
-          ),
-          tabPanelBody(
-            value = "tab_ncp",
-            devCEQ::mod_incidences_ui(ns("ncp-srv"))
-          ),
-
-          tabPanelBody(value = "tab_dtr", mod_incidences_ui(ns("tab_dtr"))),
-          tabPanelBody(value = "tab_sub", mod_incidences_ui(ns("tab_sub"))),
-          tabPanelBody(value = "tab_ink", mod_incidences_ui(ns("tab_ink"))),
-
-          tabPanelBody(value = "tab_dtx", mod_incidences_ui(ns("tab_dtx"))),
-          tabPanelBody(value = "tab_itx", mod_incidences_ui(ns("tab_itx"))),
-          tabPanelBody(value = "tab_con", mod_incidences_ui(ns("tab_con"))),
-
-          tabPanelBody(value = "tab_margins", mod_magins_ui(ns("tab_margins"))),
-
-          id = ns("results_tab"),
-          selected = "results_panel1",
-          type = c("hidden"),
-          header = NULL,
-          footer = NULL
-        )
-      )
-
-    tabPanel(
-      title = "Results",
-      if (golem::app_dev()) {
-        res_content
-      },
-      extra_css,
-      fluidRow(left_col, right_col)
     )
-  }
+  )

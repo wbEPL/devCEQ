@@ -29,6 +29,7 @@ if (!require("remotes")) {
   install.packages("remotes")
 }
 remotes::install_github("wbEPL/devCEQ", dependencies = TRUE, build_vignettes = FALSE)
+remotes::install_github("wbEPL/devCEQ", ref = "dev-gender", dependencies = TRUE, build_vignettes = FALSE)
 ```
 
 ### Run an example microsimulation app

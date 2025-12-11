@@ -20,14 +20,14 @@ f_calc_povineq <- function(
   var_inc_found <- intersect(var_inc, names(dta))
   if (length(var_inc_not_found) == length(var_inc)) {
     cli::cli_abort(
-      "None of the income variables provided in 'var_inc' are found in the data."
+      "None of {var_inc_not_found} provided in 'var_inc' are found in the data."
     )
   }
 
   # Warn if any variables are not in the data
   if (length(var_inc_not_found) > 0) {
     cli::cli_warn(
-      "The following income variables are not found in the data and will be ignored: {var_inc_missing}"
+      "The following income variables are not found in the data and will be ignored: {var_inc_not_found}"
     )
   }
 

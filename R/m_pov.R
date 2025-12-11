@@ -6,6 +6,8 @@ NULL
 #'
 #' @param ndec_type Type of input for number of deciles: "numericInput" or "selectInput"
 #'
+#' @export
+#' 
 m_pov_srv <-
   function(
     id,

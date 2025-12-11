@@ -198,19 +198,9 @@ f_var_group_default <- function() {
 }
 
 #' Var nems to vector
-#' 
+#' @export
 f_var_names_vector <- function(var_nms = get_inc_nm()) {
   set_names(var_nms$var, var_nms$var_title)
-}
-
-f_get_measure <- function(x = NULL) {
-  if (is.null(x)) {
-    return(get_measure_nm()$measure)
-  }
-  measure_nm <- get_measure_nm()
-  measure_nm %>%
-    filter(measure == x) %>%
-    pull(measure_title)
 }
 
 #' @describeIn get_var_nm Poverty and inequality measures names

@@ -299,11 +299,22 @@ f_calc_pov_stats <- function(
 #' @importFrom dplyr mutate group_by
 #' @importFrom purrr map
 #' @export
-#' 
-f_plot_pov_by <- function(dta, fig_by = "measure", x_lab = "Income concepts", ...) {
+#'
+f_plot_pov_by <- function(
+  dta,
+  fig_by = "measure",
+  fig_filter = NULL,
+  x_var = "var",
+  y_var = "value",
+  x_lab = "Income concepts",
+  color_var = "group_val",
+  facet_var = "sim",
+  type = "line",
+  ...
+) {
   fig_by <- f_get_colname(fig_by)
   all_figs <-
-    dta_fig |>
+    dta |>
     mutate(across(
       any_of(fig_by),
       ~.,
@@ -311,21 +322,40 @@ f_plot_pov_by <- function(dta, fig_by = "measure", x_lab = "Income concepts", ..
     )) |>
     group_by(grp_plot_by) |>
     nest() |>
+    ungroup()
+
+  all_figs_out <- all_figs
+  if (!is.null(fig_filter)) {
+    all_figs_out <-
+      all_figs |>
+      filter(if_any(any_of("grp_plot_by"), ~ . %in% fig_filter))
+    if (nrow(all_figs_out) == 0) {
+      cli::cli_warn(
+        "fig_filter did not match any available figures. Returning all figures."
+      )
+    } else {
+      # Reorder by fig_filter order
+      fig_order <- match(all_figs_out$grp_plot_by, fig_filter)
+      all_figs_out <- all_figs_out[order(fig_order, na.last = TRUE), ]
+    }
+  }
+
+  all_figs <-
+    all_figs_out |>
     mutate(
       gg = map(
         data,
         ~ f_plot_gg(
           dta = .x,
-          x_var = "var",
-          y_var = "value",
+          x_var = x_var,
+          y_var = y_var,
           x_lab = x_lab,
-          color_var = "group_val",
-          facet_var = "sim",
-          type = "line"
+          color_var = color_var,
+          facet_var = facet_var,
+          type = type
         )
       )
     )
-
   set_names(all_figs$gg, all_figs[["grp_plot_by"]])
 }
 

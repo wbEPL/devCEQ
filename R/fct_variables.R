@@ -46,7 +46,10 @@ get_measure_nm <- function(x = NULL) {
   if (is.null(x)) {
     return(measure_nm)
   } else {
-    measure_nm %>% filter(measure %in% x)
+    # Filter and preserve order of x
+    filtered <- measure_nm %>% filter(measure %in% x)
+    # Reorder by the order in x
+    filtered[match(x, filtered$measure), ] %>% na.omit()
   }
 }
 
@@ -200,7 +203,10 @@ f_var_names_vector <- function(var_nms = get_inc_nm()) {
   set_names(var_nms$var, var_nms$var_title)
 }
 
-f_get_measure <- function(x) {
+f_get_measure <- function(x = NULL) {
+  if (is.null(x)) {
+    return(get_measure_nm()$measure)
+  }
   measure_nm <- get_measure_nm()
   measure_nm %>%
     filter(measure == x) %>%
@@ -213,7 +219,7 @@ f_measure_dic_default <- function() {
   tribble(
     ~measure, ~measure_title,
     "hc",     "Number of poor",
-    "fgt0",   "Poverty rate (FGT0), %",
+    "fgt0",   "Poverty headcount ratio (FGT0)",
     "fgt1",   "Poverty gap index (FGT1)",
     "fgt2",   "Poverty severity index (FGT2)",
     "gini",   "Gini coefficient",

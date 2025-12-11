@@ -54,11 +54,13 @@ f_plot_gg <- function(
   }
 
   # Add appropriate labels
-  if (!is.null(color_var) && !color_var %in% names(dta)) {
+  if (is.null(color_var) || !color_var %in% names(dta)) {
+    color_var <- "color_var_temp"
     dta <- dta |> mutate(!!sym(color_var) := "")
   }
   
-  if (!is.null(facet_var) && !facet_var %in% names(dta)) {
+  if (is.null(facet_var) || !facet_var %in% names(dta)) {
+    facet_var <- "facet_var_temp"
     dta <- dta |> mutate(!!sym(facet_var) := "")
   }
 

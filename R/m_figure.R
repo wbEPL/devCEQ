@@ -64,9 +64,11 @@ m_figure_server <- function(
 
       if (!is.null(figs) && sel %in% names(figs)) {
         out <- figs[[sel]]
+      } else if (length(figs) == 0) {
+        out <- NULL
       } else {
         out <- figures()[[1]]
-      } 
+      }
       if (force_ly) {
         out <- plotly::ggplotly(out, tooltip = "text")
       }

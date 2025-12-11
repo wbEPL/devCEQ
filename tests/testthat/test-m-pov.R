@@ -82,11 +82,12 @@ dta_fig |>
     color_var = "group_val",
     facet_var = "sim",
     type = "bar"
-  ) |> 
+  ) |>
   plotly::ggplotly(tooltip = "text")
 
 
-dta_sim |> f_calc_pov_stats() |> f_plot_pov_by(fig_by = "measure") |> names()
+dta_sim |> f_calc_pov_stats() |> 
+  f_plot_pov_by(fig_by = "measure", fig_filter = get_measure_nm("fgt1")$measure_title) 
 
 # Formattin tables  -------------------------------------
 
@@ -95,6 +96,18 @@ dta_fig |> f_format_tbl() |> f_format_rt(col_min_groups = 1)
 
 # Testing the module --------------------------------------------
 devmode()
-test_m_pov(sim_res = reactive(dta_sim_local))
+test_m_pov(sim_res = reactive(dta_sim))
 
+
+f_measure_dic <- function() {
+  tribble(
+    ~measure, ~measure_title,
+    "hc",     "N poor",
+    "fgt0",   "Poverty rate, %",
+    "fgt1",   "Poverty gap",
+    "fgt2",   "Poverty severity",
+    "gini",   "Gini",
+    "theil",  "Theil"
+  )
+}
 

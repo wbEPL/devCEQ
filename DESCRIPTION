@@ -1,7 +1,7 @@
 Package: devCEQ
 Type: Package
 Title: Development platform for Shiny fiscal microsimulations
-Version: 0.0.0.9031
+Version: 0.0.0.9032
 Authors@R: person(given = "Eduard", family = "Bukin", role = c("aut", "cre"),
                   email = "edwardbukin@gmail.com")
 Description: Contains a instrastrucute for developing R Shiny apps with CEQ microsimulations.
@@ -42,7 +42,7 @@ Imports:
     openxlsx (>= 4.2),
     scales (>= 1.2),
     tidyselect (>= 1.1.2),
-    bslib (>= 0.4.0),
+    bslib,
     shinythemes (>= 1.2),
     esquisse (>= 1.1.2),
     patchwork (>= 1.1.1),
@@ -51,7 +51,9 @@ Imports:
     yesno (>= 0.1.2),
     cli (>= 3.6.1),
     fs (>= 1.6.3),
-    rstudioapi (>= 0.15.0)
+    rstudioapi (>= 0.15.0),
+    collapse,
+    reactable
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2

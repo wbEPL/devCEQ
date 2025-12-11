@@ -40,19 +40,37 @@ m_figure_server <- function(
   selected = reactive(
     "Figure 1"
   ),
+  force_ly = TRUE,
   ...
 ) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     fig_show <- reactive({
+      req( figures() )
+      req( selected() )
       figs <- figures()
       sel <- selected()
-      if (!is.null(figs) && sel %in% names(figs)) {
-        figs[[sel]]
-      } else {
-        figures()[[1]]
+
+      # Check if figs is a data frame
+      if (
+        is.data.frame(figs) |
+          inherits(figs, "datatables") |
+          inherits(figs, "flextable") |
+          inherits(figs, "reactable")
+      ) {
+        return(figs)
       }
+
+      if (!is.null(figs) && sel %in% names(figs)) {
+        out <- figs[[sel]]
+      } else {
+        out <- figures()[[1]]
+      } 
+      if (force_ly) {
+        out <- plotly::ggplotly(out)
+      }
+      out
     })
 
     # identify the class of the figure and create the appropriate rendering function
@@ -84,6 +102,15 @@ m_figure_server <- function(
         isolate(last_fig_class("datatables"))
       }
 
+      if (
+        inherits(fig_show(), "reactable") &&
+          !identical(last_fig_class(), "reactable")
+      ) {
+        isolate(last_fig_class("reactable"))
+      }
+
+      # If a react table is provided
+
       if (is.data.frame(fig_show()) && !identical(last_fig_class(), "tbl")) {
         isolate(last_fig_class("tbl"))
       }
@@ -98,7 +125,8 @@ m_figure_server <- function(
         "plotly" = plotly::plotlyOutput(ns("fig_ly")),
         "flextable" = uiOutput(ns("fig_ft")),
         "datatables" = DT::DTOutput(ns("fig_dt")),
-        "tbl" = tableOutput(ns("fig_tbl"))
+        "tbl" = tableOutput(ns("fig_tbl")),
+        "reactable" = reactable::reactableOutput(ns("fig_rt"))
       )
     })
 
@@ -132,6 +160,12 @@ m_figure_server <- function(
     output$fig_tbl <- renderTable({
       req(fig_show())
       req(is.data.frame(fig_show()))
+      fig_show()
+    })
+
+    output$fig_rt <- reactable::renderReactable({
+      req(fig_show())
+      req(inherits(fig_show(), "reactable"))
       fig_show()
     })
   })

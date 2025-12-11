@@ -1,5 +1,5 @@
 #' Calculate poverty and inequality measures for multiple income variables
-#' @named f_povineq
+#' @name f_povineq
 #' 
 NULL
 
@@ -280,7 +280,6 @@ f_calc_pov_stats <- function(
 
   # pl_var <- f_make_reactive(pl_var)
   # pl_val <- f_make_reactive(pl_val)
-browser()
   f_calc_povineq_by_sims(
     dta_sim = dta,
     var_inc = var_inc,
@@ -293,4 +292,83 @@ browser()
     f_add_var_labels() |>
     f_add_var_labels(to_var = "group_var") |>
     f_rename_cols()
+}
+
+
+#' @describeIn f_povineq Generate plots of poverty and inequality measures by specified grouping variable
+#' @importFrom dplyr mutate group_by
+#' @importFrom purrr map
+#' @export
+#' 
+f_plot_pov_by <- function(dta, fig_by = "measure", x_lab = "Income concepts", ...) {
+  fig_by <- f_get_colname(fig_by)
+  all_figs <-
+    dta_fig |>
+    mutate(across(
+      any_of(fig_by),
+      ~.,
+      .names = "grp_plot_by"
+    )) |>
+    group_by(grp_plot_by) |>
+    nest() |>
+    mutate(
+      gg = map(
+        data,
+        ~ f_plot_gg(
+          dta = .x,
+          x_var = "var",
+          y_var = "value",
+          x_lab = x_lab,
+          color_var = "group_val",
+          facet_var = "sim",
+          type = "line"
+        )
+      )
+    )
+
+  set_names(all_figs$gg, all_figs[["grp_plot_by"]])
+}
+
+
+
+f_format_tbl <- function(
+  dta,
+  pivot_names_from = c("group_var", "group_val"),
+  pivot_values_from = c("value"),
+
+  ...
+) {
+  col_measure <- f_get_colname("measure")
+  col_val <- f_get_colname("value")
+  dta |>
+    group_by(across(any_of(col_measure))) |>
+    mutate(
+      across(
+        any_of(col_val),
+        ~ case_when(
+          str_detect(.data[[col_measure]], "%") ~ scales::number(
+            .,
+            accuracy = .01,
+            scale = 100
+          ),
+
+          max(.) < 10 & min(.) > -10 ~ scales::number(., accuracy = .001, ),
+          max(.) < 100 & min(.) > -100 ~ scales::number(., accuracy = .01, ),
+          max(.) < 1000 & min(.) > -1000 ~ scales::number(., accuracy = .1, ),
+          .default = scales::number(
+            .,
+            accuracy = .1,
+            scale_cut = c(" K" = 5 * 10^3, " M" = 10^6, " B" = 10^9),
+            big.mark = ""
+          )
+        )
+      )
+    ) |>
+    pivot_wider(
+      names_from = any_of(unname(f_get_colname(pivot_names_from))),
+      values_from = any_of(unname(f_get_colname(pivot_values_from))),
+      names_sep = "__",
+      values_fill = "",
+      values_fn = as.character
+    )
 }

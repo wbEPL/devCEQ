@@ -46,6 +46,8 @@ m_incid_srv <-
 
     pltby_type = "radioGroupButtons",
     pltby_title = NULL,
+
+    fig_by = "measure",
     ...
   ) {
     moduleServer(id, function(input, output, session) {
@@ -63,39 +65,48 @@ m_incid_srv <-
       grpby <- m_input_srv("grpby", grpby_type, grpby_title, grpby_choices)
 
       # Step 2.c Plot selection
-      pltby <- m_input_srv("pltby", pltby_type, pltby_title, reactive(names(fig()$ggs)))
+      pltby <- m_input_srv("pltby", pltby_type, pltby_title, reactive(fig$id))
 
-      # Step 3.A Data preparation ------------------------------------------------
-      plot_dta <- reactive({
-        f_calc_pov_stats(
-          dta = sim_res(),
-          var_inc = get_inc_nm()$var,
-          var_wt = get_wt_nm(),
-          group_vars = get_group_nm()$var,
-          pl_var = NULL,
-          pl_val = NULL
-        ) 
+      # Step 3.A Data/Plots preparation -------------------------------------------      
+      observeEvent(sim_res(), {
+        fig$dta <-
+          f_calc_pov_stats(
+            dta = sim_res(),
+            var_inc = get_inc_nm()$var,
+            var_wt = get_wt_nm(),
+            group_vars = get_group_nm()$var,
+            pl_var = NULL,
+            pl_val = NULL
+          ) 
       })
 
+      observeEvent(fig$dta, {
+        fig$ggs <- f_plot_pov_by(fig$dta , fig_by = fig_by, x_lab = "Income concepts")
+        fig$id <- names(fig$ggs)
+        fig$title <- names(fig$ggs)
+      })
+      
+      observeEvent(fig$dta, {
+        fig$rt <- fig$dta |> f_format_tbl() |> f_format_rt(col_min_groups = 1)
+      })
+   
       # Step 3 Generating plots ------------------------------------------------
       #TODO
 
-      fig <- reactiveVal(
-        list(
+      fig <- reactiveValues(
           id = c("Fig 1", "Fig 2", "Fig 3"),
           title = c("Figure 1", "Figure 2", "Figure 3"),
           lys = list(),
-          ggs = list(fig_gg_random(), fig_gg_random(), fig_gg_random()) |> 
-            set_names(c("Fig 1", "Fig 2", "Fig 3")),
+          ggs = NULL,
           fts = map(1:3, ~ sample_n(mtcars, 5) |> flextable()) |> 
             set_names(c("Fig 1", "Fig 2", "Fig 3")),
-          dta = reactive(plot_dta() |> flextable())
-        )
+          rt = NULL,
+          dta = NULL
       )
-
+      
       # Step 10. Card with plot and data table --------------------------------
-      m_figure_server("fig1", figures = reactive({fig()$ggs}), selected = pltby)
-      m_figure_server("tbl1", figures = reactive({fig()$dta()}), selected = pltby)
+      m_figure_server("fig1", figures = reactive({fig$ggs}), selected = pltby, force_ly = T)
+      m_figure_server("tbl1", figures = reactive({fig$rt}), selected = pltby)
 
       # Step 20. Results export modal ----------------------------------------
       #TODO
@@ -111,9 +122,9 @@ m_incid_srv <-
               grpby = grpby(),
               pltby = pltby()
             ),
-            ggs = fig()$ggs,
-            fts = fig()$fts,
-            dta = fig()$dta
+            ggs = fig$ggs,
+            fts = fig$fts,
+            dta = fig$dta
           )
         })
 

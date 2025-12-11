@@ -73,8 +73,8 @@ f_get_colnames_dic <- function() {
 #' 
 f_get_colname <- function(x) {
   dic <- f_get_colnames_dic()
-  if (x %in% names(dic)) {
-    dic[[x]]
+  if (any(x %in% names(dic))) {
+    unname(dic[x])
   } else {
     x
   }

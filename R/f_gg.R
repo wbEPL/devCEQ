@@ -18,6 +18,8 @@ f_plot_gg <- function(
   dta, 
   x_var,
   y_var,
+  x_lab = "Income concept",
+  y_lab = "Value",
   type = "line",
   color_var = NULL,
   facet_var = NULL,
@@ -52,7 +54,7 @@ f_plot_gg <- function(
 
   # If x axis has text and it is long, break it
   if (is.character(dta[[x_var]]) || is.factor(dta[[x_var]])) {
-    dta <- dta |> mutate(across(any_of(x_var), ~ str_wrap(as.character(.), width = 20)))
+    dta <- dta |> mutate(across(any_of(x_var), ~ str_wrap(as.character(.), width = 15)))
   }
 
   # Base plot
@@ -83,19 +85,31 @@ f_plot_gg <- function(
     p <- p + facet_wrap(vars(.data[[facet_var]]))
   }
 
-  p <- p + theme_minimal()
+  # Check if f_get_colname("measure") exists and use its first element as x label
+  y_lab <- "Value"
+  if (f_get_colname("measure") %in% colnames(dta)) {
+    measure_nm <- dta |> select(any_of(f_get_colname("measure"))) |> pull() |> first()
+    if (!is.null(measure_nm) && !is.na(measure_nm) && measure_nm != "") {
+      y_lab <- measure_nm
+    }
+  }  
 
-  # Y scale in % if % is present in the y_var name
-  if (grepl("%", y_var)) {
-    p <- p + scale_y_continuous(labels = scales::percent_format(scale = 1))
+  # Y scale in % if % is present in the y_lab name
+  if (grepl("%", y_lab)) {
+    p <- p + scale_y_continuous(labels = scales::label_percent(.1))
   } else {
     p <- p + scale_y_continuous(labels = scales::label_number(scale_cut = scales::cut_short_scale()))
   }
 
-  # Apply custom colour and fill scales
+  p <- p + theme_minimal()
+  p <- p + labs(x = x_lab, y = y_lab)
   p <- p + f_scale_color_custom() + f_scale_fill_custom()
-
-  # Return plot
+  # Rotate x axis text if too long
+  if (is.character(dta[[x_var]]) || is.factor(dta[[x_var]])) {
+    p <- p + theme(
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+  }
   p 
 
 }

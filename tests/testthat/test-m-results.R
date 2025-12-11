@@ -62,11 +62,8 @@ f_calc_povineq_by(
 
 
 # Calculating for all simulations and plotting ----------------------------
-
-
 dta_sim |> 
   f_calc_pov_stats()
-
 
 
 dta_fig <-

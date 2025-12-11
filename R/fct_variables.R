@@ -213,7 +213,7 @@ f_measure_dic_default <- function() {
   tribble(
     ~measure, ~measure_title,
     "hc",     "Number of poor",
-    "fgt0",   "Poverty headcount ratio (FGT0)",
+    "fgt0",   "Poverty rate (FGT0), %",
     "fgt1",   "Poverty gap index (FGT1)",
     "fgt2",   "Poverty severity index (FGT2)",
     "gini",   "Gini coefficient",

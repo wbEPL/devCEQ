@@ -166,7 +166,20 @@ m_pov_srv <-
       )
 
       # Step 20. Results export modal ----------------------------------------
-      #TODO
+      m_download_srv(
+        "save_mod_local",
+        all_figs = reactive({
+          list(list(
+            sheet_name = ptitle(),
+            meta_tbl = tibble(),
+            tbl = fig$dta_out,
+            ggs = fig$ggs
+          ))
+        }),
+        file_name = reactive({
+          paste0("poverty_stats_", Sys.Date(), ".xlsx")
+        })
+      )
 
       # Step 50. Results of the module ----------------------------------------
       mod_out <-
@@ -260,7 +273,7 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
 
       nav_item(
         m_download_ui(
-          id,
+          ns("save_mod_local"),
           f_get_app_text("save_btn"),
           ui_fn = downloadButton,
           icon = icon("file-excel"),
@@ -305,7 +318,7 @@ m_povgini_srv <- function(id = NULL, sim_res, ...) {
       sim_res = sim_res,
       page_ui = f_gini_ui_linear,
       plt_options = c("gini", "theil"),
-      page_title = "Gini",
+      page_title = f_get_app_text("m_ineq"),
       ...
     )
   })

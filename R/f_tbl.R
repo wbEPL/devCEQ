@@ -1,5 +1,5 @@
 #' Tables formatting helper functions
-#' #' @name f_tbl_helpers
+#' @name f_tbl_helpers
 NULL
 
 #' @describeIn f_tbl_helpers Format number by title and value
@@ -41,7 +41,7 @@ f_num_by_title <- function(x, title = NULL, ...) {
       big.mark = ""
     )
   )
-  
+  title <- as.character(title)
   if (all(!is.null(title)) && all(str_detect(title, "%"))) {
     out <- scales::number(
       x,
@@ -49,6 +49,7 @@ f_num_by_title <- function(x, title = NULL, ...) {
       scale = 100
     )
   }
+  return(out)
 }
 
 
@@ -79,6 +80,7 @@ f_format_tbl <- function(
         ~ f_num_by_title(., .data[[col_measure]], "%")
       )
     ) |>
+    ungroup() |>
     pivot_wider(
       names_from = any_of(unname(f_get_colname(pivot_names_from))),
       values_from = any_of(unname(f_get_colname(pivot_values_from))),

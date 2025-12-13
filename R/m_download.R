@@ -27,7 +27,7 @@ m_download_ui <- function(id, label = "Export all data to Excel", ui_fn = downlo
 m_download_srv <- function(
   id,
   all_figs,
-  excel_file = paste0("pea-results-", format(Sys.time(), "%Y-%m-%d-%H-%M-%S"), ".xlsx"),
+  excel_file = paste0("FiscalSim-Results-", format(Sys.time(), "%Y-%m-%d-%H-%M-%S"), ".xlsx"),
   ...
 ) {
   moduleServer(id, function(input, output, session) {
@@ -46,10 +46,14 @@ m_download_srv <- function(
         } else
         {
         # browser()
+          
+        if (is.reactive(all_figs)) {
+          all_figs <- all_figs()
+        }
         
         withProgress(
-          message = 'Generating PEA report',
-          detail = 'Preparing all plots and tables in excel...',
+          message = 'Preparing Excel file',
+          detail = 'Saving figures and tables...',
           value = 0,
           {
             temp_file <-
@@ -58,45 +62,20 @@ m_download_srv <- function(
                 ~ {
                   # Making clean sheet name
                   if (is.null(.x$sheet_name)) {
-                    .x$sheet_name <- .y
-
-                    if (
-                      !is.null(.x$meta_tbl) || !(" " %in% colnames(.x$meta_tbl))
-                    ) {
-                      sheet_nm <- .x$meta_tbl |>
-                        filter(` ` == "sheet") |>
-                        pull(2) |>
-                        unique()
-                      sheet_nm <- sheet_nm[[1]]
-                      if (!is.null(sheet_nm) || sheet_nm == "") {
-                        .x$sheet_name <- sheet_nm
-                      }
-                    }
+                    .x$sheet_name <- paste0("Sheet_", sample(letters, 20, replace = TRUE) |> paste0(collapse = ""))
                   }
-
                   .x$sheet_name <- stringr::str_trunc(.x$sheet_name, 30)
 
                   # Clean data table
                   if (is.null(.x$tbl)) {
-                    .x$tbl <- .x$dta_preplot |>
-                      select(country, year, val, ppp, plname)
+                    .x$tbl <- .tibble(0)
                   }
 
                   # Clean metadata
                   if (is.null(.x$meta_tbl)) {
-                    .x$meta_tbl <- tibble()
+                    .x$meta_tbl <- tibble(o)
                   }
 
-                  if (inherits(.x$tbl, "data.frame") && nrow(.x$tbl) > 5) {
-                    a <- .x$tbl |> select(-where(~ dplyr::n_distinct(.) == 1))
-                    if (ncol(a) > 1 && nrow(a) > 1) {
-                      .x$meta_tbl <- bind_rows(
-                        .x$meta_tbl,
-                        fct_get_singleobs_cols(.x$tbl)
-                      )
-                      .x$tbl <- a
-                    }
-                  } 
                   .x
                 }
               ) |>
@@ -109,7 +88,7 @@ m_download_srv <- function(
             file.copy(excel_file, file, overwrite = T)
           }
         )
-      }
+        }
         }
     )
   })
@@ -129,7 +108,7 @@ test_download_app <- function(n = 3, ...) {
         out <- all_args_0[1:n] |>
           imap(~ fct_load_test_figure(dta_test, .y, all_args = all_args_0))
         list(
-          excel_file = file.path(tempdir(), paste0("pea_results_", as.numeric(Sys.time()), ".xlsx")),
+          excel_file = file.path(tempdir(), paste0("FiscalSim-Results-", as.numeric(Sys.time()), ".xlsx")),
           dta = out
         )
       })

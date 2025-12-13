@@ -74,11 +74,24 @@ f_plot_gg <- function(
     dta <- dta |> mutate(!!sym(col_group_var) := "")
   }
 
+  
+  # Check if f_get_colname("measure") exists and use its first element as x label
+  y_lab <- "Value"
+  if (col_measure %in% colnames(dta)) {
+    measure_nm <- dta |> select(any_of(col_measure)) |> pull() |> first()
+    if (!is.null(measure_nm) && !is.na(measure_nm) && measure_nm != "") {
+      y_lab <- measure_nm
+    }
+  }  
+
+  # Y scale in % if % is present in the y_lab name
+  label_local <- function(xx) f_num_by_title(xx, title = as.character(y_lab))
+  # browser()
   dta <-
     dta |>
     mutate(
       tooltip = glue::glue(
-        "{.data[[col_measure]]}: {f_num_by_title(.data[[y_var]], .data[[col_measure]])}
+        "{.data[[col_measure]]}: {label_local(.data[[y_var]])}
         {.data[[x_var]]}
         {.data[[col_group_var]]}
         {.data[[color_var]]}
@@ -121,17 +134,6 @@ f_plot_gg <- function(
     p <- p + facet_wrap(vars(.data[[facet_var]]))
   }
 
-  # Check if f_get_colname("measure") exists and use its first element as x label
-  y_lab <- "Value"
-  if (f_get_colname("measure") %in% colnames(dta)) {
-    measure_nm <- dta |> select(any_of(f_get_colname("measure"))) |> pull() |> first()
-    if (!is.null(measure_nm) && !is.na(measure_nm) && measure_nm != "") {
-      y_lab <- measure_nm
-    }
-  }  
-
-  # Y scale in % if % is present in the y_lab name
-  label_local <- function(xx) f_num_by_title(xx, title = y_lab)
   p <- p + scale_y_continuous(labels = label_local)
   p <- p + theme_minimal()
   p <- p + labs(x = x_lab, y = y_lab)
@@ -174,7 +176,7 @@ f_scale_fill_custom <- function(...) {
 }
 
 
-#' @describeIn plt Function to format a plotly object with consistent layout and configuration
+#' @describeIn f_gg Function to format a plotly object with consistent layout and configuration
 #' @importFrom plotly layout config
 #'
 format_plotly <- function(

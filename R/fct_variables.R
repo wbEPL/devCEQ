@@ -315,7 +315,7 @@ f_app_text_dic_default <- function() {
     "title_pl"     , "Poverty lines"              ,
     "title_compare", "Compare by",
     "save_btn"     , "Save results"               ,
-    "title_plot_inccon"  , "Income concepts"     ,
+    "title_plot_inccon"  , "Income"     ,
     "m_ineq"       , "Inequality"        ,
     "m_povineq"    , "Poverty and inequality"     ,
     "m_growtheq"   , "Growth and equity"          ,

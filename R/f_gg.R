@@ -78,9 +78,10 @@ f_plot_gg <- function(
     dta |>
     mutate(
       tooltip = glue::glue(
-        "{.data[[col_measure]]}
-        {.data[[x_var]]}: {scales::number(.data[[y_var]])}
-        {.data[[col_group_var]]}: {.data[[color_var]]}
+        "{.data[[col_measure]]}: {f_num_by_title(.data[[y_var]], .data[[col_measure]])}
+        {.data[[x_var]]}
+        {.data[[col_group_var]]}
+        {.data[[color_var]]}
         {.data[[facet_var]]}"
       )
     ) 
@@ -130,12 +131,8 @@ f_plot_gg <- function(
   }  
 
   # Y scale in % if % is present in the y_lab name
-  if (grepl("%", y_lab)) {
-    p <- p + scale_y_continuous(labels = scales::label_percent(.1))
-  } else {
-    p <- p + scale_y_continuous(labels = scales::label_number(scale_cut = scales::cut_short_scale()))
-  }
-
+  label_local <- function(xx) f_num_by_title(xx, title = y_lab)
+  p <- p + scale_y_continuous(labels = label_local)
   p <- p + theme_minimal()
   p <- p + labs(x = x_lab, y = y_lab)
   p <- p + f_scale_color_custom() + f_scale_fill_custom()
@@ -174,4 +171,72 @@ f_scale_color_custom <- function(...) {
 #' 
 f_scale_fill_custom <- function(...) {
   scale_fill_manual(values = rep(f_default_colours(), length.out = 100), ...)
+}
+
+
+#' @describeIn plt Function to format a plotly object with consistent layout and configuration
+#' @importFrom plotly layout config
+#'
+format_plotly <- function(
+  pltly,
+  legend = NULL,
+  # list(
+  #   # title=list(text='species'),
+  #   orientation = "h",
+  #   yanchor = "bottom",
+  #   y = 1.02,
+  #   xanchor = "left",
+  #   x = 0.05
+  # ),
+  xaxis = NULL,
+  ...
+) {
+  # Formating spaces
+
+  aa <- 
+    pltly |>
+    # plotly::layout(
+    #   # legend = legend,
+    #   # xaxis = xaxis,
+    #   # margin = list(t = 0, b = 0, l = 0, r = 0)
+    # ) |>
+    plotly::config(
+      displaylogo = FALSE,
+      showAxisDragHandles = FALSE,
+      displayModeBar = FALSE,
+      modeBarButtonsToRemove = c(
+        'pan2d',
+        'select2d',
+        'lasso2d',
+        "toggleSpikelines",
+        "resetScale2d"
+      )
+    )
+
+  # # Increasing space between axis title and axis labels
+  # aa$x$layout$yaxis$title$standoff <- 15
+  # aa$x$layout$xaxis$title$standoff <- 10
+
+  # for (i in seq_along(aa$x$layoutAttrs)) {
+  #   if (!is.null(aa$x$layoutAttrs[[i]]$yaxis2)) {
+  #     if (!is.null(aa$x$layoutAttrs[[i]]$yaxis2$title)) {
+  #       aa$x$layoutAttrs[[i]]$yaxis2$title$standoff <- 15
+  #     }
+
+  #     if (!is.null(aa$x$layoutAttrs[[i]]$autosize)) {
+  #       aa$x$layoutAttrs[[i]]$autosize <- TRUE
+  #     }
+
+  #     if (!is.null(aa$x$layoutAttrs[[i]]$legend)) {
+  #       aa$x$layoutAttrs[[i]]$legend$x <- 1.15
+  #     }
+  #   }
+
+  #   if (!is.null(aa$x$layoutAttrs[[i]]$margin)) {
+  #     aa$x$layoutAttrs[[i]]$margin$r <- 25
+  #   }
+  # }
+
+  aa
+
 }

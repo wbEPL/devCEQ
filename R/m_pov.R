@@ -16,23 +16,15 @@ m_pov_srv <-
     # dec_vars = get_var_nm()$var,
     # make_bar_fn = make_bar_dta,
 
-    page_title = "Poverty",
+    page_title = f_get_app_text("m_pov"),
 
     pl_type = "selectInput", #"numericInput"
-    pl_title = "Poverty line:",
-    pl_choices = c(
-      "National PL" = "pl_nat",
-      "PPP 1.90" = "pl_190",
-      "PPP 5.00" = "pl_500"
-    ),
+    pl_title = f_get_app_text("title_pl"),
+    pl_choices = f_var_pl_default() |> get_var_nm() |> f_var_names_vector(),
 
     grpby_type = "selectizeInput", #"numericInput"
-    grpby_title = "Compare by:",
-    grpby_choices = c(
-      "All observations" = "all",
-      f_var_names_vector(get_var_nm(c("group_1", "group_2", "group_3"))),
-      "Everything" = "total"
-    ),
+    grpby_title = f_get_app_text("title_compare"),
+    grpby_choices = f_var_names_vector(get_group_nm()),
 
     pltby_type = "radioGroupButtons",
     pltby_title = NULL,
@@ -47,11 +39,7 @@ m_pov_srv <-
       output$incidences_ui <- renderUI(page_ui(id))
 
       # Step 2.a Title
-      ptitle <- m_input_srv(
-        "title",
-        "title",
-        title = reactive(page_title),
-        choices = reactive(page_title)
+      ptitle <- m_input_srv("title", "title", title = reactive(page_title), choices = reactive(page_title)
       )
 
       # Step 2.b Poverty line selection
@@ -59,10 +47,12 @@ m_pov_srv <-
       grpby <- m_input_srv("grpby", grpby_type, grpby_title, grpby_choices)
 
       # Step 2.c Plot selection
-      plt_options_name <- get_measure_nm(plt_options)$measure_title
+      # plt_options_name <- get_measure_nm(plt_options)$measure_title
       pltby <- m_input_srv("pltby", pltby_type, pltby_title, reactive(fig$id))
 
       # Step 3.A Data/Plots preparation -------------------------------------------
+
+      # Estimates all poverty measures
       dta_calc <- eventReactive(
         {
           sim_res()
@@ -82,7 +72,7 @@ m_pov_srv <-
         }
       )
 
-      # Filtering by group variable
+      # Filtering "by group" variable and statistics to plot
       observeEvent(
         {
           dta_calc()
@@ -91,33 +81,19 @@ m_pov_srv <-
         {
           req(dta_calc())
           req(grpby())
-          dta_out <- dta_calc()
-          group_var_all <- dta_out |>
-            slice(1) |>
-            pull(any_of(f_get_colname("group_var"))) |>
-            as.character()
-          if (all(grpby() == "all")) {
-            dta_out <- dta_out |>
-              filter(if_any(
-                any_of(f_get_colname("group_var")),
-                ~ . %in% group_var_all
-              ))
-          } else if (all(grpby() == "total")) {
-            dta_out <- dta_out
-          } else {
-            dta_out <-
-              dta_out |>
-              filter(if_any(
-                any_of(f_get_colname("group_var")),
-                ~ . %in%
-                  c(group_var_all, as.character(get_var_nm(grpby())$var_title))
-              ))
-          }
-          dta_out <- dta_out |> filter(Statistics %in% plt_options_name)
-          fig$dta <- dta_out
+          fig$dta <-
+            f_filter_grouped_stats(
+              dta = dta_calc(),
+              group_var_filter = grpby()
+            ) |>
+            filter(
+              if_any(f_get_colname("measure")) %in%
+                get_measure_nm(plt_options)$measure_title
+            )
         }
       )
 
+      # Generating plots based on filtered data
       observeEvent(
         {
           fig$dta
@@ -130,7 +106,7 @@ m_pov_srv <-
               fig$dta,
               fig_by = "measure",
               fig_filter = get_measure_nm(plt_options)$measure_title,
-              x_lab = "Income concepts",
+              x_lab = f_get_app_text("title_plot_inccon"),
               facet_var = NULL,
               color_var = "sim"
             )
@@ -138,7 +114,7 @@ m_pov_srv <-
             fig_out <- f_plot_pov_by(
               fig$dta,
               fig_by = "measure",
-              x_lab = "Income concepts"
+              x_lab = f_get_app_text("title_plot_inccon")
             )
           }
 
@@ -225,12 +201,27 @@ m_pov_srv <-
 #'
 f_pov_ui_linear <- function(id, add_pl = TRUE) {
   ns <- NS(id)
+
+  # plt-specific controls 
+  input_elements <- list(
+    if (add_pl) m_input_ui(ns("pl_choice")) else NULL,
+    m_input_ui(ns("grpby")),
+    m_input_ui(ns("pltby"))
+  )
+  input_elements <- input_elements[!sapply(input_elements, is.null)]
+  if (length(input_elements) == 2) {
+    col_widths  <- c(5, 7)
+  } else if (length(input_elements) == 3) {
+    col_widths  <- c(3, 4, 5)
+  } else {
+    col_widths  <- NULL
+  }
+
+  # Drop NULL from list
   tagList(
-    # m_input_ui(ns("title")),
     layout_columns(
-      if (add_pl) m_input_ui(ns("pl_choice")) else NULL,
-      m_input_ui(ns("grpby")),
-      m_input_ui(ns("pltby"))
+      !!!input_elements,
+      col_widths = col_widths
     ),
     navset_card_tab(
       full_screen = TRUE,
@@ -241,9 +232,10 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
         "Plot",
         card_body(
           m_figure_ui(ns("fig1")),
-          min_height = "350px",
-          max_height = "500px"
-        )#,
+          fillable = TRUE,
+          min_height = "500px",
+          max_height = "525px"
+        ) #,
         # card_footer("Footer placeholder")
       ),
 
@@ -251,8 +243,9 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
         "Data",
         card_body(
           m_figure_ui(ns("tbl1")),
-          min_height = "350px",
-          max_height = "500px"
+          fillable = TRUE,
+          min_height = "450px",
+          max_height = "525px"
         )
       ),
 
@@ -263,18 +256,17 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
         )
       },
 
-      nav_spacer()
+      nav_spacer(),
 
-      # nav_item(
-      #   actionButton(ns("download_excel"), "Download Excel")
-      #   m_download_ui(
-      #   #   id,
-      #   #   "Save Excel",
-      #   #   ui_fn = downloadButton,
-      #   #   icon = icon("file-excel"),
-      #   #   class = "btn btn-light btn-sm"
-      #   # )
-      # )
+      nav_item(
+        m_download_ui(
+          id,
+          f_get_app_text("save_btn"),
+          ui_fn = downloadButton,
+          icon = icon("file-excel"),
+          class = "btn btn-light btn-sm"
+        )
+      )
     )
   )
 }

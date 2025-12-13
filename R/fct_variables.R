@@ -236,7 +236,14 @@ f_var_dic_default <- function() {
 
       1,       "group_1"         ,  "Gender typology",
       1,       "group_2"         ,  "Urban/Rural typology",
-      1,       "group_3"         ,  "Age group typology"
+      1,       "group_3"         ,  "Age group typology",
+
+      1,       "all"             ,  "All observations",
+      1,       "all_groups"      ,  "All groups combined",
+
+      1,       "pl_nat"           ,  "National poverty line",
+      1,       "pl_190"           ,  "Poverty line at PPP 1.90",
+      1,       "pl_500"           ,  "Poverty line at PPP 5.00"
 
     )
 }
@@ -257,8 +264,15 @@ f_var_inc_default <- function() {
 #' @describeIn f_var_helpers Grouping variables names
 #'
 f_var_group_default <- function() {
-    c("group_1", "group_2", "group_3")
+    c("all", "group_1", "group_2", "group_3", "all_groups")
 }
+
+#' @describeIn f_var_helpers Income variables names
+#'
+f_var_pl_default <- function() {
+    c("pl_190", "pl_nat", "pl_500")
+}
+
 
 
 #' @describeIn f_var_helpers Default dictionary for measures labels
@@ -289,4 +303,52 @@ f_colnames_dic_default <- function() {
     "value" = "Value",
     "sim" = "Simulation"
   )
+}
+
+
+#' @describeIn f_var_helpers Default dictionary for module pages
+f_app_text_dic_default <- function() {
+  tribble(
+    ~id            , ~title                       ,
+    "m_pov_ineq"   , "Poverty and inequality",
+    "m_pov"        , "Poverty",
+    "title_pl"     , "Poverty lines"              ,
+    "title_compare", "Compare by",
+    "save_btn"     , "Save results"               ,
+    "title_plot_inccon"  , "Income concepts"     ,
+    "m_ineq"       , "Inequality"        ,
+    "m_povineq"    , "Poverty and inequality"     ,
+    "m_growtheq"   , "Growth and equity"          ,
+    "m_taxben"     , "Tax and benefit impact"     ,
+    "m_simcompare" , "Compare simulations"
+  )
+}
+
+#' @describeIn f_var_helpers Get page titles dictionary
+#' @returns a data frame with page titles
+#' @export
+f_get_app_text_dic <- function() {
+  pages_dic_local <- f_app_text_dic_default()
+
+  if (exists("f_app_text_dic", mode = "function")) {
+    pages_dic_local <- f_app_text_dic()
+
+    # Combine local and custom dictionaries, prioritizing custom entries
+    pages_dic_local <- pages_dic_local |> rows_update(pages_dic_local, by = "id")
+  } 
+
+  pages_dic_local
+}
+
+#' @describeIn f_var_helpers Get titles from a dictionary
+#' @param id Identifier to get the title for
+#' @param dic is a data frame with \code{id} and \code{title} columns
+#' @returns The title corresponding to the given \code{id} or provided ID if not found
+#' @export
+f_get_app_text <- function(id, dic = f_get_app_text_dic(), ...) {
+  title <- dic %>% filter(id == !!id) |> slice(1) |> pull(title)
+  if (length(title) == 0) {
+    title <- id
+  }
+  title
 }

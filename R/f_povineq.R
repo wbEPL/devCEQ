@@ -20,7 +20,7 @@ f_calc_povineq <- function(
   var_inc_found <- intersect(var_inc, names(dta))
   if (length(var_inc_not_found) == length(var_inc)) {
     cli::cli_abort(
-      "None of {var_inc_not_found} provided in 'var_inc' are found in the data."
+      "None of {var_inc_not_found} provided in 'var_inc' {var_inc} are found in the data ({names(dta)})."
     )
   }
 
@@ -248,18 +248,21 @@ f_calc_povineq_by_sims <- function(
   }
   
   # Process all simulations
-  dta_sim |> 
+  dta_sim |>
     map(
-      ~ .x$policy_sim_raw |> 
-        # mutate(pl_nat = median(ym) * 0.4) |> 
-        f_calc_povineq_by(
-          var_inc = var_inc,
-          var_wt = var_wt,
-          pl_var = pl_var,
-          group_var = group_vars
-        ) |> 
-        mutate(sim = .x$policy_name)
-    ) |> 
+      ~ {
+        out <- 
+          .x$policy_sim_raw |>
+          f_calc_povineq_by(
+            var_inc = var_inc,
+            var_wt = var_wt,
+            pl_var = pl_var,
+            group_var = group_vars
+          ) |>
+          mutate(sim = .x$policy_name)
+        out
+      }
+    ) |>
     bind_rows()
 }
 
@@ -293,6 +296,38 @@ f_calc_pov_stats <- function(
     f_add_var_labels(to_var = "group_var") |>
     f_rename_cols()
 }
+
+#' @describeIn f_povineq Filter poverty and inequality statistics by grouping variable
+#' @importFrom dplyr filter if_any any_of
+#' @export
+f_filter_grouped_stats <- 
+  function(dta, group_var_filter = NULL, ...) {
+    col_group_var <- f_get_colname("group_var")
+
+    dta_out <- dta |>
+      filter(
+        if_any(any_of(col_group_var), ~ . == first(.)) |
+          if_any(
+            any_of(col_group_var),
+            ~ . %in%
+              as.character(get_var_nm(group_var_filter)$var_title)
+          )
+      )
+    
+    if (all(group_var_filter == "all")) {
+        dta_out <- dta |>
+          filter(
+            if_any(any_of(col_group_var), ~ . == first(.))
+          )
+    } 
+    
+    if (all(group_var_filter == "all_groups")) {
+      dta_out <- dta
+    } 
+
+    return(dta_out)
+  }
+
 
 
 #' @describeIn f_povineq Generate plots of poverty and inequality measures by specified grouping variable
@@ -360,45 +395,3 @@ f_plot_pov_by <- function(
 }
 
 
-
-f_format_tbl <- function(
-  dta,
-  pivot_names_from = c("group_var", "group_val"),
-  pivot_values_from = c("value"),
-
-  ...
-) {
-  col_measure <- f_get_colname("measure")
-  col_val <- f_get_colname("value")
-  dta |>
-    group_by(across(any_of(col_measure))) |>
-    mutate(
-      across(
-        any_of(col_val),
-        ~ case_when(
-          str_detect(.data[[col_measure]], "%") ~ scales::number(
-            .,
-            accuracy = .01,
-            scale = 100
-          ),
-
-          max(.) < 10 & min(.) > -10 ~ scales::number(., accuracy = .001, ),
-          max(.) < 100 & min(.) > -100 ~ scales::number(., accuracy = .01, ),
-          max(.) < 1000 & min(.) > -1000 ~ scales::number(., accuracy = .1, ),
-          .default = scales::number(
-            .,
-            accuracy = .1,
-            scale_cut = c(" K" = 5 * 10^3, " M" = 10^6, " B" = 10^9),
-            big.mark = ""
-          )
-        )
-      )
-    ) |>
-    pivot_wider(
-      names_from = any_of(unname(f_get_colname(pivot_names_from))),
-      values_from = any_of(unname(f_get_colname(pivot_values_from))),
-      names_sep = "__",
-      values_fill = "",
-      values_fn = as.character
-    )
-}

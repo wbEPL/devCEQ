@@ -3,7 +3,7 @@
 NULL
 
 
-##' @describeIn f_gg General ggplot2 plotting function for line and bar plots
+#' @describeIn f_gg General ggplot2 plotting function for line and bar plots
 #' @param dta Data frame containing the data to plot
 #' @param x_var Name of the variable for the x-axis (string)
 #' @param y_var Name of the variable for the y-axis (string)
@@ -146,6 +146,23 @@ f_plot_gg <- function(
   }
   p 
 
+}
+
+#' @describeIn f_gg Safe wrapper around \code{f_plot_gg} to handle errors gracefully
+#' @export
+#' @importFrom cli cli_warn
+f_plot_gg_safe <- function(
+  ...
+) {
+  tryCatch(
+    {
+      f_plot_gg(...)
+    },
+    error = function(e) {
+      cli::cli_warn("Error in plotting ggplot: {e$message}")
+      NULL
+    }
+  )
 }
 
 #' @describeIn f_gg Default colour palette

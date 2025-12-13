@@ -384,7 +384,7 @@ f_plot_pov_by <- function(
     mutate(
       gg = map(
         data,
-        ~ f_plot_gg(
+        ~ f_plot_gg_safe(
           dta = .x,
           x_var = x_var,
           y_var = y_var,

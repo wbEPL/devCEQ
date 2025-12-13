@@ -1,4 +1,28 @@
-#' Key variables names and labels
+#' Variable defiitions and dictionaries helpers.
+#' 
+#' Key approach is the following:
+#' 1. Package contains default dictionaries for each variable. 
+#'    These are defined in functions with \code{f_var_<type>_default} names.
+#'    These functions are: \code{f_var_dic_default}, \code{f_var_wt_default}, 
+#'   \code{f_var_inc_default}, \code{f_var_group_default}, \code{f_measure_dic_default}.
+#'   \code{f_colnames_dic_default}.
+#' 2. User can define custom dictionaries by defining functions with names
+#'   \code{f_var_<type>} and \code{f_measure_dic} in the global environment.
+#' 3. Main functions use either default or custom dictionaries depending on
+#'   whether custom functions exist.
+#' 
+#' 
+#' @name f_var_helpers
+NULL
+
+#' @describeIn f_var_helpers Variable IDs and labels returned in a data frame
+#' 
+#' @param vars Character vector of variable IDs to filter (default: NULL, all variables)
+#' @param suffix Optional suffix to append to variable IDs (default: NULL)
+#' @param reorder Logical, whether to reorder output based on \code{vars} order (default: TRUE)
+#' @param dic_default Function returning the default variable dictionary (default: \code{f_var_dic_default})
+#' @param dic_custom_name Name of custom variable dictionary function (default: "f_var_dic")
+#' @param ... Additional arguments (currently unused)
 #'
 #' @returns data frame with variables names
 #' @importFrom shiny isTruthy
@@ -6,102 +30,87 @@
 #' @importFrom dplyr mutate select filter
 #'
 #' @export
-get_var_nm <- function(vars = NULL, suffix = NULL) {
-  
-  var_dic_local <- f_var_dic_default()
+get_var_nm <- function(
+  vars = NULL,
+  suffix = NULL,
+  reorder = TRUE,
+  dic_default = f_var_dic_default,
+  dic_custom_name = "f_var_dic",
+  ...
+) {
+  var_dic_local <- dic_default()
 
-  if (exists("f_var_dic", mode = "function")) {
-    var_dic_local <- f_var_dic()
+  if (exists(dic_custom_name, mode = "function")) {
+    var_dic_local <- dic_custom_name |> paste0("()") |> parse(text = _) |> eval()
+  }
+  
+  rename_measure <- FALSE
+  if ("measure" %in% colnames(var_dic_local)) {
+    rename_measure <- TRUE
+    var_dic_local <- var_dic_local %>% rename(var = measure)
+  }
+
+  rename_measure_title <- FALSE
+  if ("measure_title" %in% colnames(var_dic_local)) {
+    rename_measure_title <- TRUE
+    var_dic_local <- var_dic_local %>% rename(var_title = measure_title)
   }
 
   dta <-
     var_dic_local |>
     mutate(var_title = var_title |> fct_keep_dup_string() |> as_factor()) |>
-    select(var, var_title, factor)
-
-  if (!missing(suffix) && !is.null(suffix)) {
-    dta <- dta %>% mutate(var = str_c(var, suffix))
-  }
+    select(var, var_title, any_of("factor"))
 
   if (!missing(vars) && !is.null(vars)) {
     dta <-
       dta %>%
       filter(var %in% vars) %>%
-      mutate(
-        var_title = factor(var_title, levels = var_title, labels = var_title)
-      )
+      mutate(var_title = factor(var_title, levels = var_title, labels = var_title))
   }
+
+  if (reorder) {
+    dta <- dta |> 
+      mutate(var = as_factor(var) |> fct_relevel(vars)) |>
+      arrange(var) |>
+      mutate(var = as.character(var), var_title = as_factor(var_title))
+  }
+  
+  if (!missing(suffix) && !is.null(suffix)) {
+    dta <- dta %>% mutate(var = str_c(var, suffix))
+  }
+
+  if (rename_measure) {
+    dta <- dta %>% rename(measure = var)
+  }
+
+  if (rename_measure_title) {
+    dta <- dta %>% rename(measure_title = var_title)
+  }  
 
   return(dta)
 }
 
-#' @describeIn get_var_nm All measures IDs and labels returned in a data frame
-#' @returns a data frame with measures names
+#' @describeIn f_var_helpers  Converts variables nems and IDs from a data frame to a named vector
+#' @returns a named character vector with labels in names and codes in values
+#' 
 #' @export
-get_measure_nm <- function(x = NULL) {
-  measure_nm <- f_measure_dic_default()
-  if (exists("f_measure_dic", mode = "function")) {
-    measure_nm <- f_measure_dic()
-  } 
-  if (is.null(x)) {
-    return(measure_nm)
+f_var_names_vector <- function(var_nms = get_inc_nm()) {
+  if (all(c("var", "var_title") %in% colnames(var_nms))) {
+    set_names(var_nms$var, var_nms$var_title)
+  } else if (all(c("measure", "measure_title") %in% colnames(var_nms))) {
+    set_names(var_nms$measure, var_nms$measure_title)
   } else {
-    # Filter and preserve order of x
-    filtered <- measure_nm %>% filter(measure %in% x)
-    # Reorder by the order in x
-    filtered[match(x, filtered$measure), ] %>% na.omit()
+    cli::cli_abort(
+      c(
+        x = "Input data frame had columns {colnames(var_nms)}.",
+        i = "It must have either 'var' and 'var_title' or 'measure' and 'measure_title' columns."
+      )
+    )
   }
 }
 
 
-#' @describeIn get_var_nm Income Concepts variables IDs and labels returned in a data frame
-#'
-#' @returns a data frame with variables names
-#'
-#' @export
-get_inc_nm <- function(suffix = NULL) {
-  inc_vars <- f_var_inc_default()
-  if (exists("f_var_inc", mode = "function")) {
-    inc_vars <- f_var_inc()
-  } 
-  inc_vars |>
-    str_c(suffix) %>%
-    get_var_nm(suffix = suffix)
-}
-
-#' @describeIn get_var_nm Weight variable IDs and labels in a data frame
-#'
-#' @returns a data frame with variables names
-#'
-#' @export
-get_wt_nm <- function(suffix = NULL) {
-  wt_var <- f_var_wt_default()
-  if (exists("f_var_wt", mode = "function")) {
-    wt_var <- f_var_wt()
-  } 
-
-  wt_var %>%
-    str_c(., suffix) %>%
-    get_var_nm(suffix = suffix) %>%
-    pull(var)
-}
-
-
-#' @describeIn get_var_nm Grouping variables IDs and labels in a data frame
-#' @returns a data frame with variables names
-#' @export
-get_group_nm <- function(suffix = NULL) {
-  group_vars <- f_var_group_default()
-  if (exists("f_var_group", mode = "function")) {
-    group_vars <- f_var_group()
-  } 
-  group_vars |>
-    str_c(suffix) %>%
-    get_var_nm(suffix = suffix)
-}
-
-
-#' @describeIn get_var_nm Helper to label duplicated variable names as different factors levels.
+#' @describeIn f_var_helpers Helper to label duplicated variable names as different factors levels.
 #' 
 #' @export
 fct_keep_dup_string <- function(val) {
@@ -113,7 +122,61 @@ fct_keep_dup_string <- function(val) {
 }
 
 
-#' @describeIn get_var_nm Variables dictionary 
+#' @describeIn f_var_helpers All measures IDs and labels returned in a data frame
+#' @returns a data frame with measures names
+#' @export
+get_measure_nm <- function(x = NULL) {
+  get_var_nm(
+    vars = x,
+    suffix = NULL,
+    reorder = TRUE,
+    dic_default = f_measure_dic_default,
+    dic_custom_name = "f_measure_dic"
+  )
+}
+
+
+#' @describeIn f_var_helpers Income Concepts variables IDs and labels returned in a data frame
+#'
+#' @returns a data frame with variables names
+#'
+#' @export
+get_inc_nm <- function(suffix = NULL, reorder = TRUE) {
+  inc_vars <- f_var_inc_default()
+  if (exists("f_var_inc", mode = "function")) {
+    inc_vars <- f_var_inc()
+  } 
+  inc_vars |> get_var_nm(suffix = suffix, reorder = reorder)
+}
+
+#' @describeIn f_var_helpers Weight variable IDs and labels in a data frame
+#'
+#' @returns a data frame with variables names
+#'
+#' @export
+get_wt_nm <- function(suffix = NULL) {
+  wt_var <- f_var_wt_default()
+  if (exists("f_var_wt", mode = "function")) {
+    wt_var <- f_var_wt()
+  } 
+
+  wt_var |> get_var_nm(suffix = suffix, reorder = TRUE) |> pull(var)
+}
+
+
+#' @describeIn f_var_helpers Grouping variables IDs and labels in a data frame
+#' @returns a data frame with variables names
+#' @export
+get_group_nm <- function(suffix = NULL, reorder = TRUE) {
+  group_vars_fn <- f_var_group_default()
+  if (exists("f_var_group", mode = "function")) {
+    group_vars_fn <- f_var_group()
+  } 
+  group_vars_fn |> get_var_nm(suffix = suffix, reorder = TRUE)
+}
+
+
+#' @describeIn f_var_helpers Default dictionary for variable labels
 #'
 f_var_dic_default <- function() {
     tribble(
@@ -178,43 +241,52 @@ f_var_dic_default <- function() {
     )
 }
 
-#' @describeIn get_var_nm Weight variables names 
+#' @describeIn f_var_helpers Weight variables names 
 #'
 f_var_wt_default <- function() {
   "hhwt"
 }
 
-#' @describeIn get_var_nm Income variables names
+#' @describeIn f_var_helpers Income variables names
 #'
 f_var_inc_default <- function() {
     c("ym", "yp", "yg", "yd", "yc", "yf")
 }
 
 
-#' @describeIn get_var_nm Income variables names
+#' @describeIn f_var_helpers Grouping variables names
 #'
 f_var_group_default <- function() {
     c("group_1", "group_2", "group_3")
 }
 
-#' Var nems to vector
-#' @export
-f_var_names_vector <- function(var_nms = get_inc_nm()) {
-  set_names(var_nms$var, var_nms$var_title)
-}
 
-#' @describeIn get_var_nm Poverty and inequality measures names
+#' @describeIn f_var_helpers Default dictionary for measures labels
 #' 
 f_measure_dic_default <- function() {
   tribble(
     ~measure, ~measure_title,
     "hc",     "Number of poor",
-    "fgt0",   "Poverty headcount ratio (FGT0)",
+    "fgt0",   "Poverty rate (FGT0), %",
     "fgt1",   "Poverty gap index (FGT1)",
     "fgt2",   "Poverty severity index (FGT2)",
     "gini",   "Gini coefficient",
     "theil",  "Theil index",
     "n",      "N observations",
     "pop",    "Population"
+  )
+}
+
+
+#' @describeIn f_var_helpers Default column names dictionary
+#' 
+f_colnames_dic_default <- function() {
+  c(
+    "group_var" = "Grouping variable",
+    "group_val" = "Group",
+    "var" = "Variable",
+    "measure" = "Statistics",
+    "value" = "Value",
+    "sim" = "Simulation"
   )
 }

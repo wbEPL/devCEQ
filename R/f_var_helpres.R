@@ -42,18 +42,6 @@ f_add_var_labels <- function(dta, var_nm_tbl = get_var_nm(), to_var = "var", ...
 }
 
 
-#' @describeIn f_var_helpers Default measure labels dictionary
-f_colnames_dic_default <- function() {
-  c(
-    "group_var" = "Groupping variable",
-    "group_val" = "Group",
-    "var" = "Variable",
-    "measure" = "Statistics",
-    "value" = "Value",
-    "sim" = "Simulation"
-  )
-}
-
 #' @describeIn f_var_helpers Get column names dictionary, using custom if available
 #' @return A named character vector mapping original column names to new names
 #' @export

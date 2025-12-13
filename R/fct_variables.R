@@ -189,6 +189,17 @@ get_group_nm <- function(suffix = NULL, reorder = TRUE) {
   group_vars_fn |> get_var_nm(suffix = suffix, reorder = TRUE)
 }
 
+#' @describeIn f_var_helpers Grouping variables IDs and labels in a data frame
+#' @returns a data frame with variables names
+#' @export
+get_pl_nm <- function(suffix = NULL, reorder = TRUE) {
+  group_vars_fn <- f_var_pl_default()
+  if (exists("f_var_pl", mode = "function")) {
+    group_vars_fn <- f_var_pl()
+  } 
+  group_vars_fn |> get_var_nm(suffix = suffix, reorder = TRUE)
+}
+
 
 #' @describeIn f_var_helpers Default dictionary for variable labels
 #'

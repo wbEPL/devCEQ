@@ -22,7 +22,7 @@ m_pov_srv <-
 
     pl_type = "selectInput", #"numericInput"
     pl_title = f_get_app_text("title_pl"),
-    pl_choices = f_var_pl_default() |> get_var_nm() |> f_var_names_vector(),
+    pl_choices = get_pl_nm() |> f_var_names_vector(),
 
     grpby_type = "selectizeInput", #"numericInput"
     grpby_title = f_get_app_text("title_compare"),

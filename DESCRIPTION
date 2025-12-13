@@ -54,7 +54,8 @@ Imports:
     rstudioapi (>= 0.15.0),
     collapse,
     reactable,
-    openxlsx2
+    openxlsx2,
+    flexlsx
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2

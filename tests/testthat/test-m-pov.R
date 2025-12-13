@@ -49,6 +49,7 @@ f_calc_povineq_by(
   pl_var = "pl_nat",
   group_vars = c("total", "group_1", "group_2")
 ) |>
+  count(var)
   count(group_var, group_val)
 
 # Poverty across all simulations --------------------------------------------

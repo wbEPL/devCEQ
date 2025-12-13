@@ -102,7 +102,7 @@ f_plot_gg <- function(
 
   # If x axis has text and it is long, break it
   if (is.character(dta[[x_var]]) || is.factor(dta[[x_var]])) {
-    dta <- dta |> mutate(across(any_of(x_var), ~ str_wrap(as.character(.), width = 15)))
+    dta <- dta |> mutate(across(any_of(x_var), ~ str_wrap(as.character(.), width = 15) |> as_factor()))
   }
 
   # Base plot

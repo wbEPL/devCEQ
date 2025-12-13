@@ -94,7 +94,8 @@ f_calc_povineq <- function(
       )
   }
 
-  dta |>
+  dta_out <-
+    dta |>
     select(
       any_of(c("group_var", "group_val", var_inc_found, "pl", "wt"))
     ) |>
@@ -104,7 +105,6 @@ f_calc_povineq <- function(
       names_to = "var",
       values_to = "inc_val"
     ) |>
-    group_by(across(c("group_var", "group_val", "var"))) |>
     summarise(
       hc = sum((inc_val < pl) * wt, na.rm = TRUE),
       fgt0 = calc_pov_fgt(
@@ -132,13 +132,17 @@ f_calc_povineq <- function(
       theil = calc_theil(x = inc_val, w = wt, na.rm = TRUE),
       n = n(),
       pop = sum(wt, na.rm = TRUE),
-      .groups = "drop"
+      .by = c(group_var, group_val, var)
     ) |>
     pivot_longer(
       cols = c(hc, fgt0, fgt1, fgt2, gini, theil, n, pop),
       names_to = "measure",
       values_to = "value"
-    )
+    ) |>
+    mutate(var = as_factor(var))
+    # arrange(group_var, group_val, match(var, var_inc_found))
+  
+  return(dta_out)
 }
 
 

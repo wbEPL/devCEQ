@@ -13,8 +13,10 @@ m_pov_srv <-
     id,
     sim_res,
     page_ui = f_incid_ui_linear,
-    # dec_vars = get_var_nm()$var,
-    # make_bar_fn = make_bar_dta,
+    
+    var_inc = get_inc_nm()$var,
+    var_wt = get_wt_nm(),
+    var_group = get_group_nm()$var,
 
     page_title = f_get_app_text("m_pov"),
 
@@ -24,7 +26,7 @@ m_pov_srv <-
 
     grpby_type = "selectizeInput", #"numericInput"
     grpby_title = f_get_app_text("title_compare"),
-    grpby_choices = f_var_names_vector(get_group_nm()),
+    grpby_choices = f_var_names_vector(get_var_nm(var_group)),
 
     pltby_type = "radioGroupButtons",
     pltby_title = NULL,
@@ -51,21 +53,37 @@ m_pov_srv <-
       pltby <- m_input_srv("pltby", pltby_type, pltby_title, reactive(fig$id))
 
       # Step 3.A Data/Plots preparation -------------------------------------------
+      sim_ready <- reactive({
+        req(sim_res())
+        # All simulations have names and data
+        validate(
+          need(length(sim_res()) > 0, "No simulation data found."),
+          need(
+            all(map_chr(sim_res(), ~ unique(.x$policy_name)) != ""),
+            "Not all simulations have names."
+          ),
+          need(
+            any(map_lgl(sim_res(), ~ !is.null(.x$policy_sim_raw))),
+            "Some simulations do not have simulation data."
+          ),          
+        )
+        sim_res() |> keep(~ !is.null(.x$policy_sim_raw) && nrow(.x$policy_sim_raw) > 0)
+      })
 
       # Estimates all poverty measures
       dta_calc <- eventReactive(
         {
-          sim_res()
+          sim_ready()
           pl_choice()
         },
         {
-          req(sim_res())
+          req(sim_ready())
           req(pl_choice())
           f_calc_pov_stats(
-            dta = sim_res(),
-            var_inc = get_inc_nm()$var,
-            var_wt = get_wt_nm(),
-            group_vars = get_group_nm()$var,
+            dta = sim_ready(),
+            var_inc = var_inc,
+            var_wt = var_wt,
+            group_vars = var_group,
             pl_var = pl_choice(),
             pl_val = NULL
           )
@@ -172,7 +190,7 @@ m_pov_srv <-
           list(list(
             sheet_name = ptitle(),
             meta_tbl = tibble(),
-            tbl = fig$dta_out,
+            tbl = dta_calc() |> f_format_tbl(),
             ggs = fig$ggs
           ))
         }),

@@ -62,9 +62,23 @@ get_var_nm <- function(
     select(var, var_title, any_of("factor"))
 
   if (!missing(vars) && !is.null(vars)) {
-    dta <-
-      dta %>%
-      filter(var %in% vars) %>%
+    dta <- dta %>% filter(var %in% vars)
+
+    if (any(!vars %in% dta$var)) {
+      missing_vars <- vars[!vars %in% dta$var]
+      cli::cli_warn(
+        c(x = "`get_var_nm()`: Variables '{missing_vars}' are not found in the dictionary",
+          i = "They are added with default titles. Please check the custom variables dictionary.")
+      )
+      dta_missing <- tibble(
+        var = missing_vars,
+        var_title = missing_vars |> fct_keep_dup_string(),
+         factor = 1
+      )
+      dta <- bind_rows(dta, dta_missing)
+    }
+    
+    dta <- dta %>%
       mutate(var_title = factor(var_title, levels = var_title, labels = var_title))
   }
 

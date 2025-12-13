@@ -261,6 +261,47 @@ mod_gini_pov_gen_server <-
 }
 
 
+#' @describeIn mod_gini_pov_gen_server Test app for gini and poverty modules
+#' @noRd
+test_gini_poverty_old <- function() {
+  ui <- page_fluid(
+    layout_columns(
+      widths = c(6, 6),
+      card(
+        mod_gini_ui("gini"),
+        fill = TRUE
+      ),
+      card(
+        mod_gini_ui("pov"),
+        fill = TRUE
+      )
+    )
+  )
+  
+  srv <- function(input, output, session) {
+    mod_gini_pov_gen_server(
+      id = "gini",
+      sim_res = reactive(dta_sim),
+      income_vars_tbl = get_inc_nm(),
+      poverty_line_value = median(dta_hh$ym) * 0.6,
+      wt_var = get_wt_nm(),
+      group_vars_tbl = get_group_nm()
+    )
+    
+    mod_gini_pov_gen_server(
+      id = "pov",
+      sim_res = reactive(dta_sim),
+      income_vars_tbl = get_inc_nm(),
+      poverty_line_value = median(dta_hh$ym) * 0.6,
+      wt_var = get_wt_nm(),
+      group_vars_tbl = get_group_nm()
+    )
+  }
+  
+  shinyApp(ui, srv)
+}
+
+
 #' #' poverty Server Functions
 #' #'
 #' #' @noRd

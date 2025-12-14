@@ -78,8 +78,6 @@ dta_fig <- dta_sim_local |> f_calc_pov_stats()
 dta_fig |> f_filter_grouped_stats("group_1") |> count(`Grouping variable`, Group)
 dta_fig |> f_filter_grouped_stats("all") |> count(`Grouping variable`, Group)
 dta_fig |> f_filter_grouped_stats("all_groups") |> count(`Grouping variable`, Group)
-
-
 dta_fig |> f_filter_grouped_stats("all_groups") |> count(Statistics)
 
 # Plotting specific measure --------------------------------------------
@@ -99,8 +97,31 @@ dta_fig |>
   plotly::ggplotly(tooltip = "text")
 
 
-dta_sim |> f_calc_pov_stats() |> 
-  f_plot_pov_by(fig_by = "measure", fig_filter = get_measure_nm("fgt1")$measure_title) 
+dta_sim |> f_calc_pov_stats() |> f_plot_pov_by(fig_by = "measure") 
+
+
+# Plot all group-specific plots in a large list ----------------------------
+
+all_groups <- c("all", "group_1", "group_2", "all_groups")
+
+f_plot_gg_groups <- function(dta, group_vars) {
+  fig_list <- list()
+  for (grp in group_vars) {
+    dta_filt <- dta |> f_filter_grouped_stats(grp)
+    fig_out <- dta_filt |>
+      f_plot_pov_by(
+        x_var = "var",
+        y_var = "value",
+        color_var = "group_val",
+        facet_var = "sim",
+        type = "bar"
+      )
+    fig_list[[grp]] <- fig_out
+  }
+  return(fig_list)
+}
+
+figs_all_groups <- f_plot_gg_groups(dta_fig, all_groups)
 
 # Formattin tables  -------------------------------------
 
@@ -109,6 +130,6 @@ dta_fig |> f_format_tbl() |> f_format_rt(col_min_groups = 1)
 
 # Testing the module --------------------------------------------
 devmode()
-test_m_pov(sim_res = reactive(req(dta_sim)))
+test_m_pov(sim_res = reactive(req(dta_sim_local)))
 
 

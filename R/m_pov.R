@@ -90,38 +90,40 @@ m_pov_srv <-
         }
       )
 
-      # Filtering "by group" variable and statistics to plot
-      observeEvent(
-        {
-          dta_calc()
-          grpby()
-        },
-        {
-          req(dta_calc())
-          req(grpby())
-          fig$dta <-
-            f_filter_grouped_stats(
-              dta = dta_calc(),
-              group_var_filter = grpby()
-            ) |>
-            filter(
-              if_any(f_get_colname("measure")) %in%
-                get_measure_nm(plt_options)$measure_title
-            )
-        }
-      )
+      dta_calc_formatted <- reactive({
+        req(dta_calc())
+        dta_calc() |> f_format_tbl()
+      })
 
+      # Filtering "by group" variable and statistics to plot
+      dta_calc_fig <- reactive({
+        req(dta_calc())
+        req(grpby())
+        dta_calc() |>
+          filter(
+            if_any(f_get_colname("measure")) %in%
+              get_measure_nm(plt_options)$measure_title
+          ) |>
+          f_filter_grouped_stats(group_var_filter = grpby())
+      })
+
+      # dta_fig <- reactive({
+      #   req(dta_calc())
+      #   req(grpby())
+
+      # })
+      
       # Generating plots based on filtered data
       observeEvent(
         {
-          fig$dta
+          dta_calc_fig()
           grpby()
         },
         {
-          req(fig$dta)
+          req(dta_calc_fig())
           if (length(grpby()) == 1 && grpby() == "all") {
             fig_out <- f_plot_pov_by(
-              fig$dta,
+              dta_calc_fig(),
               fig_by = "measure",
               fig_filter = get_measure_nm(plt_options)$measure_title,
               x_lab = f_get_app_text("title_plot_inccon"),
@@ -130,18 +132,20 @@ m_pov_srv <-
             )
           } else {
             fig_out <- f_plot_pov_by(
-              fig$dta,
+              dta_calc_fig(),
               fig_by = "measure",
+              fig_filter = get_measure_nm(plt_options)$measure_title,
               x_lab = f_get_app_text("title_plot_inccon")
             )
           }
 
           # Reorder plots based on plt_options
+          # browser()
           fig$ggs <- fig_out
-          req(fig$ggs)
           fig$id <- names(fig$ggs)
           fig$title <- names(fig$ggs)
-        }
+        }, 
+        ignoreInit = TRUE
       )
 
       observeEvent(fig$dta, {
@@ -190,7 +194,7 @@ m_pov_srv <-
           list(list(
             sheet_name = ptitle(),
             meta_tbl = tibble(),
-            tbl = dta_calc() |> f_format_tbl(),
+            tbl = dta_calc_formatted(),
             ggs = fig$ggs
           ))
         }),
@@ -212,9 +216,7 @@ m_pov_srv <-
             id = fig$id,
             title = fig$title,
             ggs = fig$ggs,
-            fts = fig$fts,
-            dta = fig$dta,
-            dta_out = fig$dta_out
+            dta_out =  dta_calc_formatted()
           )
         })
 
@@ -254,17 +256,16 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
       !!!input_elements,
       col_widths = col_widths
     ),
-    navset_card_tab(
-      full_screen = TRUE,
+    navset_card_underline(
+      full_screen = FALSE,
       title = m_input_ui(ns("title")),
-      # navbar_options = navbar_options(position="fixed-bottom"),
-
+      
       nav_panel(
         "Plot",
         card_body(
           m_figure_ui(ns("fig1")),
-          fillable = TRUE,
-          min_height = "500px",
+          fillable = TRUE, 
+          min_height = "450px",
           max_height = "525px"
         ) #,
         # card_footer("Footer placeholder")

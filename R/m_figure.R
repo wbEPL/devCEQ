@@ -70,12 +70,7 @@ m_figure_server <- function(
         out <- figures()[[1]]
       }
       if (force_ly) {
-        out <- plotly::ggplotly(out, tooltip = "text") |>
-          layout(
-            # autosize = TRUE,
-            height = "100%"
-          ) |> 
-          format_plotly()
+        out <- plotly::ggplotly(out, tooltip = "text", height = 425) |> format_plotly()
       }
       out
     })

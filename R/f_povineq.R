@@ -170,13 +170,13 @@ f_calc_povineq_by <-
     group_vars_other_missing <- setdiff(group_vars_other, names(dta))
     group_vars_other_present <- intersect(group_vars_other, names(dta))
     group_vars_used <- c("total", group_vars_other_present)
-    if (length(group_vars_other_missing) > 0) {
-      cli::cli_warn(
-        "The following grouping variables are not found in the data and will be ignored: {group_vars_other_missing}"
-      )
-    }
+    # if (length(group_vars_other_missing) > 0) {
+    #   cli::cli_warn(
+    #     "The following grouping variables are not found in the data and will be ignored: {group_vars_other_missing}"
+    #   )
+    # }
 
-    cli::cli_inform("Using grouping variables: {group_vars_used}")
+    # cli::cli_inform("Using grouping variables: {group_vars_used}")
 
     group_vars_used |>
       purrr::map(

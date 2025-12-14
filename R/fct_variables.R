@@ -312,7 +312,10 @@ f_measure_dic_default <- function() {
     "gini",   "Gini coefficient",
     "theil",  "Theil index",
     "n",      "N observations",
-    "pop",    "Population"
+    "pop",    "Population",
+    "relative", "Relative incidence, % of income type",
+    "absolute", "Absolute incidence, % of all deciles",
+    "level"   , "Currency units"
   )
 }
 
@@ -343,9 +346,12 @@ f_app_text_dic_default <- function() {
     "title_plot_inccon"  , "Income"     ,
     "m_ineq"       , "Inequality"        ,
     "m_povineq"    , "Poverty and inequality"     ,
-    "m_growtheq"   , "Growth and equity"          ,
-    "m_taxben"     , "Tax and benefit impact"     ,
-    "m_simcompare" , "Compare simulations"
+    # Incidence-specific
+    "m_incidence"  , "Incidences"         ,
+    "ndec_title"   , "Number of deciles",
+    "title_wtvar"  , "Weight variable",
+    "decby_title"  , "Deciles by",
+    "incid_title"  , "Incidences type"  
   )
 }
 

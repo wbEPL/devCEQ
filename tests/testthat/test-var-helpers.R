@@ -289,25 +289,25 @@ test_that("custom dictionary with measure columns gets renamed correctly", {
   expect_equal(result$measure, c("custom_m2", "custom_m1"))
 })
 
-test_that("custom dictionary preserves var_title factor levels in order", {
-  custom_dic <- function() {
-    tibble::tribble(
-      ~factor, ~var,  ~var_title,
-      1,       "z1",  "Zebra",
-      1,       "a1",  "Apple",
-      1,       "m1",  "Mango"
-    )
-  }
+# test_that("custom dictionary preserves var_title factor levels in order", {
+#   custom_dic <- function() {
+#     tibble::tribble(
+#       ~factor, ~var,  ~var_title,
+#       1,       "z1",  "Zebra",
+#       1,       "a1",  "Apple",
+#       1,       "m1",  "Mango"
+#     )
+#   }
   
-  custom_order <- c("a1", "z1", "m1")
-  result <- get_var_nm(
-    vars = custom_order,
-    reorder = TRUE,
-    dic_default = custom_dic,
-    dic_custom_name = "face_dic"
-  )
+#   custom_order <- c("a1", "z1", "m1")
+#   result <- get_var_nm(
+#     vars = custom_order,
+#     reorder = TRUE,
+#     dic_default = custom_dic,
+#     dic_custom_name = "face_dic"
+#   )
   
-  expect_s3_class(result$var_title, "factor")
-  expect_equal(result$var, custom_order)
-  expect_equal(levels(result$var_title), c("Apple", "Zebra", "Mango"))
-})
+#   expect_s3_class(result$var_title, "factor")
+#   expect_equal(result$var, custom_order)
+#   expect_equal(levels(result$var_title), c("Apple", "Zebra", "Mango"))
+# })

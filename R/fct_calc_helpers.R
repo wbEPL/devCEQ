@@ -5,6 +5,99 @@
 #' 
 NULL 
 
+#' @describeIn deciles Calculate deciles/quantiles for specified variables
+#' 
+#' @param dta A data frame containing the variables to calculate quantiles for
+#' @param dec_var Character vector of variable names to calculate quantiles for
+#' @param wt_var Character name of the weight variable. If NULL or not found in data, equal weights are used
+#' @param n_dec Number of quantiles to create (default: 10 for deciles)
+#' 
+#' @return The input data frame with additional columns for each variable's quantiles,
+#'   named as `{var}_decile_{n_dec}`. Existing decile variables are not recalculated.
+#' 
+#' @export
+f_calc_deciles <- function(
+  dta,
+  dec_var = NULL,
+  wt_var = NULL,
+  n_dec = 10
+) {
+  # Validate inputs
+  if (is.null(dec_var) || length(dec_var) == 0) {
+    cli::cli_warn("{.arg dec_var} must be a non-empty character vector")
+    return(dta)
+  }
+  
+  missing_vars <- dec_var[!dec_var %in% names(dta)]
+  if (length(missing_vars) == length(dec_var)) {
+    cli::cli_abort("None of {.arg dec_var} variables found in data: {.var {missing_vars}}")
+  }
+  if (length(missing_vars) > 0) {
+    cli::cli_warn("Skipping missing variables: {.var {missing_vars}}")
+    dec_var <- setdiff(dec_var, missing_vars)
+  }
+  
+  new_dec_var <- paste0(dec_var, "_decile_", n_dec)
+  
+  # Check NULL first, then membership
+  if (is.null(wt_var) || !wt_var %in% names(dta)) {
+    dta <- dta |> mutate(wt_temp__ = 1)
+  } else {
+    dta <- dta |> mutate(wt_temp__ = !!sym(wt_var))
+  }
+  
+  # Identify which deciles need to be created
+  on_dec_var <- dec_var[!(new_dec_var %in% names(dta))]
+  
+  if (length(on_dec_var) == 0) {
+    cli::cli_inform("All requested decile variables already exist")
+    return(dta)
+  }
+  
+  dta <-
+    dta |>
+    calc_deciles(
+      dec_var = on_dec_var,
+      wt_var = "wt_temp__",
+      n_dec = n_dec,
+      dec_var_name = str_c("{.col}_decile_", n_dec)
+    ) |>
+    select(-wt_temp__)
+  
+  return(dta)
+}
+
+
+#' @describeIn deciles Calculate deciles/quantiles across multiple policy simulations
+#' 
+#' @param dta_sim A list of simulation results, where each element contains a 
+#'   `policy_sim_raw` data frame with microdata
+#' @param dec_var Character vector of variable names to calculate quantiles for
+#' @param wt_var Character name of the weight variable. If NULL or not found in data, 
+#'   equal weights are used
+#' @param n_dec Number of quantiles to create (default: 10 for deciles)
+#' @param ... Additional arguments (currently unused)
+#' 
+#' @return A list with the same structure as `dta_sim`, where each simulation's 
+#'   `policy_sim_raw` data frame has been augmented with decile columns
+#' 
+#' @export
+f_calc_deciles_by_sim <- function(dta_sim, dec_var, wt_var = NULL, n_dec = 10, ...) {
+  dta_sim |>
+    purrr::map(
+      ~ {
+        .x$policy_sim_raw <-
+          .x$policy_sim_raw |>
+          f_calc_deciles(
+            dec_var = dec_var,
+            wt_var = wt_var,
+            n_dec = n_dec
+          )
+        .x
+      }
+    )
+}
+
 #' @describeIn deciles Calculate N qualtiles of a variables from the CEQ results
 #'
 #' @inheritParams get_dta_gini

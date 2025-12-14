@@ -54,7 +54,7 @@ m_incid_srv <-
       ns <- session$ns
 
       # Step 1. Page structure -------------------------------------------------------
-      output$incidences_ui <- renderUI(page_ui(id))
+      output$incidences_ui <- renderUI(page_ui(ns(NULL)))
 
       # Step 2.a Title
       ptitle <- m_input_srv("title", "title", title = reactive(page_title), choices = reactive(page_title))

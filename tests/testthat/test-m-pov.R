@@ -130,6 +130,6 @@ dta_fig |> f_format_tbl() |> f_format_rt(col_min_groups = 1)
 
 # Testing the module --------------------------------------------
 devmode()
-test_m_pov(sim_res = reactive(req(dta_sim_local)))
+test_m_pov(sim_res = reactive(req(dta_sim)))
 
 

@@ -33,7 +33,7 @@ library(bslib)
 # test_m_incid(page_ui = f_incid_ui_card)
 
 ## Page switching --------------------------------------------
-# test_m_res_switches()
+test_m_res_switches()
 
 ## Insidences results module with switches and all results collection ----------
 # test_m_incid_switches()

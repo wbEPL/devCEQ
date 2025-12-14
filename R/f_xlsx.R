@@ -271,7 +271,7 @@ peawb_add_ggs <- function(wb, sheet_name, offset_x = 0, ggs = NULL, ...) {
   if (!is.null(ggs)) {
     if (inherits(ggs, "gg")) {
       ggs <- list(ggs)
-    }
+    } 
     ggs <- map(ggs, ~ {
       to_file <- tempfile(fileext = ".png")
       ggsave(

@@ -38,11 +38,10 @@ m_pov_srv <-
       ns <- session$ns
 
       # Step 1. Page structure -------------------------------------------------------
-      output$incidences_ui <- renderUI(page_ui(id))
+      output$incidences_ui <- renderUI(page_ui(ns(NULL)))
 
       # Step 2.a Title
-      ptitle <- m_input_srv("title", "title", title = reactive(page_title), choices = reactive(page_title)
-      )
+      ptitle <- m_input_srv("title", "title", title = reactive(page_title), choices = reactive(page_title))
 
       # Step 2.b Poverty line selection
       pl_choice <- m_input_srv("pl_choice", pl_type, pl_title, pl_choices)
@@ -103,86 +102,93 @@ m_pov_srv <-
           filter(
             if_any(f_get_colname("measure")) %in%
               get_measure_nm(plt_options)$measure_title
-          ) |>
-          f_filter_grouped_stats(group_var_filter = grpby())
+          )        
       })
 
-      # dta_fig <- reactive({
-      #   req(dta_calc())
-      #   req(grpby())
-
-      # })
+      dta_fig <- reactive({
+        req(dta_calc())
+        if (length((var_group)) == 0) {
+          return(NULL)
+        }
+        out <- 
+          var_group |>
+          map(
+            ~ {
+              dta_local <- dta_calc_fig() |> f_filter_grouped_stats(.x)
+              if (length(.x) == 1 && .x == "all") {
+                fig_out <- f_plot_pov_by(
+                  dta_local,
+                  fig_by = "measure",
+                  fig_filter = get_measure_nm(plt_options)$measure_title,
+                  x_lab = f_get_app_text("title_plot_inccon"),
+                  facet_var = NULL,
+                  color_var = "sim"
+                )
+              } else {
+                fig_out <- f_plot_pov_by(
+                  dta_local,
+                  fig_by = "measure",
+                  fig_filter = get_measure_nm(plt_options)$measure_title,
+                  x_lab = f_get_app_text("title_plot_inccon")
+                )
+              }
+            }
+          ) |>
+          set_names(var_group)
+        out
+      })
       
       # Generating plots based on filtered data
       observeEvent(
         {
-          dta_calc_fig()
+          dta_fig()
           grpby()
         },
         {
-          req(dta_calc_fig())
-          if (length(grpby()) == 1 && grpby() == "all") {
-            fig_out <- f_plot_pov_by(
-              dta_calc_fig(),
-              fig_by = "measure",
-              fig_filter = get_measure_nm(plt_options)$measure_title,
-              x_lab = f_get_app_text("title_plot_inccon"),
-              facet_var = NULL,
-              color_var = "sim"
-            )
-          } else {
-            fig_out <- f_plot_pov_by(
-              dta_calc_fig(),
-              fig_by = "measure",
-              fig_filter = get_measure_nm(plt_options)$measure_title,
-              x_lab = f_get_app_text("title_plot_inccon")
-            )
-          }
-
-          # Reorder plots based on plt_options
+          req(dta_fig())
+          req(grpby())
           # browser()
-          fig$ggs <- fig_out
+          if (grpby() %in% names(dta_fig())) {
+            fig$ggs <- dta_fig()[[grpby()]]
+          } else {
+            fig$ggs <- dta_fig()[[1]]
+          }
           fig$id <- names(fig$ggs)
           fig$title <- names(fig$ggs)
         }, 
         ignoreInit = TRUE
       )
 
-      observeEvent(fig$dta, {
-        req(fig$dta)
-        fig$dta_out <- fig$dta |> f_format_tbl()
-      })
+      # observeEvent(fig$dta, {
+      #   req(fig$dta)
+      #   fig$dta_out <- fig$dta |> f_format_tbl()
+      # })
 
-      observeEvent(fig$dta_out, {
-        req(fig$dta_out)
-        fig$rt <- fig$dta_out |> f_format_rt(col_min_groups = 1)
-      })
+      # observeEvent(fig$dta_out, {
+      #   req(dta_calc_formatted())
+      #   fig$rt <- dta_calc_formatted() |> f_format_rt(col_min_groups = 1)
+      # })
 
       # Step 3 Generating plots ------------------------------------------------
       fig <- reactiveValues(
-        id = c("Fig 1", "Fig 2", "Fig 3"),
-        title = c("Figure 1", "Figure 2", "Figure 3"),
-        lys = list(),
+        id = NULL,
+        title = NULL,
         ggs = NULL,
-        fts = NULL,
-        rt = NULL,
-        dta_out = NULL,
         dta = NULL
       )
 
       # Step 10. Card with plot and data table --------------------------------
       m_figure_server(
         "fig1",
-        figures = reactive({
-          fig$ggs
-        }),
+        figures = reactive(fig$ggs),
         selected = pltby,
         force_ly = T
       )
+      
       m_figure_server(
         "tbl1",
         figures = reactive({
-          fig$rt
+          dta_calc_formatted() |> f_format_rt(col_min_groups = 1)
         }),
         selected = pltby
       )
@@ -195,7 +201,7 @@ m_pov_srv <-
             sheet_name = ptitle(),
             meta_tbl = tibble(),
             tbl = dta_calc_formatted(),
-            ggs = fig$ggs
+            ggs = purrr::list_flatten(dta_fig())
           ))
         }),
         file_name = reactive({
@@ -215,8 +221,9 @@ m_pov_srv <-
             ),
             id = fig$id,
             title = fig$title,
-            ggs = fig$ggs,
-            dta_out =  dta_calc_formatted()
+            sheet_name = ptitle(),
+            tbl = dta_calc_formatted(),
+            ggs = purrr::list_flatten(dta_fig())
           )
         })
 
@@ -230,6 +237,8 @@ m_pov_srv <-
 
 
 #' @describeIn m_incid Incidence page template for output in a results layout
+#' @importFrom shiny NS tagList
+#' @import bslib
 #' @export
 #'
 f_pov_ui_linear <- function(id, add_pl = TRUE) {
@@ -252,7 +261,7 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
 
   # Drop NULL from list
   tagList(
-    layout_columns(
+    bslib::layout_columns(
       !!!input_elements,
       col_widths = col_widths
     ),
@@ -347,6 +356,7 @@ m_povgini_srv <- function(id = NULL, sim_res, ...) {
 #' @export
 #'
 test_m_pov <- function(
+  idd = NULL,
   page_ui = f_pov_ui_linear,
   sim_res = reactive(dta_sim),
   ...
@@ -355,10 +365,10 @@ test_m_pov <- function(
   library(shinyWidgets)
   library(bslib)
 
-  ui <- m_povgini_ui(NULL)
+  ui <- m_povgini_ui(idd)
 
   server <- function(input, output, session) {
-    m_povgini_srv(NULL, sim_res = sim_res, ...)
+    m_povgini_srv(idd, sim_res = sim_res, ...)
   }
 
   shinyApp(ui, server)

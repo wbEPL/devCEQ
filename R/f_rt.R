@@ -59,7 +59,7 @@ f_format_rt <- function(
     if (length(valid_groups) > 0) {
       col_groups <- lapply(valid_groups, function(grp) {
         # Find all columns belonging to this group
-        group_cols <- col_names[has_delim][grepl(paste0("^", grp, col_delim), col_names[has_delim])]
+        group_cols <- col_names[has_delim][grepl(paste0(grp, col_delim), col_names[has_delim], fixed = TRUE)]
         reactable::colGroup(name = grp, columns = group_cols)
       })
       
@@ -84,7 +84,7 @@ f_format_rt <- function(
   # Create reactable
   reactable::reactable(
     dta,
-    # columnGroups = col_groups,
+    columnGroups = col_groups,
     columns = if (length(col_defs) > 0) col_defs else NULL,
     defaultColDef = colDef(align = "center", vAlign = "center"),
     filterable = TRUE,

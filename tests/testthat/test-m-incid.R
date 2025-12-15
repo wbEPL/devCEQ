@@ -49,7 +49,7 @@ dta_sim_local$policy0$policy_sim_raw |>
     n_dec = 4
   ) 
 
-
+# Make a function for aggregating by deciles across simulations and computing relative, absolute and level incidence
 
 
 agg_sims_by_deciles(

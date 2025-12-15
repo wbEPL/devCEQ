@@ -22,7 +22,7 @@ CEQ_ui <- function(
     ...
     ) {
 
-  spinner <- tagList(#
+  spinner <- tagList(
     waiter::spin_circle(),
     br(),
     span(paste0(get_app_name(), " loading..."), style = "color:white;")
@@ -70,16 +70,66 @@ CEQ_ui <- function(
 
   tagList(
     golem_add_external_resources(),
-    if (isTRUE(unlist(options("golem.app.prod"))))
-    {
+    if (!in_devmode()) {
       waiter::waiter_show_on_load(spinner)
     },
-    if (isTRUE(unlist(options("golem.app.prod"))))
-    {
+    if (!in_devmode()) {
       waiter::waiter_hide_on_render(NS('generic_inputs')("n_policy_ui"))
     },
     pages
   )
+}
+
+
+#' New CEQ UI function
+#' @export
+#' @importFrom bslib page_navbar nav_panel
+#' @import shiny
+#' @importFrom waiter waiterShowOnLoad
+#' @importFrom shinyFeedback useShinyFeedback
+#'
+#'
+ceq_ui_new <- function(
+  request,
+  theme_fn = function(...) bs_theme(...),
+  fn_results_ui = fn_results_ui_dummy,
+  ...
+) {
+  whole_app <-
+    bslib::page_navbar(
+      id = "main_sidebar",
+      theme = theme_fn(),
+      header = tagList(
+        waiter_on_load(),
+        # devCEQ_dependency(),
+        golem_add_external_resources()
+      ),
+      title = get_app_name(),
+      window_title = get_app_name(),
+      navbar_options = list(
+        class = "bg-primary",
+        theme = "dark",
+        collapsible = FALSE
+      ),
+
+      bslib::nav_panel(title = "Info", value = "Info", h4("Information")),
+
+      bslib::nav_panel(
+        title = "Policy Choices",
+        value = "pc2019",
+        m_inputs_ui('generic_inputs')
+      ),
+
+      bslib::nav_panel(
+        title = "Results",
+        value = "Results",
+        fn_results_ui(id = 'ceqsim')
+      ),
+
+      bslib::nav_panel("How it works?", value = "howto", h4("How it works?"))
+    )
+
+  whole_app
 }
 
 
@@ -103,9 +153,9 @@ gen_ceq_ui <-
   ) {
 
     function(request) {
-      CEQ_ui(
+      ceq_ui_new(
         request,
-        theme_fn = theme_fn,
+        # theme_fn = theme_fn,
         style_logo_position = style_logo_position,
         inp_nav_width = inp_nav_width,
         fn_results_ui = fn_results_ui,
@@ -144,9 +194,9 @@ fn_results_ui_dummy2 <- function(id) {
 #'
 #' @noRd
 #' @export
-get_app_name <- function() {
+get_app_name <- function(alt_name = "Fiscal Insidences Analysis", ...) {
   app_name <- options("current.app.name")
-  if (is.null(app_name[[1]])) app_name <- ""
+  if (is.null(app_name[[1]])) app_name <- alt_name
   return(app_name[[1]])
 }
 
@@ -192,6 +242,7 @@ golem_add_external_resources <- function(){
     cicerone::use_cicerone(),
     shinyjs::useShinyjs(),
     waiter::use_waiter(),
+    shinyFeedback::useShinyFeedback(),
     # if (isTRUE(unlist(options( "golem.app.prod" )))) {waiter::waiterPreloader()},
     # shinyalert::useShinyalert(),
     shinyWidgets::useSweetAlert(theme = "bootstrap-4"),

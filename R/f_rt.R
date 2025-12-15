@@ -84,7 +84,7 @@ f_format_rt <- function(
   # Create reactable
   reactable::reactable(
     dta,
-    columnGroups = col_groups,
+    # columnGroups = col_groups,
     columns = if (length(col_defs) > 0) col_defs else NULL,
     defaultColDef = colDef(align = "center", vAlign = "center"),
     filterable = TRUE,

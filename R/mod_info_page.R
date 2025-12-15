@@ -4,6 +4,7 @@
 #' @noRd
 #' @import shiny
 #' @importFrom htmltools HTML
+#' @importFrom bslib nav_select
 #' @export
 
 mod_info_page_server <-
@@ -41,6 +42,7 @@ mod_info_page_server <-
                 inputId = navbar_id,
                 selected =  active_tab$previous
               )
+              bslib::nav_select(navbar_id, active_tab$previous, session)
 
               showModal(modalDialog(
                 # title = as.character(getOption("current.app.name", "CEQ")),
@@ -63,8 +65,9 @@ mod_info_page_server <-
               updateNavbarPage(
                 session = session,
                 inputId = navbar_id,
-                selected =  active_tab$previous
+                selected =  "pc2019" #active_tab$previous
               )
+              bslib::nav_select(navbar_id, "pc2019", session)
               new_val <- run_guid_click() + 1
               run_guid_click(new_val)
             } else {
@@ -82,6 +85,8 @@ mod_info_page_server <-
           updateNavbarPage(session = session,
                            inputId = navbar_id,
                            selected =  how_to_tab)
+          
+          bslib::nav_select(navbar_id, how_to_tab, session)
         })
 
         # Next click -------------------------------
@@ -154,7 +159,7 @@ mod_info_page_server <-
 
 
 
-#' Compile guides functoin
+#' Compile guides function
 #'
 #' @description A shiny Module.
 #'
@@ -203,7 +208,7 @@ compile_guides <- function(ns = NS(NULL)) {
     step(
       el = ns("policy_names_holder"),
       is_id = TRUE,
-      title = "Provide self-explaining titles of the simulated scenarios.",
+      title = "Provide self-explanatory titles of the simulated scenarios.",
       position = "bottom",
       show_btns = TRUE
     )$
@@ -214,7 +219,7 @@ compile_guides <- function(ns = NS(NULL)) {
       title = "Revise inputs.",
       description =
         shiny::markdown("Watch out for limitations within which policy choices
-                        could be modified. Scroll down to see all policy options."),
+                        can be modified. Scroll down to see all policy options."),
       position = "left-center",
       show_btns = TRUE
     )$
@@ -243,10 +248,10 @@ compile_guides <- function(ns = NS(NULL)) {
       el = ns("input_tabs_nav_holder_3"),
       is_id = TRUE,
       title =
-        "'Summary' tab contains a table with all policy inputs compared side-by side.",
+        "'Summary' tab contains a table with all policy inputs compared side-by-side.",
       description =
         shiny::markdown("It compares provided values with the baseline and
-                        highlights inputs that are different from each other"),
+                        highlights inputs that are different from each other."),
       position = "right-bottom",
       show_btns = TRUE#,
       # on_highlight_started = str_c(
@@ -260,7 +265,7 @@ compile_guides <- function(ns = NS(NULL)) {
       is_id = TRUE,
       title = "Press Run to execute simulations.",
       description =
-        shiny::markdown("'Run' must be pressed every time when we've updated desired policy choices."),
+        shiny::markdown("'Run' must be pressed every time we've updated desired policy choices."),
       position = "right",
       show_btns = TRUE
     )$
@@ -268,11 +273,11 @@ compile_guides <- function(ns = NS(NULL)) {
     step(
       el = ns("download_sim_holder"),
       is_id = TRUE,
-      title = "Download simulaiton inputs in a single file for later use",
+      title = "Download simulation inputs in a single file for later use.",
       description =
         shiny::markdown("Such file can be used to restore old policy choices
                         and continue modifying them. This file has an
-                        app-specific extencion `.ceqsim`"),
+                        app-specific extension `.ceqsim`."),
       position = "right",
       show_btns = TRUE
     )$
@@ -289,7 +294,7 @@ compile_guides <- function(ns = NS(NULL)) {
     step(
       el = ns("reset_btn_0"),
       is_id = TRUE,
-      title = "To start everything from the scratch, use the 'Reset' button or reload the app",
+      title = "To start everything from scratch, use the 'Reset' button or reload the app.",
       position = "right",
       show_btns = TRUE,
       on_highlight_started = str_c(
@@ -311,7 +316,7 @@ compile_guides <- function(ns = NS(NULL)) {
     step(
       el = ns("policy_choices_holder_2"),
       is_id = TRUE,
-      title = "Return to the Policy Choices page",
+      title = "Return to the Policy Choices page.",
       position = "left-center",
       show_btns = TRUE,
       on_highlight_started = str_c(

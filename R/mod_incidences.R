@@ -1,4 +1,4 @@
-#' Insidences module
+#' Insidences module (old version)
 #' 
 #' @name mod_incidences
 #' 
@@ -8,13 +8,12 @@ NULL
 #' 
 #' @importFrom shiny NS uiOutput
 #' @importFrom shinycssloaders withSpinner
+#' @export
 #' 
 mod_incidences_ui <- 
   function(id) {
     ns <- NS(id)
     uiOutput(ns("incidences_ui")) |> shinycssloaders::withSpinner() 
-    # tags$div(style = "overflow-y: auto; height: calc(100vh - 8rem); overflow-x: hidden;") %>%
-    # tagList()
   }
 
 

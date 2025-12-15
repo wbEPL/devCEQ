@@ -40,9 +40,12 @@ m_pov_srv <-
       ns <- session$ns
 
       # Step 1. Page structure -------------------------------------------------------
+      ever_rendered <- reactiveVal(FALSE)
       output$incidences_ui <- renderUI({
+        req(isolate(!ever_rendered()))
         validate(need(isTruthy(sim_res()), "Press 'Run' to execute simulaitons."))
-        page_ui(ns(NULL))})
+        page_ui(ns(NULL))
+      })
 
       # Step 2.a Title
       ptitle <- m_input_srv("title", "title", title = reactive(page_title), choices = reactive(page_title))

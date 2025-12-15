@@ -29,6 +29,7 @@ m_input_srv <- function(
   type = "numericInput",
   title = reactive(NULL),
   choices = reactive(NULL),
+  select_index = NULL,
   ...
 ) {
   moduleServer(id, function(input, output, session) {
@@ -51,6 +52,7 @@ m_input_srv <- function(
     ui <- reactive({
       args <- c(
         list(id = ns(NULL), title = title(), choices = choices()),
+        if (!is.null(select_index)) list(selected = choices()[select_index]),
         list(...)
       )
       do.call(f_ui, args)

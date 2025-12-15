@@ -258,8 +258,8 @@ f_incid_ui_linear2 <- function(id) {
       m_input_ui(ns("ndec")),
       m_input_ui(ns("decby")),
       m_input_ui(ns("incid")),
-      m_input_ui(ns("grpby")),
-      m_input_ui(ns("pltby"))
+      m_input_ui(ns("grpby"))#,
+      # m_input_ui(ns("pltby"))
     ),
     layout_columns(
       m_input_ui(ns("pltby"))

@@ -2,6 +2,33 @@
 #' @name f_tbl_helpers
 NULL
 
+
+f_label_percent <- function() {
+  scales::label_percent(accuracy = .01, scale = 100)
+}
+
+f_label_number <- function(x, ...) {
+  x_max <- max(x, na.rm = TRUE)
+  x_min <- min(x, na.rm = TRUE)
+  if (x_max < 2 & x_min > -2) {
+    scale_fn <- scales::label_number(accuracy = .0001, ...)
+  } else if (x_max < 10 & x_min > -10) {
+    scale_fn <- scales::label_number(accuracy = .001, ...)
+  } else if (x_max < 100 & x_min > -100) {
+    scale_fn <- scales::label_number(accuracy = .01, ...)
+  } else if (x_max < 9000 & x_min > -9000) {
+    scale_fn <- scales::label_number(accuracy = .1, big.mark = "", ...)
+  } else {
+    scale_fn <- scales::label_number(
+      accuracy = .1,
+      scale_cut = c(" K" = 5 * 10^3, " M" = 10^6, " B" = 10^9),
+      big.mark = "",
+      ...
+    )
+  }
+  return(scale_fn)
+}
+
 #' @describeIn f_tbl_helpers Format number by title and value
 #' @importFrom scales label_percent label_number cut_short_scale
 #' @param x Numeric vector to format
@@ -10,47 +37,24 @@ NULL
 #' @return A character vector of formatted numbers
 #' @export
 f_num_by_title <- function(x, title = NULL, ...) {
-  out <- case_when(
-    # !is.null(title) && str_detect(title, "%") ~ scales::number(
-    #   x,
-    #   accuracy = .01,
-    #   scale = 100
-    # ),
-    max(x, na.rm = TRUE) < 2 & min(x, na.rm = TRUE) > -2 ~ scales::number(
-      x,
-      accuracy = .0001
-    ),
-    max(x, na.rm = TRUE) < 10 & min(x, na.rm = TRUE) > -10 ~ scales::number(
-      x,
-      accuracy = .001
-    ),
-    max(x, na.rm = TRUE) < 100 & min(x, na.rm = TRUE) > -100 ~ scales::number(
-      x,
-      accuracy = .01
-    ),
-    max(x, na.rm = TRUE) < 9000 &
-      min(x, na.rm = TRUE) > -9000 ~ scales::number(
-      x,
-      accuracy = .1,
-      big.mark = ""
-    ),
-    .default = scales::number(
-      x,
-      accuracy = .1,
-      scale_cut = c(" K" = 5 * 10^3, " M" = 10^6, " B" = 10^9),
-      big.mark = ""
-    )
-  )
-  title <- as.character(title)
-  if (all(!is.null(title)) && all(str_detect(title, "%"))) {
-    out <- scales::number(
-      x,
-      accuracy = .01,
-      scale = 100
-    )
+  
+  # Check if title indicates percentage formatting
+  is_percent <- !is.null(title) && 
+                length(title) > 0 && 
+                all(!is.na(title)) && 
+                all(str_detect(as.character(title), "%"))
+  
+  if (is_percent) {
+    format_fn <- f_label_percent()
+  } else if (any(!is.null(x) || !is.na(x))) {
+    format_fn <- f_label_number(x)
+  } else {
+    format_fn <- scales::label_number(accuracy = .001, big.mark = "", ...)
   }
-  return(out)
+  
+  format_fn
 }
+
 
 
 #' @describeIn f_tbl_helpers Format a data frame for table output
@@ -72,14 +76,20 @@ f_format_tbl <- function(
 ) {
   col_measure <- f_get_colname("measure")
   col_val <- f_get_colname("value")
+  # browser()
   dta |>
     group_by(across(any_of(col_measure))) |>
+    nest() |>
     mutate(
-      across(
-        any_of(col_val),
-        ~ f_num_by_title(., .data[[col_measure]], "%")
-      )
-    ) |>
+      data = purrr::map2(
+        data,
+        .data[[col_measure]],
+        ~ {
+          format_fn <- f_num_by_title(.x[[col_val]], as.character(.y))
+          .x |> mutate(across(any_of(col_val), ~ format_fn(.)))
+        }
+    )) |> 
+    unnest(cols = c(data)) |> 
     ungroup() |>
     pivot_wider(
       names_from = any_of(unname(f_get_colname(pivot_names_from))),

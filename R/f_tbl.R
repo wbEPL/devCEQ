@@ -21,7 +21,7 @@ f_label_number <- function(x, ...) {
   } else {
     scale_fn <- scales::label_number(
       accuracy = .1,
-      scale_cut = c(" K" = 5 * 10^3, " M" = 10^6, " B" = 10^9),
+      scale_cut = c(0, " K" = 5 * 10^3, " M" = 10^6, " B" = 10^9),
       big.mark = "",
       ...
     )
@@ -64,7 +64,7 @@ f_num_by_title <- function(x, title = NULL, ...) {
 #' @param ... Additional arguments (currently unused)
 #' @return A formatted data frame ready for table output
 #' @importFrom dplyr group_by mutate across case_when
-#' @importFrom tidyr pivot_wider
+#' @importFrom tidyr pivot_wider unnest
 #' @importFrom stringr str_detect
 #' @importFrom scales number percent
 #' @export
@@ -89,7 +89,7 @@ f_format_tbl <- function(
           .x |> mutate(across(any_of(col_val), ~ format_fn(.)))
         }
     )) |> 
-    unnest(cols = c(data)) |> 
+    tidyr::unnest(cols = c(data)) |> 
     ungroup() |>
     pivot_wider(
       names_from = any_of(unname(f_get_colname(pivot_names_from))),

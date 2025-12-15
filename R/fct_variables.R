@@ -301,7 +301,7 @@ f_var_pl_default <- function() {
 
 
 #' @describeIn f_var_helpers Default dictionary for measures labels
-#' 
+#' @importsFrom tibble tribble
 f_measure_dic_default <- function() {
   tribble(
     ~measure, ~measure_title,

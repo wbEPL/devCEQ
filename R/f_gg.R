@@ -85,7 +85,8 @@ f_plot_gg <- function(
   }  
 
   # Y scale in % if % is present in the y_lab name
-  label_local <- f_num_by_title(xx, title = as.character(y_lab))
+  y_values <- dta |> select(any_of(y_var)) |> pull(1)
+  label_local <- f_num_by_title(y_values, title = as.character(y_lab))
   # browser()
   dta <-
     dta |>

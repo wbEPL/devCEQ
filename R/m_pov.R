@@ -38,7 +38,9 @@ m_pov_srv <-
       ns <- session$ns
 
       # Step 1. Page structure -------------------------------------------------------
-      output$incidences_ui <- renderUI(page_ui(ns(NULL)))
+      output$incidences_ui <- renderUI({
+        validate(need(isTruthy(sim_res()), "Press 'Run' to execute simulaitons."))
+        page_ui(ns(NULL))})
 
       # Step 2.a Title
       ptitle <- m_input_srv("title", "title", title = reactive(page_title), choices = reactive(page_title))
@@ -53,9 +55,11 @@ m_pov_srv <-
 
       # Step 3.A Data/Plots preparation -------------------------------------------
       sim_ready <- reactive({
-        req(sim_res())
+        # req(sim_res())
+        # browser()
         # All simulations have names and data
         validate(
+          need(isTruthy(sim_res()), "Press 'Run' to execute simulaitons."),
           need(length(sim_res()) > 0, "No simulation data found."),
           need(
             all(map_chr(sim_res(), ~ unique(.x$policy_name)) != ""),
@@ -66,6 +70,7 @@ m_pov_srv <-
             "Some simulations do not have simulation data."
           ),          
         )
+        req(sim_res())
         sim_res() |> keep(~ !is.null(.x$policy_sim_raw) && nrow(.x$policy_sim_raw) > 0)
       })
 
@@ -139,6 +144,7 @@ m_pov_srv <-
       })
       
       # Generating plots based on filtered data
+      # fig_out <- reactive()
       observeEvent(
         {
           dta_fig()

@@ -23,7 +23,7 @@ CEQ_server <- function(
     inp_str_fn = gen_inp_str,
     ui_gen_fn = gen_tabinp_ui,
     n_policy = c(1, 2, 1),
-    n_policy_type = c("numericInline", "numeric", "slider", "dropdown", "none"),
+    n_policy_type = c("dropdown", "numericInline", "numeric", "slider", "none"),
     info_page_md = NULL,
     info_page_size = "l",
 

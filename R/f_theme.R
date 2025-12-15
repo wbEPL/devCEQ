@@ -19,14 +19,14 @@ waiter_on_load <- function() {
           color = c("light")
         ),
         div(
-          str_c("Loading ", get_app_name(), "...",
+          str_c("Loading ", get_app_name(), "..."),
           style = "margin-top: 1em; font-size: 1.25em; color: white;"
         )#,
         # tags$img(
         #   src = "www/logo/wbg-logo-prosperity-white.svg", # Replace with your logo path
         #   height = "60px",
         #   style = "margin-top: 1em;"
-        )
+        
       ),
       color = "#004972" # WBG blue background
     )

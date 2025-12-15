@@ -295,7 +295,7 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
           m_figure_ui(ns("tbl1")),
           fillable = TRUE,
           min_height = "450px",
-          max_height = "650px"
+          max_height = "800px"
         )
       ),
 

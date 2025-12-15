@@ -72,6 +72,8 @@ dta_sim_local |> f_calc_pov_stats() |> count(Simulation)
 # Plotting --------------------------------------------
 dta_fig <- dta_sim_local |> f_calc_pov_stats()
 
+# profvis::profvis({dta_sim_local |> f_calc_pov_stats()})
+
 
 # Filter appropriate groupping variables ------------------------------
 

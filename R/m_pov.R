@@ -32,6 +32,8 @@ m_pov_srv <-
     pltby_title = NULL,
 
     plt_options = c("fgt0", "fgt1", "fgt2", "hc"),
+
+    stats = c("fgt0", "fgt1", "fgt2", "hc", "gini", "thiel", "n", "pop"),
     ...
   ) {
     moduleServer(id, function(input, output, session) {
@@ -89,7 +91,8 @@ m_pov_srv <-
             var_wt = var_wt,
             group_vars = var_group,
             pl_var = pl_choice(),
-            pl_val = NULL
+            pl_val = NULL,
+            stats = stats
           )
         }
       )
@@ -281,7 +284,7 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
           m_figure_ui(ns("fig1")),
           fillable = TRUE, 
           min_height = "450px",
-          max_height = "525px"
+          max_height = "600px"
         ) #,
         # card_footer("Footer placeholder")
       ),
@@ -292,7 +295,7 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
           m_figure_ui(ns("tbl1")),
           fillable = TRUE,
           min_height = "450px",
-          max_height = "525px"
+          max_height = "650px"
         )
       ),
 
@@ -345,6 +348,7 @@ m_povgini_srv <- function(id = NULL, sim_res, ...) {
       sim_res = sim_res,
       page_ui = f_pov_ui_linear,
       plt_options = c("fgt0", "fgt1", "fgt2", "hc"),
+      stats = c("fgt0", "fgt1", "fgt2", "hc"),
       ...
     )
     m_pov_srv(
@@ -353,6 +357,7 @@ m_povgini_srv <- function(id = NULL, sim_res, ...) {
       page_ui = f_gini_ui_linear,
       plt_options = c("gini", "theil"),
       page_title = f_get_app_text("m_ineq"),
+      stats = c("gini", "theil"),
       ...
     )
   })

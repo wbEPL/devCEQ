@@ -13,6 +13,7 @@ f_calc_povineq <- function(
   pl_var = NULL,
   pl_val = NULL,
   group_var = "total",
+  stats = c("fgt0", "fgt1", "fgt2", "gini", "theil", "hc", "n", "pop"),
   ...
 ) {
   # Handling missing income variabels
@@ -106,36 +107,71 @@ f_calc_povineq <- function(
       values_to = "inc_val"
     ) |>
     summarise(
-      hc = sum((inc_val < pl) * wt, na.rm = TRUE),
-      fgt0 = calc_pov_fgt(
-        x = inc_val,
-        pl = pl,
-        alpha = 0,
-        w = wt,
-        na.rm = TRUE
-      ),
-      fgt1 = calc_pov_fgt(
-        x = inc_val,
-        pl = pl,
-        alpha = 1,
-        w = wt,
-        na.rm = TRUE
-      ),
-      fgt2 = calc_pov_fgt(
-        x = inc_val,
-        pl = pl,
-        alpha = 2,
-        w = wt,
-        na.rm = TRUE
-      ),
-      gini = calc_gini(x = inc_val, w = wt, na.rm = TRUE),
-      theil = calc_theil(x = inc_val, w = wt, na.rm = TRUE),
+      hc = if ("hc" %in% stats) {
+        sum((inc_val < pl) * wt, na.rm = TRUE)
+      } else {
+        NA_real_
+      },
+
+      fgt0 = if ("fgt0" %in% stats) {
+        calc_pov_fgt(
+          x = inc_val,
+          pl = pl,
+          alpha = 0,
+          w = wt,
+          na.rm = TRUE
+        )
+      } else {
+        NA_real_
+      },
+      fgt1 = if ("fgt1" %in% stats) {
+        calc_pov_fgt(
+          x = inc_val,
+          pl = pl,
+          alpha = 1,
+          w = wt,
+          na.rm = TRUE
+        )
+      } else {
+        NA_real_
+      },
+      fgt2 = if ("fgt2" %in% stats) {
+        calc_pov_fgt(
+          x = inc_val,
+          pl = pl,
+          alpha = 2,
+          w = wt,
+          na.rm = TRUE
+        )
+      } else {
+        NA_real_
+      },
+      gini = if ("gini" %in% stats) {
+        calc_gini(x = inc_val, w = wt, na.rm = TRUE)
+      } else {
+        NA_real_
+      },
+      theil = if ("theil" %in% stats) {
+        calc_theil(x = inc_val, w = wt, na.rm = TRUE)
+      } else {
+        NA_real_
+      },
       n = n(),
       pop = sum(wt, na.rm = TRUE),
       .by = c(group_var, group_val, var)
     ) |>
+    select(where(~ all(!is.na(.)))) |>
     pivot_longer(
-      cols = c(hc, fgt0, fgt1, fgt2, gini, theil, n, pop),
+      cols = any_of(c(
+        "fgt0",
+        "fgt1",
+        "fgt2",
+        "gini",
+        "theil",
+        "hc",
+        "n",
+        "pop"
+      )),
       names_to = "measure",
       values_to = "value"
     ) |>
@@ -158,6 +194,7 @@ f_calc_povineq_by <-
     pl_var = NULL,
     pl_val = NULL,
     group_vars = c("total"),
+    stats = c("fgt0", "fgt1", "fgt2", "gini", "theil", "hc", "n", "pop"),
     ...
   ) {
     # Handle case when group_vars is NULL
@@ -188,6 +225,7 @@ f_calc_povineq_by <-
             pl_var = pl_var,
             pl_val = pl_val,
             group_var = .x,
+            stats = stats, 
             ...
           )
         }
@@ -231,6 +269,7 @@ f_calc_povineq_by_sims <- function(
   pl_var = NULL,
   group_vars = NULL,
   var_wt = NULL,
+  stats = c("fgt0", "fgt1", "fgt2", "gini", "theil", "hc", "n", "pop"),
   ...
 ) {
 
@@ -261,7 +300,8 @@ f_calc_povineq_by_sims <- function(
             var_inc = var_inc,
             var_wt = var_wt,
             pl_var = pl_var,
-            group_var = group_vars
+            group_var = group_vars,
+            stats = stats
           ) |>
           mutate(sim = .x$policy_name)
         out
@@ -282,6 +322,7 @@ f_calc_pov_stats <- function(
   group_vars = get_group_nm()$var,
   pl_var = NULL,
   pl_val = NULL,
+  stats = c("fgt0", "fgt1", "fgt2", "gini", "theil", "hc", "n", "pop"),
   ...
 ) {
 
@@ -293,7 +334,8 @@ f_calc_pov_stats <- function(
     var_wt = var_wt,
     pl_var = pl_var,
     pl_val = pl_val,
-    group_vars = group_vars
+    group_vars = group_vars,
+    stats = stats
   ) |>
     f_add_measure_labels() |>
     f_add_var_labels() |>

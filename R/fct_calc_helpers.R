@@ -70,7 +70,15 @@ f_format_incidence <- function(dta, ...) {
     ) |>
     select(-starts_with("order_")) |>
     unnest(cols = c(data)) |>
-    f_rename_cols()
+    arrange(across(any_of(c(
+      "sim",
+      "var",
+      "group_var",
+      "decile_var",
+      "measure",
+      "decile"
+    )))) |>
+    f_rename_cols() 
 }
 
 #' Calculate relative and absolute incidence measures
@@ -124,7 +132,7 @@ f_format_incidence <- function(dta, ...) {
 #' }
 #'
 #' @export
-f_calc_incidence <- function(dta, ...) {
+f_calc_incidence <- function(dta, force_abs = FALSE, ...) {
   dta <-
     dta |>
     left_join(
@@ -143,8 +151,11 @@ f_calc_incidence <- function(dta, ...) {
       )
   }
 
+  if (!isTRUE(force_abs)) {
+    dta <- dta |> mutate(level = level * factor)
+  }
+
   dta |>
-    mutate(level = level * factor) |>
     group_by(across(any_of(c("decile_var", "sim", "var")))) |>
     mutate(total = sum(level, na.rm = TRUE)) |>
     ungroup() |>
@@ -182,7 +193,7 @@ f_calc_incidence <- function(dta, ...) {
 #' distributions across different policy scenarios.
 #'
 #' @export
-f_agg_by_decile_by_sim <- function(dta_sim, var_decile, var_agg, var_group = NULL,  wt_var = NULL, ...) {
+f_agg_by_decile_by_sim <- function(dta_sim, var_decile, var_agg, var_group = NULL, wt_var = NULL, ...) {
   dta_sim |>
     purrr::map(
       ~ {
@@ -316,7 +327,6 @@ f_agg_by_decile_one <- function(dta, var_decile, var_agg, var_group = NULL, wt_v
     ) 
   
   n_dec <- length(levels(dta[[var_decile]]))
-  
   dta |>
     mutate(
       decile_var = dec_income,

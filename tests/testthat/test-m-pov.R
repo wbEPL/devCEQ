@@ -50,7 +50,7 @@ f_calc_povineq_by(
   group_vars = c("total", "group_1", "group_2")
 ) |>
   count(var)
-  count(group_var, group_val)
+  # count(group_var, group_val)
 
 # Poverty across all simulations --------------------------------------------
 f_calc_povineq_by_sims(
@@ -68,6 +68,15 @@ dta_sim_local |> f_calc_pov_stats() |> count(Variable)
 dta_sim_local |> f_calc_pov_stats() |> count(`Grouping variable`, Group)
 dta_sim_local |> f_calc_pov_stats() |> count(Simulation)
 
+library(microbenchmark)
+microbenchmark(
+  f_calc_pov_stats(dta_sim_local),
+  times = 10
+)
+
+profvis::profvis(f_calc_pov_stats(dta_sim_local))
+
+
 
 # Plotting --------------------------------------------
 dta_fig <- dta_sim_local |> f_calc_pov_stats()
@@ -82,13 +91,15 @@ dta_fig |> f_filter_grouped_stats("all") |> count(`Grouping variable`, Group)
 dta_fig |> f_filter_grouped_stats("all_groups") |> count(`Grouping variable`, Group)
 dta_fig |> f_filter_grouped_stats("all_groups") |> count(Statistics)
 
+profvis::profvis(f_filter_grouped_stats(dta_fig, "all_groups"))
+
 # Plotting specific measure --------------------------------------------
 
 measure_fltr <- get_measure_nm("fgt0")$measure_title
-fig_by <- "measure" |> f_get_colname()
+fig_by <- f_get_colname("measure")
 
 dta_fig |>
-  filter(if_any(any_of(f_get_colname(fig_by)), ~ . == as.character(measure_fltr))) |>
+  filter(if_any(any_of(fig_by), ~ . == as.character(measure_fltr))) |>
   f_plot_gg(
     x_var = "var",
     y_var = "value",
@@ -101,6 +112,7 @@ dta_fig |>
 
 dta_sim |> f_calc_pov_stats() |> f_plot_pov_by(fig_by = "measure") 
 
+profvis::profvis(f_plot_pov_by(dta_fig, fig_by = "measure"))
 
 # Plot all group-specific plots in a large list ----------------------------
 
@@ -132,6 +144,6 @@ dta_fig |> f_format_tbl() |> f_format_rt(col_min_groups = 1)
 
 # Testing the module --------------------------------------------
 devmode()
-test_m_pov(sim_res = reactive(req(dta_sim)))
+test_m_pov(sim_res = reactive(req(dta_sim_local)))
 
 

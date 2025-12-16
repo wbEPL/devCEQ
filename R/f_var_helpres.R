@@ -24,7 +24,7 @@ f_get_dic <- function(dic_nm, ...) {
   }
   
   if (!exists(dic_nm, mode = "function")) {
-    cli::cli_warn("Dictionary function {.fn {dic_nm}} not found.")
+    # cli::cli_warn("Dictionary function {.fn {dic_nm}} not found.")
     return(NULL)
   }
   
@@ -172,7 +172,12 @@ f_get_colnames_dic <- function() {
 #' 
 f_get_colname <- function(...) {
   x <- c(...)
-  get_var_nm(x, dic_default = "f_colnames_dic_default", dic_custom = "f_colnames_dic") 
+  y <- f_var_names_vector(f_get_colnames_dic())
+  if (length(x) == 0) {
+    return(y)
+  }
+  # filter only to existing names
+  names(y[y %in% x])
 }
 
 #' @describeIn f_var_helpers Rename data frame columns using a dictionary

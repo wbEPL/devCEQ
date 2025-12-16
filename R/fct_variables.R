@@ -294,7 +294,7 @@ f_var_group_default <- function() {
 #' @describeIn f_var_helpers Income variables names
 #'
 f_var_pl_default <- function() {
-    c("pl_190", "pl_nat", "pl_500")
+    c("pl_nat", "pl_190", "pl_500")
 }
 
 
@@ -323,7 +323,7 @@ f_measure_dic_default <- function() {
 #' 
 f_colnames_dic_default <- function() {
   tribble(
-    ~var, ~var_title,
+    ~var,          ~var_title,
     "group_var",   "Grouping variable",
     "group_val",   "Group",
     "var",         "Variable",

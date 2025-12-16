@@ -46,9 +46,11 @@ f_calc_povineq <- function(
 
   # Handeling missing poverty line variable
   if (is.null(pl_var) && is.null(pl_val)) {
-    cli::cli_warn(
-      "'pl_var' and 'pl_val' are not provided: using default poverty line as 40% of median income."
-    )
+    if (in_devmode()) {
+      cli::cli_warn(
+        "'pl_var' and 'pl_val' are not provided: using default poverty line as 40% of median income."
+      )
+    }
     # pl_val <- "pl_default"
     dta <- dta |> mutate(pl = weighted.mean(default_inc, w = wt) * 0.4)
   }
@@ -348,7 +350,7 @@ f_calc_pov_stats <- function(
 #' @export
 f_filter_grouped_stats <- 
   function(dta, group_var_filter = NULL, ...) {
-    col_group_var <- f_get_colname("group_var")
+    col_group_var <- f_get_colname("group_var")        
 
     dta_out <- dta |>
       filter(

@@ -3,8 +3,16 @@
 NULL
 
 
-f_label_percent <- function() {
-  scales::label_percent(accuracy = .01, scale = 100)
+f_label_percent <- function(x, ...) {
+  x_max <- max(x, na.rm = TRUE)
+  x_min <- min(x, na.rm = TRUE)
+  if (x_max > 0.5) {
+    return(scales::label_percent(accuracy = .1, scale = 100))
+  } else if (x_max > 0.1) {
+    return(scales::label_percent(accuracy = .01, scale = 100))
+  } else {
+    return(scales::label_percent(accuracy = .001, scale = 100))
+  }
 }
 
 f_label_number <- function(x, ...) {
@@ -45,7 +53,7 @@ f_num_by_title <- function(x, title = NULL, ...) {
                 all(str_detect(as.character(title), "%"))
   
   if (is_percent) {
-    format_fn <- f_label_percent()
+    format_fn <- f_label_percent(x)
   } else if (any(!is.null(x) || !is.na(x))) {
     format_fn <- f_label_number(x)
   } else {
@@ -97,5 +105,29 @@ f_format_tbl <- function(
       names_sep = "__",
       values_fill = "",
       values_fn = as.character
+    )
+}
+
+#' @describeIn f_tbl_helpers Format a decile table for output
+#' @export
+f_format_decile_tbl <- function(
+  dta,
+  pivot_names_from = c("group_var", "group_val"),
+  pivot_values_from = c("value"),
+  ...
+) {
+  dta |>
+    select(
+      -any_of(c(
+        f_get_colname("n"),
+        f_get_colname("decile_n"),
+        f_get_colname("pop"),
+        f_get_colname("decile_val")
+      ))
+    ) |>
+    f_format_tbl(
+      pivot_names_from = pivot_names_from,
+      pivot_values_from = pivot_values_from,
+      ...
     )
 }

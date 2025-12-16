@@ -300,7 +300,7 @@ f_var_pl_default <- function() {
 
 
 #' @describeIn f_var_helpers Default dictionary for measures labels
-#' @importsFrom tibble tribble
+#' @importFrom tibble tribble
 f_measure_dic_default <- function() {
   tribble(
     ~measure, ~measure_title,
@@ -346,14 +346,14 @@ f_app_text_dic_default <- function() {
     ~id            , ~title                       ,
     "m_pov_ineq"   , "Poverty and inequality",
     "m_pov"        , "Poverty",
-    "title_pl"     , "Poverty lines"              ,
+    "title_pl"     , "Poverty lines",
     "title_compare", "Compare by",
-    "save_btn"     , "Save results"               ,
-    "title_plot_inccon"  , "Income"     ,
-    "m_ineq"       , "Inequality"        ,
-    "m_povineq"    , "Poverty and inequality"     ,
+    "save_btn"     , "Save results",
+    "title_plot_inccon"  , "Income",
+    "m_ineq"       , "Inequality",
+    "m_povineq"    , "Poverty and inequality",
     # Incidence-specific
-    "m_incidence"  , "Incidences"         ,
+    "m_incidence"  , "Incidences",
     "ndec_title"   , "Number of deciles",
     "title_wtvar"  , "Weight variable",
     "decby_title"  , "Deciles by",

@@ -15,7 +15,7 @@ NULL
 #' This function checks if a dictionary function exists, calls it, and validates
 #' the result is a non-empty data frame. Returns NULL with warnings if validation fails.
 #' 
-#' @keywords internal
+#' @export
 f_get_dic <- function(dic_nm, ...) {
   # Validate input
   if (is.null(dic_nm) || !is.character(dic_nm) || length(dic_nm) != 1) {
@@ -66,7 +66,7 @@ f_get_dic <- function(dic_nm, ...) {
 #' the default with custom values using \code{rows_update()}. If only one
 #' dictionary is valid, it returns that one. Aborts if both are invalid.
 #' 
-#' @keywords internal
+#' @export
 f_get_upd_dic <- function(dic_nm, dic_default_name, ...) {
   # Validate inputs
   if (is.null(dic_nm) || !is.character(dic_nm) || length(dic_nm) != 1) {
@@ -79,7 +79,7 @@ f_get_upd_dic <- function(dic_nm, dic_default_name, ...) {
   }
   
   # Get dictionaries
-  dic <- if (!is.null(dic_nm)) f_get_dic(dic_nm, ...) else NULL
+  dic <- f_get_dic(dic_nm, ...)
   dic_default <- f_get_dic(dic_default_name, ...)
   
   # Check if both are NULL
@@ -101,14 +101,9 @@ f_get_upd_dic <- function(dic_nm, dic_default_name, ...) {
       )
       return(dic_default)
     }
-    
-    dic <- tryCatch(
-      dic_default |> rows_update(dic, by = common_cols, unmatched = "ignore"),
-      error = function(e) {
-        cli::cli_warn("Error merging dictionaries: {e$message}. Using default.")
-        dic_default
-      }
-    )
+    dic_exist <- dic[[common_cols]]
+    dic_add <- dic_default |> filter(if_any(any_of(common_cols), ~ !. %in% dic_exist))    
+    dic <- dic |> bind_rows(dic_add)
   } else if (is.null(dic)) {
     dic <- dic_default
   }

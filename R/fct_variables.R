@@ -34,15 +34,11 @@ get_var_nm <- function(
   vars = NULL,
   suffix = NULL,
   reorder = TRUE,
-  dic_default = f_var_dic_default,
+  dic_default = "f_var_dic_default",
   dic_custom_name = "f_var_dic",
   ...
 ) {
-  var_dic_local <- dic_default()
-
-  if (exists(dic_custom_name, mode = "function")) {
-    var_dic_local <- dic_custom_name |> paste0("()") |> parse(text = _) |> eval()
-  }
+  var_dic_local <- f_get_upd_dic(dic_custom_name, dic_default)
   
   rename_measure <- FALSE
   if ("measure" %in% colnames(var_dic_local)) {
@@ -72,9 +68,12 @@ get_var_nm <- function(
       )
       dta_missing <- tibble(
         var = missing_vars,
-        var_title = missing_vars |> fct_keep_dup_string(),
-         factor = 1
+        var_title = missing_vars |> fct_keep_dup_string()
       )
+
+      if ("factor" %in% colnames(dta)) {
+        dta_missing <- dta_missing %>% mutate(factor = 1)
+      }
       dta <- bind_rows(dta, dta_missing)
     }
     
@@ -144,7 +143,7 @@ get_measure_nm <- function(x = NULL) {
     vars = x,
     suffix = NULL,
     reorder = TRUE,
-    dic_default = f_measure_dic_default,
+    dic_default = "f_measure_dic_default",
     dic_custom_name = "f_measure_dic"
   )
 }
@@ -313,9 +312,9 @@ f_measure_dic_default <- function() {
     "theil",  "Theil index",
     "n",      "N observations",
     "pop",    "Population",
-    "relative", "Relative incidence, % of income type",
-    "absolute", "Absolute incidence, % of all deciles",
-    "level"   , "Currency units"
+    "relative", "Relative incidence, % of {decile_var}",
+    "absolute", "Absolute incidence, % of {var} total",
+    "level"   , "{var}, local currency"
   )
 }
 
@@ -323,13 +322,20 @@ f_measure_dic_default <- function() {
 #' @describeIn f_var_helpers Default column names dictionary
 #' 
 f_colnames_dic_default <- function() {
-  c(
-    "group_var" = "Grouping variable",
-    "group_val" = "Group",
-    "var" = "Variable",
-    "measure" = "Statistics",
-    "value" = "Value",
-    "sim" = "Simulation"
+  tribble(
+    ~var, ~var_title,
+    "group_var",   "Grouping variable",
+    "group_val",   "Group",
+    "var",         "Variable",
+    "measure",     "Statistics",
+    "value",       "Value",
+    "sim",         "Simulation",
+    "decile",      "Decile",
+    "decile_n",    "Number of declies",
+    "decile_var",  "Decile by",
+    "decile_val",  "Sum of decile values",
+    "n",           "N observations",
+    "pop",         "Population (sum of weights)"
   )
 }
 
@@ -359,16 +365,7 @@ f_app_text_dic_default <- function() {
 #' @returns a data frame with page titles
 #' @export
 f_get_app_text_dic <- function() {
-  pages_dic_local <- f_app_text_dic_default()
-
-  if (exists("f_app_text_dic", mode = "function")) {
-    pages_dic_local <- f_app_text_dic()
-
-    # Combine local and custom dictionaries, prioritizing custom entries
-    pages_dic_local <- pages_dic_local |> rows_update(pages_dic_local, by = "id")
-  } 
-
-  pages_dic_local
+  f_get_upd_dic("f_app_text_dic", "f_app_text_dic_default")
 }
 
 #' @describeIn f_var_helpers Get titles from a dictionary

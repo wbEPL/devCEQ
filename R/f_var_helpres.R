@@ -92,6 +92,8 @@ f_get_upd_dic <- function(dic_nm, dic_default_name, ...) {
   # Merge dictionaries if both exist
   if (!is.null(dic) && !is.null(dic_default)) {
     common_cols <- intersect(names(dic_default), names(dic))
+    key_cols <- c("id", "var", "measure")
+    common_cols <- intersect(common_cols, key_cols)
     
     if (length(common_cols) == 0) {
       cli::cli_warn(
@@ -157,12 +159,10 @@ f_add_var_labels <- function(dta, var_nm_tbl = get_var_nm(), to_var = "var", ...
 #' @return A named character vector mapping original column names to new names
 #' @export
 f_get_colnames_dic <- function() {
-  if (exists("f_colnames_dic", mode = "function")) {
-    dic <- f_colnames_dic()
-  } else {
-    dic <- f_colnames_dic_default()
-  }
-  dic
+  f_get_upd_dic(
+    dic_nm = "f_colnames_dic",
+    dic_default_name = "f_colnames_dic_default"
+  )
 }
 
 #' @describeIn f_var_helpers Get new column name for a given original name
@@ -170,26 +170,27 @@ f_get_colnames_dic <- function() {
 #' @return The new column name if found in the dictionary, otherwise returns \code{x} unchanged
 #' @export
 #' 
-f_get_colname <- function(x) {
-  dic <- f_get_colnames_dic()
-  if (any(x %in% names(dic))) {
-    unname(dic[x])
-  } else {
-    x
-  }
+f_get_colname <- function(...) {
+  x <- c(...)
+  get_var_nm(x, dic_default = "f_colnames_dic_default", dic_custom = "f_colnames_dic") 
 }
 
 #' @describeIn f_var_helpers Rename data frame columns using a dictionary
 #' @param dta A data frame to rename columns
-#' @param dic A named character vector mapping new names to original column names
-#' (default: output of \code{f_get_colnames_dic()})
+#' @param dic A named character vector where names are new column names and 
+#'   values are original column names (default: output of \code{f_var_names_vector(f_get_colnames_dic())})
 #' @param ... Additional arguments (currently unused)
 #' @return A data frame with renamed columns
 #' @export
-f_rename_cols <- function(dta, dic = f_get_colnames_dic(), ...) {
+f_rename_cols <- function(dta, dic = f_var_names_vector(f_get_colnames_dic()), ...) {
+  # Filter to only columns that exist in the data
+  dic_present <- dic[dic %in% colnames(dta)]
+  
+  if (length(dic_present) == 0) {
+    return(dta)
+  }
+  
+  # Rename: names(dic) = new names, dic values = old names
   dta |> 
-    rename_with(
-      .fn = ~ dic[.x],
-      .cols = intersect(names(dic), colnames(dta))
-    )
+    rename(!!!setNames(dic_present, names(dic_present)))
 }

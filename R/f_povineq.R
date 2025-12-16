@@ -388,7 +388,7 @@ f_filter_var_generic <-
       return(dta)
     }
 
-    dta_out <- dta |> filter(if_any(any_of(filter_var), ~ . == first(.)))
+    dta_out <- dta |> filter(if_any(any_of(filter_var), ~ . %in% filter_value))
     if (nrow(dta_out) == 0) {
       dta_out <- dta |> filter(if_any(any_of(filter_var), ~ . == first(.)))
     }

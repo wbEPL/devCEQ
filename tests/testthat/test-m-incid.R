@@ -26,7 +26,8 @@ dta_sim_local <-
 
 # Step 1 add deciles to data if not present --------------------------------------------
 
-dta_sim_local$policy0$policy_sim_raw |> 
+dta_deciles <-
+  dta_sim_local$policy0$policy_sim_raw |>
   f_calc_deciles(
     dec_var = get_inc_nm()$var,
     wt_var = "hhwt",
@@ -42,12 +43,92 @@ dta_sim_local |>
 
 # Step 2 aggregate stats by decile --------------------------------------------
 
-dta_sim_local$policy0$policy_sim_raw |>
-  f_calc_deciles(
+# Aggregating bsaed on one groupping variable
+dta_deciles |>
+  f_agg_by_decile_one(
+    var_decile = "ym___decile",
+    var_agg = c("ym", "dtx_prog1", "dtx_prog2"),
+    wt_var = get_wt_nm()
+  )
+
+dta_deciles |>
+  f_agg_by_decile_one(
+    var_decile = "ym___decile",
+    var_agg = c("ym", "dtx_prog1", "dtx_prog2"),
+    var_group = "group_2",
+    wt_var = get_wt_nm()
+  )
+
+
+# Aggregating based on multiple groupping variables
+dta_deciles |>
+  f_agg_by_decile(
+    var_decile = c("ym___decile", "yn___decile", "yp___decile"),
+    var_agg = c("ym", "yn", "yp",  "dtx_prog1", "dtx_prog2"),
+    var_group = "group_2",
+    wt_var = get_wt_nm()
+  )
+
+
+dta_deciles |>
+  f_agg_by_decile(
+    var_decile = c("ym___decile", "yn___decile", "yp___decile"),
+    var_agg = c("ym", "yn", "yp",  "dtx_prog1", "dtx_prog2"),
+    var_group = "group_2",
+    wt_var = get_wt_nm()
+  )
+
+# Step 3 aggregate by deciles across simulations --------------------------------------------
+dec_agg <- 
+  dta_sim_local |>
+  f_calc_deciles_by_sim(
     dec_var = get_inc_nm()$var,
-    wt_var = "hhwt",
-    n_dec = 4
-  ) 
+    wt_var = get_wt_nm(),
+    n_dec = 3
+  ) |>
+  f_agg_by_decile_by_sim(
+    var_decile = str_c(get_inc_nm()$var, "___decile"),
+    var_agg = c(get_inc_nm()$var, "dtx_prog1", "dtx_prog2"),
+    wt_var = get_wt_nm(),
+    n_dec = 10
+  )
+
+
+dec_agg |> f_prep_incidence()
+
+
+
+# dec_agg2 <-
+dec_agg |>
+  f_prep_incidence() |>
+  f_add_measure_labels() |>
+  f_add_var_labels() |>
+  f_add_var_labels(to_var = "decile_var") |>
+  group_by(measure, decile_var, var) |>
+  nest() |>
+  ungroup() |>
+  # Preserve original factor order
+  mutate(
+    across(where(is.factor), ~ as.numeric(.), .names = "order_{.col}"),
+    across(where(is.factor), as.character)
+  ) |>
+  rowwise() |>
+  mutate(measure = glue::glue_data(cur_data(), measure)) |>
+  ungroup() |>
+  mutate(
+    across(
+      where(is.character),
+      ~ as_factor(.x) |> fct_reorder(get(paste0("order_", cur_column())))
+    )
+  ) |>
+  select(-starts_with("order_")) |>
+  unnest(cols = c(data)) |>
+  f_rename_cols()
+
+
+
+
+
 
 # Make a function for aggregating by deciles across simulations and computing relative, absolute and level incidence
 

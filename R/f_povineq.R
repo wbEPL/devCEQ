@@ -376,6 +376,26 @@ f_filter_grouped_stats <-
     return(dta_out)
   }
 
+#' @describeIn f_povineq Filter poverty and inequality statistics by grouping variable
+#' @importFrom dplyr filter if_any any_of
+#' @export
+f_filter_var_generic <-
+  function(dta, filter_value = "all", filter_var = "group_var", ...) {
+    if (!filter_var %in% names(dta)) {
+      filter_var <- f_get_colname(filter_var)
+    }
+    if (all(filter_value %in% c("all", "all_groups"))) {
+      return(dta)
+    }
+
+    dta_out <- dta |> filter(if_any(any_of(filter_var), ~ . == first(.)))
+    if (nrow(dta_out) == 0) {
+      dta_out <- dta |> filter(if_any(any_of(filter_var), ~ . == first(.)))
+    }
+
+    return(dta_out)
+  }
+
 
 
 #' @describeIn f_povineq Generate plots of poverty and inequality measures by specified grouping variable

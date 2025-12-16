@@ -62,10 +62,14 @@ get_var_nm <- function(
 
     if (any(!vars %in% dta$var)) {
       missing_vars <- vars[!vars %in% dta$var]
-      cli::cli_warn(
-        c(x = "`get_var_nm()`: Variables '{missing_vars}' are not found in the dictionary",
-          i = "They are added with default titles. Please check the custom variables dictionary.")
-      )
+      if (in_devmode()) {
+        cli::cli_inform(
+          c(
+            x = "`get_var_nm()`: Variables '{missing_vars}' are not found in the dictionary",
+            i = "They are added with default titles. Please check the custom variables dictionary."
+          )
+        )
+      }
       dta_missing <- tibble(
         var = missing_vars,
         var_title = missing_vars |> fct_keep_dup_string()

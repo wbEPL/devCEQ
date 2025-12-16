@@ -5,6 +5,260 @@
 #' 
 NULL 
 
+f_prep_incidence <- function(dta, ...) {
+  dta <-
+    dta |>
+    left_join(
+      get_var_nm() |>
+        select(-any_of("var_title")),
+      by = c("var" = "var")
+    )
+
+  if (!"factor" %in% colnames(dta)) {
+    dta <- dta %>% mutate(factor = 1)
+  } else {
+    dta <- dta |>
+      mutate(
+        factor = as.numeric(factor),
+        factor = ifelse(is.na(factor), NA_real, factor)
+      )
+  }
+
+  dta |>
+    mutate(level = level * factor) |>
+    group_by(across(any_of(c("decile_var", "sim", "var")))) |>
+    mutate(total = sum(level, na.rm = TRUE)) |>
+    ungroup() |>
+    mutate(relative = level / decile_val, absolute = level / total) %>%
+    select(-total, -factor) |>
+    pivot_longer(
+      cols = any_of(c("relative", "absolute", "level")),
+      names_to = "measure",
+      values_to = "value"
+    )
+}
+
+#' @describeIn deciles Aggregate variables by decile across multiple policy simulations
+#'
+#' @param dta_sim A list of simulation results, where each element contains:
+#'   \describe{
+#'     \item{policy_sim_raw}{A data frame with simulation microdata}
+#'     \item{policy_name}{Character name of the policy simulation}
+#'   }
+#' @param var_decile Character vector of decile variable names to aggregate by,
+#'   formatted as `{var}___decile` 
+#' @param var_agg Character vector of variable names to aggregate by weighted sum
+#' @param var_group Character vector of grouping variable names for disaggregation (optional)
+#' @param wt_var Character name of the weight variable. If NULL or not found,
+#'   equal weights of 1 are used
+#' @param ... Additional arguments passed to `f_agg_by_decile()`
+#'
+#' @return A tibble combining aggregations across all simulations, with an
+#'   additional `sim` column identifying the policy simulation name. Each row
+#'   represents aggregated statistics for one decile group in one simulation.
+#'
+#' @details
+#' This function applies `f_agg_by_decile()` to each simulation in the list and
+#' combines results with simulation identifiers. Useful for comparing decile
+#' distributions across different policy scenarios.
+#'
+#' @export
+f_agg_by_decile_by_sim <- function(dta_sim, var_decile, var_agg, var_group = NULL,  wt_var = NULL, ...) {
+  dta_sim |>
+    purrr::map(
+      ~ {
+        f_agg_by_decile(
+          dta = .x$policy_sim_raw,
+          var_decile = var_decile,
+          var_agg = var_agg,
+          wt_var = wt_var,
+          var_group = var_group,
+          ...
+        ) |>
+          mutate(sim = .x$policy_name)
+      }
+    ) |> 
+    bind_rows() |>
+    pivot_longer(
+      cols = any_of(var_agg),
+      names_to = "var",
+      values_to = "level"
+    ) 
+}
+
+#' @describeIn deciles Aggregate variables by decile
+#'
+#' @param dta A data frame containing decile variables and variables to aggregate
+#' @param var_decile Character string of the decile variable name, formatted as
+#'   `{var}___decile___{n}` where `{var}` is the income variable and `{n}` is
+#'   the number of deciles/quantiles
+#' @param var_agg Character vector of variable names to aggregate by weighted sum
+#' @param wt_var Character name of the weight variable. If NULL or not found,
+#'   equal weights of 1 are used
+#' @param ... Additional arguments (currently unused)
+#'
+#' @return A tibble with one row per decile group containing:
+#'   \describe{
+#'     \item{[decile_var]}{The decile grouping variable (factor)}
+#'     \item{n}{Number of observations in each decile}
+#'     \item{pop}{Weighted population in each decile}
+#'     \item{[var_agg columns]}{Weighted sums for each variable in `var_agg`}
+#'     \item{var_by}{The base income variable name extracted from `var_decile`}
+#'     \item{deciles_n}{The number of deciles/quantiles used}
+#'   }
+#'
+#' @details
+#' This function performs weighted aggregation of variables by decile groups.
+#' The decile variable name is parsed to extract metadata about which income
+#' variable was used to create the deciles and how many quantile groups were formed.
+#'
+#' @examples
+#' \dontrun{
+#' f_agg_by_decile(
+#'   dta = microdata,
+#'   var_decile = "ym___decile",
+#'   var_agg = c("ym", "dtx_prog1", "dtx_prog2"),
+#'   wt_var = "hhwt"
+#' )
+#' }
+f_agg_by_decile_one <- function(dta, var_decile, var_agg, var_group = NULL, wt_var = NULL, ...) {
+  # Check if var_decile exists in dta
+  if (!var_decile %in% names(dta)) {
+    cli::cli_abort(
+      "Decile variable {.var {var_decile}} not found in the data. ",
+      "Please ensure that deciles are calculated before aggregation."
+    )
+  }
+  
+  # Parse decile variable name to extract income variable and number of deciles
+  dec_income <- var_decile |> stringr::str_split_1("___") |> pluck(1)
+
+  # Check if dec_income is in data
+  if (!dec_income %in% names(dta)) {
+    cli::cli_warn(
+      "Variable {.var {dec_income}} used for decile calculation ",
+      "should not be present in the data to avoid confusion."
+    )
+    dta <- dta |> mutate(decile_val = NA_real_)
+  } else {
+    dta <- dta |> mutate(decile_val = .data[[dec_income]])
+  }
+  
+  # Check if wt_var exists in dta and impute weight 1 if not
+  if (is.null(wt_var) || !wt_var %in% names(dta)) {
+    dta <- dta |> mutate(wt_local__ = 1)
+  } else {
+    dta <- dta |> mutate(wt_local__ = .data[[wt_var]])
+  }
+  
+  # Check if var_group is not NULL and all var_group from the vectpr do not exist
+  if (!is.null(var_group)) {
+    missing_var_group <- setdiff(var_group, names(dta))
+    if (length(missing_var_group) > 0) {
+      cli::cli_warn(
+        "Grouping variable(s) {.var {missing_var_group}} not found in the data. ",
+        "These variable(s) will be ignored."
+      )
+    } 
+    var_group <- intersect(var_group, names(dta))
+  }
+  
+
+  # Aggregate by decile
+  dta <- 
+    dta |>
+    select(all_of(c(var_decile, var_agg, var_group, "wt_local__")), decile_val) |>
+    summarise(
+      n = n(),
+      pop = sum(wt_local__, na.rm = TRUE),
+      across(all_of(c(var_agg, "decile_val")), ~ sum(. * wt_local__, na.rm = TRUE)),
+      .by = all_of(c(var_decile, var_group))
+    ) 
+  
+  n_dec <- length(levels(dta[[var_decile]]))
+  
+  dta |>
+    mutate(
+      decile_var = dec_income,
+      decile_n = n_dec,
+      decile = .data[[var_decile]]
+    ) |> 
+    select(decile_var, decile, decile_n, decile_val, n, any_of(var_group), pop, all_of(var_agg))
+}
+
+
+
+#' @describeIn deciles Aggregate variables by multiple decile groupings
+#'
+#' @param dta A data frame containing decile variables and variables to aggregate
+#' @param var_deciles Character vector of decile variable names, each formatted as
+#'   `{var}___decile` where `{var}` is the income variable and `{n}` is
+#'   the number of deciles/quantiles
+#' @param var_agg Character vector of variable names to aggregate by weighted sum
+#' @param wt_var Character name of the weight variable. If NULL or not found,
+#'   equal weights of 1 are used
+#' @param ... Additional arguments passed to `f_agg_by_decile_one()`
+#'
+#' @return A tibble combining aggregations for all decile groupings, with one
+#'   row per decile group per decile variable. Contains the same columns as
+#'   `f_agg_by_decile_one()` output, stacked for all decile variables.
+#'
+#' @details
+#' This function is a wrapper around `f_agg_by_decile_one()` that applies it
+#' to multiple decile variables and combines the results. Useful when you want
+#' to aggregate by deciles of different income concepts (e.g., market income,
+#' net income, disposable income) in a single operation.
+#'
+#' @examples
+#' \dontrun{
+#' f_agg_by_decile(
+#'   dta = microdata,
+#'   var_decile = c("ym___decile", "yn___decile", "yp___decile"),
+#'   var_agg = c("ym", "yn", "yp", "dtx_prog1", "dtx_prog2"),
+#'   wt_var = "hhwt"
+#' )
+#' }
+f_agg_by_decile <- function(dta, var_decile, var_agg, wt_var = NULL, var_group = NULL, ...) {
+
+  # Check if var_deciles exist in dta
+  missing_vars <- var_decile[!var_decile %in% names(dta)]
+  # Skip the one missing if at leat one exists
+  if (length(missing_vars) == length(var_decile)) {
+    cli::cli_abort(
+      "None of the specified decile variables {.var {missing_vars}} are present in the data."
+    )
+  }
+  if (length(missing_vars) > 0) {
+    cli::cli_warn(
+      "Variable(s) {.var {missing_vars}} not found in the data. Skipping these variable(s)."
+    )
+    var_decile <- setdiff(var_decile, missing_vars)
+  }
+
+  # Check if var_group is a character vector and warn if not assignint var_group  to null
+  if (!is.null(var_group) && !is.character(var_group)) {
+    cli::cli_warn(
+      "{.arg var_group} should be a character vector of variable names. Ignoring {.arg var_group}."
+    )
+    var_group <- NULL
+  }
+
+  var_decile |>
+    purrr::map(
+      ~ {
+        f_agg_by_decile_one(
+          dta = dta,
+          var_decile = .x,
+          var_agg = var_agg,
+          var_group = var_group,
+          wt_var = wt_var,
+          ...
+        )
+      }
+    ) |>
+    bind_rows()
+}
+
 #' @describeIn deciles Calculate deciles/quantiles for specified variables
 #' 
 #' @param dta A data frame containing the variables to calculate quantiles for
@@ -37,7 +291,7 @@ f_calc_deciles <- function(
     dec_var <- setdiff(dec_var, missing_vars)
   }
   
-  new_dec_var <- paste0(dec_var, "_decile_", n_dec)
+  new_dec_var <- paste0(dec_var, "___decile")
   
   # Check NULL first, then membership
   if (is.null(wt_var) || !wt_var %in% names(dta)) {
@@ -60,7 +314,7 @@ f_calc_deciles <- function(
       dec_var = on_dec_var,
       wt_var = "wt_temp__",
       n_dec = n_dec,
-      dec_var_name = str_c("{.col}_decile_", n_dec)
+      dec_var_name = str_c("{.col}___decile")
     ) |>
     select(-wt_temp__)
   

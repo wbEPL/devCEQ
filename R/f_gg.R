@@ -26,6 +26,8 @@ f_plot_gg <- function(
   ...
 ) {
 
+  dta <- dta |> mutate(across(where(is.factor), ~ forcats::fct_drop(.)))
+
   # Check if the columns are as specified or they are in their names
   x_var <- ifelse(x_var %in% colnames(dta), x_var, f_get_colname(x_var))
   y_var <- ifelse(y_var %in% colnames(dta), y_var, f_get_colname(y_var))

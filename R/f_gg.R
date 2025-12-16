@@ -19,7 +19,7 @@ f_plot_gg <- function(
   x_var,
   y_var,
   x_lab = "Income concept",
-  y_lab = "Value",
+  y_lab = NULL,
   type = "line",
   color_var = NULL,
   facet_var = NULL,
@@ -78,13 +78,17 @@ f_plot_gg <- function(
 
   
   # Check if f_get_colname("measure") exists and use its first element as x label
-  y_lab <- "Value"
-  if (col_measure %in% colnames(dta)) {
+  # y_lab <- "Value"
+  if (col_measure %in% colnames(dta) && is.null(y_lab)) {
     measure_nm <- dta |> select(any_of(col_measure)) |> pull() |> first()
     if (!is.null(measure_nm) && !is.na(measure_nm) && measure_nm != "") {
       y_lab <- measure_nm
+    } else {
+      y_lab <- "Value"
     }
-  }  
+  } else {
+    y_lab <- y_lab
+  }
 
   # Y scale in % if % is present in the y_lab name
   y_values <- dta |> select(any_of(y_var)) |> pull(1)
@@ -142,7 +146,7 @@ f_plot_gg <- function(
   p <- p + labs(x = x_lab, y = y_lab)
   p <- p + f_scale_color_custom() + f_scale_fill_custom()
   # Rotate x axis text if too long
-  if (is.character(dta[[x_var]]) || is.factor(dta[[x_var]])) {
+  if ((is.character(dta[[x_var]]) || is.factor(dta[[x_var]])) && max(nchar(as.character(dta[[x_var]]))) > 10) {
     p <- p + theme(
       axis.text.x = element_text(angle = 45, hjust = 1)
     )

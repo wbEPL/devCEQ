@@ -21,7 +21,7 @@ f_label_number <- function(x, ...) {
   } else {
     scale_fn <- scales::label_number(
       accuracy = .1,
-      scale_cut = c(0, " K" = 5 * 10^3, " M" = 10^6, " B" = 10^9),
+      scale_cut = scales::cut_short_scale() , #c(0, "K" = 5 * 10^3, "M" = 10^6, "B" = 10^9),
       big.mark = "",
       ...
     )

@@ -5,7 +5,126 @@
 #' 
 NULL 
 
-f_prep_incidence <- function(dta, ...) {
+#' Format incidence data for presentation with labels and proper ordering
+#'
+#' @param dta A data frame containing incidence data with columns:
+#'   \describe{
+#'     \item{measure}{Measure type (character or factor)}
+#'     \item{decile_var}{Variable used for decile grouping (character or factor)}
+#'     \item{var}{Variable name (character or factor)}
+#'   }
+#' @param ... Additional arguments (currently unused)
+#'
+#' @return A formatted tibble with:
+#'   \itemize{
+#'     \item Measure and variable labels applied from dictionaries
+#'     \item All character/factor columns converted to ordered factors
+#'     \item Glue-based interpolation applied to measure labels
+#'     \item Column names renamed according to the column names dictionary
+#'   }
+#'
+#' @details
+#' This function performs a complete formatting pipeline for incidence data:
+#' \enumerate{
+#'   \item Adds measure labels using \code{f_add_measure_labels()}
+#'   \item Adds variable labels using \code{f_add_var_labels()}
+#'   \item Adds decile variable labels
+#'   \item Groups and nests by measure, decile_var, and var
+#'   \item Preserves factor ordering through temporary numeric columns
+#'   \item Applies glue interpolation to measure labels (allows dynamic text like "{var}")
+#'   \item Restores factor ordering and unnests data
+#'   \item Renames columns using \code{f_rename_cols()}
+#' }
+#'
+#' The function is particularly useful for preparing incidence analysis results
+#' for tables and visualizations with human-readable labels.
+#'
+#' @export
+f_format_incidence <- function(dta, ...) {
+  dta |>
+    f_add_measure_labels() |>
+    f_add_var_labels() |>
+    f_add_var_labels(to_var = "decile_var") |>
+    f_add_var_labels(to_var = "group_var") |>
+    group_by(measure, decile_var, var) |>
+    nest() |>
+    ungroup() |>
+    # Preserve original factor order
+    mutate(
+      across(where(is.factor), ~ as.numeric(.), .names = "order_{.col}"),
+      across(where(is.factor), as.character)
+    ) |>
+    mutate(
+      measure = purrr::pmap_chr(
+        list(.data[["measure"]], .data[["decile_var"]], .data[["var"]]),
+        ~ {
+          glue(..1, var = str_to_lower(..3), decile_var = str_to_lower(..2))
+        }
+      )
+    ) |>
+    mutate(
+      across(
+        where(is.character),
+        ~ as_factor(.x) |> fct_reorder(get(paste0("order_", cur_column())))
+      )
+    ) |>
+    select(-starts_with("order_")) |>
+    unnest(cols = c(data)) |>
+    f_rename_cols()
+}
+
+#' Calculate relative and absolute incidence measures
+#'
+#' @param dta A data frame containing aggregated data with columns:
+#'   \describe{
+#'     \item{var}{Variable name to calculate incidence for}
+#'     \item{level}{Aggregated level/value of the variable}
+#'     \item{decile_val}{Sum of the decile variable values (for relative incidence)}
+#'     \item{decile_var}{Optional - variable used for decile grouping}
+#'     \item{sim}{Optional - simulation identifier}
+#'   }
+#' @param ... Additional arguments (currently unused)
+#'
+#' @return A long-format tibble with incidence measures, containing:
+#'   \describe{
+#'     \item{decile_var}{Decile grouping variable (if present in input)}
+#'     \item{sim}{Simulation identifier (if present in input)}
+#'     \item{var}{Variable name}
+#'     \item{measure}{Type of incidence measure: "relative", "absolute", or "level"}
+#'     \item{value}{Calculated incidence value}
+#'     \item{decile_val}{Sum of decile values}
+#'     \item{n, pop}{Number of observations and population (if present)}
+#'   }
+#'
+#' @details
+#' This function calculates three types of incidence measures:
+#' \itemize{
+#'   \item \strong{Relative incidence}: The level value as a proportion of the decile sum 
+#'         (\code{level / decile_val})
+#'   \item \strong{Absolute incidence}: The level value as a proportion of the variable's 
+#'         total across all groups (\code{level / total})
+#'   \item \strong{Level}: The raw level value multiplied by a factor from the variable 
+#'         dictionary (typically 1 or -1 for benefits vs. taxes)
+#' }
+#'
+#' The function performs the following steps:
+#' \enumerate{
+#'   \item Joins with the variable dictionary to get factor values (sign adjustments)
+#'   \item Applies the factor to level values (e.g., -1 for taxes)
+#'   \item Calculates total values by grouping variables
+#'   \item Computes relative and absolute incidence ratios
+#'   \item Transforms to long format with measure types as rows
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' # After aggregating by deciles
+#' dec_agg |>
+#'   f_calc_incidence()
+#' }
+#'
+#' @export
+f_calc_incidence <- function(dta, ...) {
   dta <-
     dta |>
     left_join(
@@ -153,26 +272,47 @@ f_agg_by_decile_one <- function(dta, var_decile, var_agg, var_group = NULL, wt_v
   
   # Check if var_group is not NULL and all var_group from the vectpr do not exist
   if (!is.null(var_group)) {
-    missing_var_group <- setdiff(var_group, names(dta))
-    if (length(missing_var_group) > 0) {
-      cli::cli_warn(
-        "Grouping variable(s) {.var {missing_var_group}} not found in the data. ",
-        "These variable(s) will be ignored."
-      )
-    } 
-    var_group <- intersect(var_group, names(dta))
+
+    if ("all" %in% var_group) {
+      dta <- dta |>
+        mutate(group_var = "No groupping", group_val = "All observations")
+    } else {
+      missing_var_group <- setdiff(var_group, names(dta))
+      if (length(missing_var_group) > 0) {
+        cli::cli_warn(
+          "Grouping variable(s) {.var {missing_var_group}} not found in the data. ",
+          "These variable(s) will be ignored."
+        )
+      } else {
+        var_group <- intersect(var_group, names(dta))
+        dta <- dta |>
+          mutate(
+            group_var = var_group,
+            group_val = as.character(!!sym(var_group))
+          )
+
+      }
+    }
+  } else {
+      dta <- dta |>
+        mutate(group_var = "No groupping", group_val = "All observations")
   }
   
-
   # Aggregate by decile
-  dta <- 
+  dta <-
     dta |>
-    select(all_of(c(var_decile, var_agg, var_group, "wt_local__")), decile_val) |>
+    select(
+      all_of(c(var_decile, var_agg, "group_var", "group_val", "wt_local__")),
+      decile_val
+    ) |>
     summarise(
       n = n(),
       pop = sum(wt_local__, na.rm = TRUE),
-      across(all_of(c(var_agg, "decile_val")), ~ sum(. * wt_local__, na.rm = TRUE)),
-      .by = all_of(c(var_decile, var_group))
+      across(
+        all_of(c(var_agg, "decile_val")),
+        ~ sum(. * wt_local__, na.rm = TRUE)
+      ),
+      .by = all_of(c(var_decile, "group_var", "group_val"))
     ) 
   
   n_dec <- length(levels(dta[[var_decile]]))
@@ -182,8 +322,18 @@ f_agg_by_decile_one <- function(dta, var_decile, var_agg, var_group = NULL, wt_v
       decile_var = dec_income,
       decile_n = n_dec,
       decile = .data[[var_decile]]
-    ) |> 
-    select(decile_var, decile, decile_n, decile_val, n, any_of(var_group), pop, all_of(var_agg))
+    ) |>
+    select(
+      decile_var,
+      decile,
+      decile_n,
+      decile_val,
+      group_var,
+      group_val,
+      n,
+      pop,
+      all_of(var_agg)
+    )
 }
 
 
@@ -246,14 +396,22 @@ f_agg_by_decile <- function(dta, var_decile, var_agg, wt_var = NULL, var_group =
   var_decile |>
     purrr::map(
       ~ {
-        f_agg_by_decile_one(
-          dta = dta,
-          var_decile = .x,
-          var_agg = var_agg,
-          var_group = var_group,
-          wt_var = wt_var,
-          ...
-        )
+        var_decile_local <- .x
+        var_group |>
+          map(
+            ~ {
+              var_group_local <- .x
+              f_agg_by_decile_one(
+                dta = dta,
+                var_decile = var_decile_local,
+                var_agg = var_agg,
+                var_group = var_group_local,
+                wt_var = wt_var,
+                ...
+              )
+            }
+          ) |>
+          bind_rows()  
       }
     ) |>
     bind_rows()

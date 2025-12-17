@@ -71,6 +71,7 @@ mod_inp_tab_switches_ui <-
         "Summary Table" = "summary"
       ),
       direction = "vertical",
+      width = "100%",
       justified = TRUE
     )
   }

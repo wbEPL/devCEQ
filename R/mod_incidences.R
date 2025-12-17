@@ -1,22 +1,23 @@
-#' insidences UI Function
-#'
-#' @description A shiny Module.
-#'
-#' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
-#' @importFrom shiny NS tagList
-#' @export
-mod_incidences_ui <- function(id) {
-  ns <- NS(id)
-  uiOutput(ns("incidence_ui")) %>%
-    shinycssloaders::withSpinner() %>%
-    tags$div(style = "overflow-y: auto; height: calc(100vh - 8rem); overflow-x: hidden;") %>%
-    tagList()
-}
+#' Insidences module (old version)
+#' 
+#' @name mod_incidences
+#' 
+NULL
 
-#' insidences Server Functions
+#' @describeIn mod_incidences New incidences UI placeholder
+#' 
+#' @importFrom shiny NS uiOutput
+#' @importFrom shinycssloaders withSpinner
+#' @export
+#' 
+mod_incidences_ui <- 
+  function(id) {
+    ns <- NS(id)
+    uiOutput(ns("incidences_ui")) |> shinycssloaders::withSpinner() 
+  }
+
+
+#' insidences Server Functions OLD
 #'
 #' @noRd
 #' @importFrom shinyWidgets radioGroupButtons

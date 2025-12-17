@@ -133,27 +133,6 @@ mod_results_server <- function(id,
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    observeEvent(
-      sim_res(),
-      {
-        # browser()
-        # res_list <- reactiveValuesToList(sim_res)
-        if (!isTruthy(sim_res())) {
-          shinyjs::addClass(selector = "#main_sidebar li:nth-child(3)", class = "tooltip-disabled")
-          shinyjs::html(selector = "#main_sidebar li:nth-child(3)",
-                        html = '<span class="tooltiptext" id="ToolTipContent">Press Run to generate results.</span>',
-                        add = TRUE,
-                        asis = TRUE)
-          shinyjs::disable(selector = "#main_sidebar li:nth-child(3)")
-
-        } else {
-          removeUI(selector = "#ToolTipContent")
-          shinyjs::removeClass(selector = "#main_sidebar li:nth-child(3)", class = "tooltip-disabled")
-          shinyjs::addClass(selector = "#main_sidebar li:nth-child(3)", class = "tooltip-enabled")
-          shinyjs::enable(selector = "#main_sidebar li:nth-child(3)")
-        }
-      }, ignoreInit = FALSE, ignoreNULL = FALSE
-    )
 
     # Switching tabs ---------------------------------------------------
     observe({

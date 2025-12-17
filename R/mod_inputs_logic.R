@@ -1,6 +1,35 @@
 
 # UIs ---------------------------------------------------------------------
 
+#' New inputs morule UI wrapper
+#' 
+#' 
+m_inputs_ui <- function(id = NULL) {
+  ns <- NS(id)
+
+  sidebar_ui <-
+    mod_inputs_btns_ui(id) |>
+    div(id = ns("inputs_controls_holder"))
+
+  main_ui <-
+    mod_inp_tabs_content_ui(id) %>%
+    div(style = "min-height:600px") %>%
+    div(id = ns("policy_choices_tabs_1")) %>%
+    div(id = ns("policy_choices_tabs_2"))
+  
+  bslib::page_sidebar(
+    id = ns("inputs_page_sidebar"),
+    sidebar = bslib::sidebar(
+      title = NULL,
+      width = 350,
+      open = TRUE,
+      sidebar_ui
+    ),
+    main_ui
+  )
+
+}
+
 
 #' inputs UI Function
 #'
@@ -14,7 +43,7 @@
 #'
 #' @importFrom shiny NS tagList
 #' @export
-mod_inputs_ui_wrapper <- function(id, inp_nav_width = NULL, ...) {
+mod_inputs_ui_wrapper <- function(id, inp_nav_width = NULL, ..., ui_wrapper = fluidRow) {
   ns <- NS(id)
   dots <- rlang::dots_list(...)
 
@@ -43,7 +72,7 @@ mod_inputs_ui_wrapper <- function(id, inp_nav_width = NULL, ...) {
       # if (golem::app_dev()) {}
     )
 
-  fluidRow(left_col, right_col)
+  ui_wrapper(left_col, right_col)
 }
 
 

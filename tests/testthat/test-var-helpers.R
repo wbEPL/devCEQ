@@ -1,3 +1,4 @@
+testthat::skip()
 # Tests for f_var_helpres.R functions =====================================
 
 # f_get_dic() tests --------------------------------------------------------

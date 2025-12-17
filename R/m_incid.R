@@ -8,7 +8,7 @@ NULL
 #' 
 #' @importFrom shiny NS uiOutput
 #' @importFrom shinycssloaders withSpinner
-#' 
+#' @export
 m_incid_ui <- 
   function(id) {
     ns <- NS(id)
@@ -22,6 +22,7 @@ m_incid_ui <-
 #'
 #' @param ndec_type Type of input for number of deciles: "numericInput" or "selectInput"
 #' 
+#' @export
 m_incid_srv <-
   function(
     id,

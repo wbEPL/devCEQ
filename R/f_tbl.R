@@ -6,9 +6,9 @@ NULL
 f_label_percent <- function(x, ...) {
   x_max <- max(x, na.rm = TRUE)
   x_min <- min(x, na.rm = TRUE)
-  if (x_max > 0.5) {
+  if (x_max > 0.1) {
     return(scales::label_percent(accuracy = .1, scale = 100))
-  } else if (x_max > 0.1) {
+  } else if (x_max > 0.01) {
     return(scales::label_percent(accuracy = .01, scale = 100))
   } else {
     return(scales::label_percent(accuracy = .001, scale = 100))

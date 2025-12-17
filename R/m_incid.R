@@ -12,7 +12,7 @@ NULL
 m_incid_ui <- 
   function(id) {
     ns <- NS(id)
-    uiOutput(ns("incidences_ui")) |> shinycssloaders::withSpinner() 
+    uiOutput(ns("incidences_ui")) |> shinycssloaders::withSpinner() |> card()
     # tags$div(style = "overflow-y: auto; height: calc(100vh - 8rem); overflow-x: hidden;") %>%
     # tagList()
   }
@@ -61,7 +61,16 @@ m_incid_srv <-
       ns <- session$ns
 
       # Step 1. Page structure -------------------------------------------------------
-      output$incidences_ui <- renderUI(page_ui(ns(NULL)))
+      ever_rendered <- reactiveVal(FALSE)
+      output$incidences_ui <- renderUI({
+
+        req(isolate(!ever_rendered()))
+        validate(need(
+          isTruthy(sim_res()),
+          "Press 'Run' to execute simulaitons."
+        ))
+        page_ui(ns(NULL))
+      })
 
       # Step 2.a Title
       ptitle <- m_input_srv("title", "title", reactive(page_title), reactive(page_title))
@@ -139,7 +148,6 @@ m_incid_srv <-
       dta_2_a <- reactive({
         req(dta_1_incid())
         req(decby_inp())
-        # browser()
         dta_1_incid() |> f_filter_var_generic(decby_inp(), "decile_var")
       })
 
@@ -214,16 +222,6 @@ m_incid_srv <-
         ignoreInit = TRUE
       )
 
-      # observeEvent(fig$dta, {
-      #   req(fig$dta)
-      #   fig$dta_out <- fig$dta |> f_format_tbl()
-      # })
-
-      # observeEvent(fig$dta_out, {
-      #   req(dta_calc_formatted())
-      #   fig$rt <- dta_calc_formatted() |> f_format_rt(col_min_groups = 1)
-      # })
-
       # Step 3 Generating plots ------------------------------------------------
       fig <- reactiveValues(
         id = NULL,
@@ -293,35 +291,6 @@ m_incid_srv <-
   }
 
 #' @describeIn m_incid Incidence page template for output in a results layout
-#' @export
-#'
-f_incid_ui_linear2 <- function(id) {
-  ns <- NS(id)
-  tagList(
-    m_input_ui(ns("title")),
-    layout_columns(
-      m_input_ui(ns("ndec")),
-      m_input_ui(ns("decby")),
-      m_input_ui(ns("incid")),
-      m_input_ui(ns("grpby"))#,
-      # m_input_ui(ns("pltby"))
-    ),
-    layout_columns(
-      m_input_ui(ns("pltby"))
-    ),
-    # Figure
-    m_figure_ui(ns("fig1")),
-
-    # Table
-    m_figure_ui(ns("tbl1")),
-
-    # Diagnostics
-    m_diagnostics_ui(ns("dev_info"))
-  )
-}
-
-
-#' @describeIn m_incid Incidence page template for output in a results layout
 #' @importFrom shiny NS tagList
 #' @import bslib
 #' @export
@@ -342,7 +311,7 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
   # Drop NULL from list
   tagList(
     bslib::layout_columns(
-      !!!input_elements#,
+      !!!input_elements #,
       # col_widths = col_widths
     ),
     bslib::layout_columns(
@@ -350,7 +319,7 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
       col_widths = c(12)
     ),
     navset_card_underline(
-      full_screen = FALSE,
+      full_screen = TRUE,
       title = m_input_ui(ns("title")),
 
       nav_panel(
@@ -369,7 +338,7 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
         card_body(
           m_figure_ui(ns("tbl1")),
           fillable = TRUE,
-          min_height = "450px"#,
+          min_height = "450px" #,
           # max_height = "800px"
         )
       ),

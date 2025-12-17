@@ -38,11 +38,11 @@ m_res_switches_srv <- function(id, active_tab = reactive(NULL), ...) {
 
       # Switching tabs ---------------------------------------------------
       observe({
-        # req(active_tab())
+        req(active_tab())
         shinyWidgets::updateRadioGroupButtons(
           session,
           "results_tab_choice",
-          disabledChoices = c("ins", "hr1", "hr2")
+          disabledChoices = c("ins", "hr1", "hr2", "hr3", "hr4", "hr5", "hr6", "hr7")
         )
       })
 

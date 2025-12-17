@@ -29,7 +29,7 @@ f_title_ui <- function(id, title = NULL, ...) {
 #' @importFrom shiny NS numericInput
 #' @export
 #' 
-f_numericInput_ui <- function(id, title = NULL, choices = NULL, ...) {
+f_numericInput_ui <- function(id, title = NULL, choices = NULL, width = "100%", ...) {
   ns <- NS(id)  
 
   # Skip if choices and value is not provided, or all choises are not numeric
@@ -54,7 +54,7 @@ f_numericInput_ui <- function(id, title = NULL, choices = NULL, ...) {
   valid_args <- c("min", "max", "step", "width")
   args <- list(...)
   args <- args[names(args) %in% valid_args]
-  args <- c(inputId = ns("inputId"), label = title, value = value, args)
+  args <- c(inputId = ns("inputId"), label = title, value = value, width = width, args)
   do.call(shiny::numericInput, args)
 }
 
@@ -70,6 +70,7 @@ f_selegenInput_ui <- function(fn = shiny::selectizeInput) {
     title = NULL,
     choices = NULL,
     selected = choices[1],
+    width = "100%",
     ...
   ) {
     ns <- NS(id)
@@ -90,7 +91,8 @@ f_selegenInput_ui <- function(fn = shiny::selectizeInput) {
         inputId = ns("inputId"),
         label = title,
         choices = choices,
-        selected = selected
+        selected = selected,
+        width = width
       ),
       args
     )

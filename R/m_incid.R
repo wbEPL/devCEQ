@@ -32,11 +32,13 @@ m_incid_srv <-
     var_wt = get_wt_nm(),
     var_group = get_group_nm()$var,
 
+    var_agg = get_var_nm()$var[1:10],
+
     page_title = f_get_app_text("m_incidence"),
 
     ndec_type = "selectInput", 
     ndec_title = f_get_app_text("ndec_title"),
-    ndec_choices = c(10, 5, 15, 25, 50),
+    ndec_choices = c(5, 10, 15, 25, 50),
 
     decby_type = "selectizeInput",
     decby_title = f_get_app_text("decby_title"),
@@ -64,19 +66,45 @@ m_incid_srv <-
       # Step 2.a Title
       ptitle <- m_input_srv("title", "title", reactive(page_title), reactive(page_title))
 
-      # Step 2.b Decile selection
+      # Filters for calculations
       ndec_inp <- m_input_srv("ndec", ndec_type, ndec_title, ndec_choices)
-
-      # Step 2.c Decile by selection
-      decby_inp <- m_input_srv("decby", decby_type, decby_title, decby_choices)
-
-      # Step 2.d Statistics selection
-      incid_inp <- m_input_srv("incid", incid_type, f_get_app_text("incid_type"), incid_choices)
+    
+      # filters for dsiplay
+      decby_inp <- m_input_srv(
+        "decby",
+        decby_type,
+        decby_title,
+        reactive({
+          if (!isTruthy(dta_1_incid())) {
+            return(decby_choices)
+          } else {
+            f_get_var_uniq_vals(dta_1_incid(), "decile_var")
+          }
+        })
+      )
       
-      # Step 2.e Group by selection
-      grpby_inp <- m_input_srv("grpby", grpby_type, grpby_title, grpby_choices)
+      incid_inp <- m_input_srv(
+        "incid",
+        incid_type,
+        incid_title,
+        reactive({
+          if (!isTruthy(dta_2_a())) {
+            return(incid_choices)
+          } else {
+            f_get_var_uniq_vals(dta_2_a(), "measure")
+          }
+        })
+      )
+      
+      grpby_inp <- m_input_srv(
+        "grpby",
+        grpby_type,
+        grpby_title,
+        reactive({
+          grpby_choices
+        })
+      )
 
-      # Step 2.z Plot selection
       pltby_inp <- m_input_srv("pltby", pltby_type, pltby_title, reactive(fig$id))
 
       # Step 3.A Data/Plots preparation -------------------------------------------
@@ -84,90 +112,105 @@ m_incid_srv <-
 
       # Step 4. Calculations ------------------------------------------------
 
-      # 4.1 Deciles 
-      dta_1_deciles <- reactive({
+      # 4.1 Deciles
+      dta_1_incid <- reactive({
         req(sim_ready())
         req(ndec_inp())
-        req(decby_choices)
-        f_calc_deciles_by_sim(
-          sim_ready(),
-          dec_var = decby_choices,
-          wt_var = var_wt,
-          n_dec = ndec_inp()
-        )
-      })
-
-      # 4.2 Aggregate incidences
-      dta_2_incid <- reactive({})
-
-      # 4.3 Prepare formatted data for tables and plots
-      dta_calc_formatted <- reactive({
-        req(dta_calc())
-        dta_calc() |> f_format_tbl()
-      })
-
-      # Filtering "by group" variable and statistics to plot
-      dta_calc_fig <- reactive({
-        # req(dta_calc())
         # req(grpby_inp())
-        # dta_calc() |>
-        #   filter(
-        #     if_any(f_get_colname("measure")) %in%
-        #       get_measure_nm(plt_options)$measure_title
-        #   )        
+        valid_groups <- grpby_choices |> unname() |> setdiff("all_groups")
+        
+        # browser()
+        sim_ready() |>
+          f_calc_deciles_by_sim(
+            dec_var = unname(decby_choices),
+            wt_var = var_wt,
+            n_dec = ndec_inp()
+          ) |>
+          f_agg_by_decile_by_sim(
+            var_decile = str_c(decby_choices, "___decile"),
+            var_agg = var_agg,
+            var_group = valid_groups,
+            wt_var = var_wt
+          ) |>
+          f_calc_incidence(force_abs = TRUE) |>
+          f_format_incidence()
       })
 
+      dta_2_a <- reactive({
+        req(dta_1_incid())
+        req(decby_inp())
+        # browser()
+        dta_1_incid() |> f_filter_var_generic(decby_inp(), "decile_var")
+      })
+
+      
+      dta_2_b <- reactive({
+        req(dta_2_a())
+        req(incid_inp())
+        dta_2_a() |> f_filter_var_generic(incid_inp(), "measure")
+      })
+      
+      dta_out <- reactive({
+        req(dta_2_b())
+        req(grpby_inp())
+        dta_2_b() |> f_filter_grouped_stats(grpby_inp())
+      })
+      
+      dta_out_formatted <- reactive({
+        dta_2_b() |> f_format_decile_tbl()
+      })
+
+      dta_export <- reactive({
+        dta_1_incid() |> f_format_decile_tbl()
+      })
+
+  
       dta_fig <- reactive({
-        # req(dta_calc())
-        # if (length((var_group)) == 0) {
-        #   return(NULL)
-        # }
-        # out <- 
-        #   var_group |>
-        #   map(
-        #     ~ {
-        #       dta_local <- dta_calc_fig() |> f_filter_grouped_stats(.x)
-        #       if (length(.x) == 1 && .x == "all") {
-        #         fig_out <- f_plot_pov_by(
-        #           dta_local,
-        #           fig_by = "measure",
-        #           fig_filter = get_measure_nm(plt_options)$measure_title,
-        #           x_lab = f_get_app_text("title_plot_inccon"),
-        #           facet_var = NULL,
-        #           color_var = "sim"
-        #         )
-        #       } else {
-        #         fig_out <- f_plot_pov_by(
-        #           dta_local,
-        #           fig_by = "measure",
-        #           fig_filter = get_measure_nm(plt_options)$measure_title,
-        #           x_lab = f_get_app_text("title_plot_inccon")
-        #         )
-        #       }
-        #     }
-        #   ) |>
-        #   set_names(var_group)
-        # out
+        req(dta_out())
+        req(grpby_inp())
+        # browser()
+        dta_out() |>
+          f_get_var_uniq_vals("var") |>
+          (\(x) set_names(x, x))() |>
+          imap(
+            ~ {
+              if (grpby_inp() == "all") {
+                dta_out() |>
+                  f_filter_var_generic(.x, "var") |> # count(Variable)
+                  f_plot_gg(
+                    x_var = "decile",
+                    y_var = "value",
+                    x_lab = f_get_app_text("decile"),
+                    color_var = "sim",
+                    facet_var = NULL,
+                    type = "bar"
+                  )
+              } else {
+                dta_out() |>
+                  f_filter_var_generic(.x, "var") |> # count(Variable)
+                  f_plot_gg(
+                    x_var = "decile",
+                    y_var = "value",
+                    x_lab = f_get_app_text("decile"),
+                    color_var = "group_val",
+                    facet_var = "sim",
+                    type = "bar"
+                  )
+              }
+              
+            }
+          )
       })
       
       # Generating plots based on filtered data
       observeEvent(
-        {
-          dta_fig()
-          grpby_inp()
-        },
+        dta_fig(),
         {
           req(dta_fig())
-          req(grpby_inp())
-          # browser()
-          if (grpby_inp() %in% names(dta_fig())) {
-            fig$ggs <- dta_fig()[[grpby_inp()]]
-          } else {
-            fig$ggs <- dta_fig()[[1]]
-          }
+          fig$ggs <- dta_fig()
           fig$id <- names(fig$ggs)
           fig$title <- names(fig$ggs)
-        }, 
+        },
         ignoreInit = TRUE
       )
 
@@ -193,16 +236,16 @@ m_incid_srv <-
       m_figure_server(
         "fig1",
         figures = reactive(fig$ggs),
-        selected = pltby,
+        selected = pltby_inp,
         force_ly = T
       )
       
       m_figure_server(
         "tbl1",
         figures = reactive({
-          dta_calc_formatted() |> f_format_rt(col_min_groups = 1)
+          dta_out_formatted() |> f_format_rt(col_min_groups = 1)
         }),
-        selected = pltby
+        selected = pltby_inp
       )
 
       # Step 20. Results export modal ----------------------------------------
@@ -212,7 +255,7 @@ m_incid_srv <-
           list(list(
             sheet_name = ptitle(),
             meta_tbl = tibble(),
-            tbl = dta_calc_formatted(),
+            tbl = dta_export(),
             ggs = purrr::list_flatten(dta_fig())
           ))
         }),
@@ -227,14 +270,16 @@ m_incid_srv <-
           list(
             inputs = list(
               ptitle = ptitle(),
-              pl_choice = pl_choice(),
-              grpby = grpby_inp(),
-              pltby = pltby()
+              grpby_inp = grpby_inp(),
+              pltby_inp = pltby_inp(),
+              ndec_inp = ndec_inp(),
+              decby_inp = decby_inp(),
+              incid_inp = incid_inp()
             ),
             id = fig$id,
             title = fig$title,
             sheet_name = ptitle(),
-            tbl = dta_calc_formatted(),
+            tbl = dta_out_formatted(),
             ggs = purrr::list_flatten(dta_fig())
           )
         })
@@ -289,28 +334,32 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
     m_input_ui(ns("ndec")),
     m_input_ui(ns("decby")),
     m_input_ui(ns("incid")),
-    m_input_ui(ns("grpby")),
-    m_input_ui(ns("pltby"))
+    m_input_ui(ns("grpby"))#,
+    # m_input_ui(ns("pltby"))
   )
   col_widths <- c(3,3,3,3)
 
   # Drop NULL from list
   tagList(
     bslib::layout_columns(
-      !!!input_elements,
-      col_widths = col_widths
+      !!!input_elements#,
+      # col_widths = col_widths
+    ),
+    bslib::layout_columns(
+      m_input_ui(ns("pltby")),
+      col_widths = c(12)
     ),
     navset_card_underline(
       full_screen = FALSE,
       title = m_input_ui(ns("title")),
-      
+
       nav_panel(
         "Plot",
         card_body(
           m_figure_ui(ns("fig1")),
-          fillable = TRUE, 
+          fillable = TRUE,
           min_height = "450px",
-          max_height = "525px"
+          max_height = "600px"
         ) #,
         # card_footer("Footer placeholder")
       ),
@@ -320,8 +369,8 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
         card_body(
           m_figure_ui(ns("tbl1")),
           fillable = TRUE,
-          min_height = "450px",
-          max_height = "525px"
+          min_height = "450px"#,
+          # max_height = "800px"
         )
       ),
 

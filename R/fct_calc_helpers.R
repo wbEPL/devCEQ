@@ -5,6 +5,16 @@
 #' 
 NULL 
 
+#' @describeIn deciles Helper function to get unique values of a variable
+#' @export
+f_get_var_uniq_vals <- function(dta, var_nm, ...) {
+  dta |>
+    select(any_of(f_get_colname(var_nm))) |>
+    pull(1) |>
+    unique() |>
+    as.character()
+}
+
 #' Format incidence data for presentation with labels and proper ordering
 #'
 #' @param dta A data frame containing incidence data with columns:

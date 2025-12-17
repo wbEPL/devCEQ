@@ -121,7 +121,7 @@ wt_var <- get_wt_nm()
 group_var <-  get_group_nm()$var[-length(get_group_nm()$var)]
 
 
-# Step 1. Calcualte incidences
+# Step 1. Calcualte incidences ---------------------------------------------
 dta_1_incid <-
   dta_sim_local |>
   f_calc_deciles_by_sim(
@@ -135,13 +135,14 @@ dta_1_incid <-
     var_group = group_var,
     wt_var = wt_var
   ) |>
-  f_calc_incidence() |>
-  f_format_incidence() 
+  f_calc_incidence(force_abs = TRUE) |>
+  f_format_incidence()  
 
 
 # Step 2. Filter appropriate groupping variables ------------------------------
 
-all_measures <- dta_1_incid |> select(any_of(f_get_colname("measure"))) |> pull(1) |> unique() |> as.character()
+
+all_measures <- dta_1_incid |> f_get_var_uniq_vals("measure")
 measure_fltr <- all_measures[1]
 
 all_decile_by <- dta_1_incid |> select(any_of(f_get_colname("decile_var"))) |> pull(1) |> unique() |> as.character()
@@ -153,92 +154,62 @@ grpoup_fltr <- all_groups[2]
 all_vars <- dta_1_incid |> select(any_of(f_get_colname("var"))) |> pull(1) |> unique() |> as.character()
 var_fltr <- all_vars[1]
 
-dta_1_incid |> 
+dta_plot <-
+  dta_1_incid |>
   f_filter_grouped_stats(grpoup_fltr) |>
   f_filter_var_generic(measure_fltr, "measure") |>
-  f_filter_var_generic(decile_fltr, "decile_var") |>
-  f_filter_var_generic(var_fltr, "var")  |>
+  f_filter_var_generic(decile_fltr, "decile_var")
+
+dta_plot_one <- 
+  dta_plot |>
+  f_filter_var_generic(var_fltr, "var") 
+
+dta_plot_one|>
   f_plot_gg(
     x_var = "decile",
     y_var = "value",
-    y_lab = f_get_app_text("decile"),
+    x_lab = f_get_app_text("decile"),
     color_var = "group_val",
     facet_var = "sim",
     type = "bar"
-  ) 
+  )
 
-
-
-# Wrapper for all simulaiton with exaustive table of results ---------------
-dta_sim_local |> f_calc_pov_stats()
-dta_sim_local |> f_calc_pov_stats() |> count(Statistics)
-dta_sim_local |> f_calc_pov_stats() |> count(Variable)
-dta_sim_local |> f_calc_pov_stats() |> count(`Grouping variable`, Group)
-dta_sim_local |> f_calc_pov_stats() |> count(Simulation)
-
-
-# Plotting --------------------------------------------
-dta_fig <- dta_sim_local |> f_calc_pov_stats()
-
-
-# Filter appropriate groupping variables ------------------------------
-
-dta_fig |> f_filter_grouped_stats("group_1") |> count(`Grouping variable`, Group)
-dta_fig |> f_filter_grouped_stats("all") |> count(`Grouping variable`, Group)
-dta_fig |> f_filter_grouped_stats("all_groups") |> count(`Grouping variable`, Group)
-dta_fig |> f_filter_grouped_stats("all_groups") |> count(Statistics)
-
-# Plotting specific measure --------------------------------------------
-
-measure_fltr <- get_measure_nm("fgt0")$measure_title
-fig_by <- "measure" |> f_get_colname()
-
-dta_fig |>
-  filter(if_any(any_of(f_get_colname(fig_by)), ~ . == as.character(measure_fltr))) |>
-  f_plot_gg(
-    x_var = "var",
-    y_var = "value",
-    color_var = "group_val",
-    facet_var = "sim",
-    type = "bar"
-  ) |>
-  plotly::ggplotly(tooltip = "text")
-
-
-dta_sim |> f_calc_pov_stats() |> f_plot_pov_by(fig_by = "measure") 
-
-
-# Plot all group-specific plots in a large list ----------------------------
-
-all_groups <- c("all", "group_1", "group_2", "all_groups")
-
-f_plot_gg_groups <- function(dta, group_vars) {
-  fig_list <- list()
-  for (grp in group_vars) {
-    dta_filt <- dta |> f_filter_grouped_stats(grp)
-    fig_out <- dta_filt |>
-      f_plot_pov_by(
-        x_var = "var",
-        y_var = "value",
-        color_var = "group_val",
-        facet_var = "sim",
-        type = "bar"
-      )
-    fig_list[[grp]] <- fig_out
-  }
-  return(fig_list)
-}
-
-figs_all_groups <- f_plot_gg_groups(dta_fig, all_groups)
-
+figs <-
+  dta_plot |>
+  select(any_of(f_get_colname(c("var")))) |>
+  distinct() |>
+  pull(1) |>
+  as.character() |>
+  (\(x) set_names(x, x))() |>
+  imap(
+    ~ {
+      # browser()
+      dta_plot |>
+        f_filter_var_generic(.x, "var") |> # count(Variable)
+        f_plot_gg(
+          x_var = "decile",
+          y_var = "value",
+          x_lab = f_get_app_text("decile"),
+          color_var = "group_val",
+          facet_var = "sim",
+          type = "bar"
+        )
+    }
+  )
+  
 # Formattin tables  -------------------------------------
 
-dta_fig |> f_format_tbl() |> f_format_rt(col_min_groups = 1)
+dta_tbl <- 
+  dta_1_incid |>
+  f_format_decile_tbl() |> 
+  f_format_rt(col_min_groups = 1)
+
+
 
 
 # Testing the module --------------------------------------------
 devmode()
-test_m_pov(sim_res = reactive(req(dta_sim)))
+test_m_incid(sim_res = reactive(req(dta_sim)))
 
 
 

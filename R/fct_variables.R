@@ -316,9 +316,9 @@ f_measure_dic_default <- function() {
     "theil",  "Theil index",
     "n",      "N observations",
     "pop",    "Population",
-    "relative", "Relative incidence, % of {decile_var}",
-    "absolute", "Absolute incidence, % of {var} total",
-    "level"   , "{var}, local currency"
+    "relative", "Relative incidence, %", # of {decile_var}",
+    "absolute", "Absolute incidence, %", # of {var} total",
+    "level"   , "Level, local currency"
   )
 }
 
@@ -361,7 +361,8 @@ f_app_text_dic_default <- function() {
     "ndec_title"   , "Number of deciles",
     "title_wtvar"  , "Weight variable",
     "decby_title"  , "Deciles by",
-    "incid_title"  , "Incidences type"  
+    "incid_title"  , "Incidences type",
+    "decile",       "Decile",
   )
 }
 

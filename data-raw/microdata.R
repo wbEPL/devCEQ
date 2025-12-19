@@ -303,10 +303,9 @@ dta_hh <-
     pl_190 = median(ym) * 0.6,
     pl_500 = median(ym) * 0.8
   ) |>
-  # Adding deciles of income
-  calc_deciles(
-    dec_var = get_inc_nm(suffix = NULL)$var,
-    wt_var = get_wt_nm(),
+  f_calc_deciles(
+    dec_var = get_inc_nm()$var,
+    wt_var = "hhwt",
     n_dec = 10
   )
 
@@ -350,11 +349,12 @@ usethis::use_data(dta_sim, overwrite = TRUE)
 
 dta_hh_agg <-
   dta_hh |>
-  calc_agg_by(
-    vars = get_var_nm(suffix = NULL)$var,
-    by_var = "ym_decile",
+  f_agg_by_decile_one(
+    var_decile = "ym___decile",
+    var_agg = get_var_nm(suffix = NULL)$var,
     wt_var = get_wt_nm()
   )
+
 
 
 # # Varaibles missing from the aggregated data

@@ -214,7 +214,7 @@ m_incid_srv <-
             ~ {
               title_local <- .y
               if (
-                grpby_inp() == "all" ||
+                all(grpby_inp() == "all") ||
                   all(grpfltr_inp() == "All observations") ||
                   length(grpfltr_inp()) == 1
               ) {

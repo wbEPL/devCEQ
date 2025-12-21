@@ -29,7 +29,8 @@ m_input_srv <- function(
   type = "numericInput",
   title = reactive(NULL),
   choices = reactive(NULL),
-  select_index = NULL,
+  selected_index = reactive(NULL),
+  multiple = FALSE,
   ...
 ) {
   moduleServer(id, function(input, output, session) {
@@ -50,10 +51,25 @@ m_input_srv <- function(
 
     choices <- f_make_reactive(choices)
     title <- f_make_reactive(title)
+    selected_index <- f_make_reactive(selected_index)
+    selected <- reactive(
+      if (!is.null(selected_index())) {
+        choices()[selected_index()]
+      } else {
+        NULL
+      }
+    )
     ui <- reactive({
       args <- c(
-        list(id = ns(NULL), title = title(), choices = choices()),
-        if (!is.null(select_index)) list(selected = choices()[select_index]),
+        list(
+          id = ns(NULL),
+          title = title(),
+          choices = choices(),
+          multiple = multiple
+        ),
+        if (!is.null(selected_index())) {
+          list(selected = choices()[selected_index])
+        },
         list(...)
       )
       do.call(f_ui, args)
@@ -63,7 +79,12 @@ m_input_srv <- function(
 
     # Update module function (Not used for now)
 
-    f_collect_input(NULL, choices = choices)
+    f_collect_input(
+      NULL,
+      choices = choices,
+      selected = selected,
+      multiple = multiple
+    )
   })
 }
 
@@ -100,7 +121,13 @@ f_safe_numeric <- function(x) {
 #' @param choices Reactive expression with the named list of default choices
 #' @param ... Additional namd parameters to add to  to m_input_srv
 #' @export
-f_collect_input <- function(id, choices = reactive(NULL), ...) {
+f_collect_input <- function(
+  id,
+  choices = reactive(NULL),
+  selected = reactive(NULL),
+  multiple = FALSE,
+  ...
+) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     choices <- f_make_reactive(choices)
@@ -109,7 +136,11 @@ f_collect_input <- function(id, choices = reactive(NULL), ...) {
     # Default value before input is initialized
     observe({
       req(choices())
-      isolate(out(choices()[1]))
+      if (multiple) {
+        isolate(out(choices()))
+      } else {
+        isolate(out(choices()[1]))
+      }
     })
 
     # Update the value when input changes

@@ -13,16 +13,19 @@ NULL
 #' @param ... Additional arguments (currently unused)
 #' @return A ggplot2 object representing the plot
 #' @export
-#' 
+#'
 f_plot_gg <- function(
-  dta, 
+  dta,
   x_var,
   y_var,
-  x_lab = "Income concept",
-  y_lab = NULL,
   type = "line",
+  bar_position = "dodge",
   color_var = NULL,
   facet_var = NULL,
+  x_lab = "Income concept",
+  y_lab = NULL,
+  color_lab = "varname",
+  facet_lab = NULL,
   ...
 ) {
 
@@ -60,23 +63,25 @@ f_plot_gg <- function(
     color_var <- "color_var_temp"
     dta <- dta |> mutate(!!sym(color_var) := "")
   }
-  
+
   if (is.null(facet_var) || !facet_var %in% names(dta)) {
     facet_var <- "facet_var_temp"
     dta <- dta |> mutate(!!sym(facet_var) := "")
   }
 
-  col_measure <- f_get_colname("measure")
+  col_measure <- "measure"
+  col_measure <- ifelse(col_measure %in% colnames(dta), col_measure, f_get_colname(col_measure))
   if (!col_measure %in% colnames(dta)) {
     dta <- dta |> mutate(!!sym(col_measure) := "")
   }
 
-  col_group_var <- f_get_colname("group_var")
+  col_group_var <- "group_var"
+  col_group_var <- ifelse(col_group_var %in% colnames(dta), col_group_var, f_get_colname(col_group_var))
   if (!col_group_var %in% colnames(dta)) {
     dta <- dta |> mutate(!!sym(col_group_var) := "")
   }
 
-  
+
   # Check if f_get_colname("measure") exists and use its first element as x label
   # y_lab <- "Value"
   if (col_measure %in% colnames(dta) && is.null(y_lab)) {
@@ -104,7 +109,7 @@ f_plot_gg <- function(
         {.data[[color_var]]}
         {.data[[facet_var]]}"
       )
-    ) 
+    )
 
 
   # If x axis has text and it is long, break it
@@ -130,8 +135,7 @@ f_plot_gg <- function(
       geom_line() +
       geom_point()
   } else if (type == "bar") {
-    p <- p +
-      geom_col(stat = "identity", position = "dodge")
+    p <- p + geom_col(position = bar_position)
   } else {
     cli::cli_abort("Unsupported plot type: {type}")
   }
@@ -144,6 +148,11 @@ f_plot_gg <- function(
   p <- p + scale_y_continuous(labels = label_local)
   p <- p + theme_minimal()
   p <- p + labs(x = x_lab, y = y_lab)
+  if (!is.null(color_lab) && color_lab != "varname") {
+    p <- p + labs(color = color_lab, fill = color_lab)
+  } else if (is.null(color_lab)) {
+    p <- p + labs(color = NULL, fill = NULL)
+  }
   p <- p + f_scale_color_custom() + f_scale_fill_custom()
   # Rotate x axis text if too long
   if ((is.character(dta[[x_var]]) || is.factor(dta[[x_var]])) && max(nchar(as.character(dta[[x_var]]))) > 10) {
@@ -151,7 +160,7 @@ f_plot_gg <- function(
       axis.text.x = element_text(angle = 45, hjust = 1)
     )
   }
-  p 
+  p
 
 }
 
@@ -186,7 +195,7 @@ f_default_colours <- function() {
 #' @describeIn f_gg Custom ggplot2 colour scale using a predefined palette
 #' @param ... Additional arguments passed to \code{scale_color_manual}
 #' @export
-#' 
+#'
 f_scale_color_custom <- function(...) {
   scale_color_manual(values = rep(f_default_colours(), length.out = 100), ...)
 }
@@ -194,7 +203,7 @@ f_scale_color_custom <- function(...) {
 #' @describeIn f_gg Custom ggplot2 fill scale using a predefined palette
 #' @param ... Additional arguments passed to \code{scale_fill_manual}
 #' @export
-#' 
+#'
 f_scale_fill_custom <- function(...) {
   scale_fill_manual(values = rep(f_default_colours(), length.out = 100), ...)
 }
@@ -219,7 +228,7 @@ format_plotly <- function(
 ) {
   # Formating spaces
 
-  aa <- 
+  aa <-
     pltly |>
     # plotly::layout(
     #   # legend = legend,

@@ -126,6 +126,10 @@ f_radioGroupButtons_ui <- function(
   size = "sm",
   individual = TRUE,
   direction = "horizontal",
+  checkIcon = list(
+    yes = icon("square-check"),
+    no = icon("square")
+  ),
   ...
 ) {
   ns <- NS(id)
@@ -136,17 +140,30 @@ f_radioGroupButtons_ui <- function(
   }
 
   if (!is.null(choices) && length(choices) > 1) {
-    shinyWidgets::radioGroupButtons(
-      inputId = ns("inputId"),
-      label = title,
-      choices = choices,
-      selected = selected,
-      status = status,
-      size = size,
-      individual = individual,
-      direction = direction,
-      ...
+    valid_args <- c(
+      "justified",
+      "width",
+      "choiceNames",
+      "choiceValues",
+      "disabled"
     )
+    args <- list(...)
+    args <- args[names(args) %in% valid_args]
+    args <- c(
+      list(
+        inputId = ns("inputId"),
+        label = title,
+        choices = choices,
+        selected = selected,
+        status = status,
+        size = size,
+        individual = individual,
+        direction = direction,
+        checkIcon = checkIcon
+      ),
+      args
+    )
+    do.call(shinyWidgets::radioGroupButtons, args)
   }
 }
 

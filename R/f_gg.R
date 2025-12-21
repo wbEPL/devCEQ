@@ -26,6 +26,8 @@ f_plot_gg <- function(
   y_lab = NULL,
   color_lab = "varname",
   facet_lab = NULL,
+  title = NULL,
+  subtitle = NULL,
   ...
 ) {
 
@@ -95,6 +97,26 @@ f_plot_gg <- function(
     y_lab <- y_lab
   }
 
+  if (is.null(title)) {
+    dta <- dta |> mutate(title = "")
+  } else {
+    dta <- dta |> mutate(title = title[[1]])
+  }
+
+  if (is.null(subtitle)) {
+    dta <- dta |> mutate(subtitle = "")
+  } else {
+    dta <- dta |> mutate(subtitle = subtitle[[1]])
+  }
+
+
+
+  if (is.null(x_lab)) {
+    dta <- dta |> mutate(x_lab = "")
+  } else {
+    dta <- dta |> mutate(x_lab = x_lab[[1]])
+  }
+
   # Y scale in % if % is present in the y_lab name
   y_values <- dta |> select(any_of(y_var)) |> pull(1)
   label_local <- f_num_by_title(y_values, title = as.character(y_lab))
@@ -103,8 +125,10 @@ f_plot_gg <- function(
     dta |>
     mutate(
       tooltip = glue::glue(
-        "{.data[[col_measure]]}: {label_local(.data[[y_var]])}
-        {.data[[x_var]]}
+        "<b>{.data[['title']]}</b>
+        {.data[['subtitle']]}
+        {.data[[col_measure]]}: {label_local(.data[[y_var]])}
+        {.data[['x_lab']]}: {.data[[x_var]]}
         {.data[[col_group_var]]}
         {.data[[color_var]]}
         {.data[[facet_var]]}"
@@ -147,7 +171,7 @@ f_plot_gg <- function(
 
   p <- p + scale_y_continuous(labels = label_local)
   p <- p + theme_minimal()
-  p <- p + labs(x = x_lab, y = y_lab)
+  p <- p + labs(x = x_lab, y = y_lab, title = title, subtitle = subtitle)
   if (!is.null(color_lab) && color_lab != "varname") {
     p <- p + labs(color = color_lab, fill = color_lab)
   } else if (is.null(color_lab)) {

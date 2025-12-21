@@ -168,7 +168,13 @@ f_calc_incidence <- function(dta, force_abs = FALSE, ...) {
     group_by(across(any_of(c("decile_var", "sim", "var")))) |>
     mutate(total = sum(level, na.rm = TRUE)) |>
     ungroup() |>
-    mutate(relative = level / decile_val, absolute = level / total) %>%
+    mutate(relative = level / decile_val, absolute = level / total) |>
+    mutate(
+      across(
+        c(relative, absolute),
+        ~ ifelse(is.nan(.) | is.infinite(.), 0, .)
+      )
+    ) |>
     select(-total, -factor) |>
     pivot_longer(
       cols = any_of(c("relative", "absolute", "level")),
@@ -514,15 +520,16 @@ f_calc_deciles <- function(
   }
 
   # Identify which deciles need to be created
-  on_dec_var <- dec_var[!(new_dec_var %in% names(dta))]
+  on_dec_var <- dec_var#[!(new_dec_var %in% names(dta))]
 
-  if (length(on_dec_var) == 0) {
-    cli::cli_inform("All requested decile variables already exist")
-    return(dta)
-  }
+  # if (length(on_dec_var) == 0) {
+  #   cli::cli_inform("All requested decile variables already exist")
+  #   return(dta)
+  # }
 
   dta <-
     dta |>
+    select(-any_of(new_dec_var)) |>
     calc_deciles(
       dec_var = on_dec_var,
       wt_var = "wt_temp__",

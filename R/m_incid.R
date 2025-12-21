@@ -1,15 +1,15 @@
 #' Insidences and other vis template module
-#' 
+#'
 #' @name m_incid
-#' 
+#'
 NULL
 
 #' @describeIn m_incid New incidences UI placeholder
-#' 
+#'
 #' @importFrom shiny NS uiOutput
 #' @importFrom shinycssloaders withSpinner
 #' @export
-m_incid_ui <- 
+m_incid_ui <-
   function(id) {
     ns <- NS(id)
     uiOutput(ns("incidences_ui")) |> shinycssloaders::withSpinner() |> card()
@@ -21,14 +21,14 @@ m_incid_ui <-
 #' @describeIn m_incid New incidence server logic
 #'
 #' @param ndec_type Type of input for number of deciles: "numericInput" or "selectInput"
-#' 
+#'
 #' @export
 m_incid_srv <-
   function(
     id,
     sim_res,
     page_ui = f_incid_ui_linear,
-    
+
     var_inc = get_inc_nm()$var,
     var_wt = get_wt_nm(),
     var_group = get_group_nm()$var,
@@ -37,7 +37,7 @@ m_incid_srv <-
 
     page_title = f_get_app_text("m_incidence"),
 
-    ndec_type = "selectInput", 
+    ndec_type = "selectInput",
     ndec_title = f_get_app_text("ndec_title"),
     ndec_choices = c(5, 10, 15, 25, 50),
 
@@ -52,6 +52,10 @@ m_incid_srv <-
     grpby_type = "selectizeInput",
     grpby_title = f_get_app_text("title_compare"),
     grpby_choices = f_var_names_vector(get_var_nm(var_group)),
+
+    grpfltr_type = "checkboxGroupButtons",
+    grpfltr_title = f_get_app_text("title_filter"),
+    grpfltr_choices = NULL,
 
     pltby_type = "radioGroupButtons",
     pltby_title = NULL,
@@ -76,10 +80,10 @@ m_incid_srv <-
       # Step 2.a Title
       ptitle <- m_input_srv("title", "title", reactive(page_title), reactive(page_title))
 
-      # Filters for calculations
+      # fltr 1: N deciles ----------------------------------------------------
       ndec_inp <- m_input_srv("ndec", ndec_type, ndec_title, ndec_choices)
-    
-      # filters for dsiplay
+
+      # fltr 2: Deciles by ---------------------------------------------------
       decby_inp <- m_input_srv(
         "decby",
         decby_type,
@@ -92,7 +96,8 @@ m_incid_srv <-
           }
         })
       )
-      
+
+      # fltr 3: Incidences type-----------------------------------------------
       incid_inp <- m_input_srv(
         "incid",
         incid_type,
@@ -105,15 +110,32 @@ m_incid_srv <-
           }
         })
       )
-      
+
+      # fltr 4: Group by ------------------------------------------------------
       grpby_inp <- m_input_srv(
         "grpby",
         grpby_type,
         grpby_title,
-        reactive({
-          grpby_choices
-        })
+        reactive(grpby_choices)
       )
+
+      # fltr 5: Group filter ------------------------------------------------------
+      upd_grpfltr <- reactiveVal(FALSE)
+      grpfltr_choice_react <- reactive({
+        req(dta_2_c())
+        isolate(upd_grpfltr(TRUE))
+        f_get_var_uniq_vals(dta_2_c(), "group_val")
+      })
+      grpfltr_inp <- m_input_srv(
+        "grpfltr",
+        grpfltr_type,
+        grpfltr_title,
+        grpfltr_choice_react
+      )
+      # observe({
+      #   req(grpfltr_inp())
+      #   browser()
+      # })
 
       pltby_inp <- m_input_srv("pltby", pltby_type, pltby_title, reactive(fig$id))
 
@@ -126,10 +148,8 @@ m_incid_srv <-
       dta_1_incid <- reactive({
         req(sim_ready())
         req(ndec_inp())
-        # req(grpby_inp())
         valid_groups <- grpby_choices |> unname() |> setdiff("all_groups")
-        
-        # browser()
+
         sim_ready() |>
           f_calc_deciles_by_sim(
             dec_var = unname(decby_choices),
@@ -147,24 +167,33 @@ m_incid_srv <-
       })
 
       dta_2_a <- reactive({
-        req(dta_1_incid())
+        isolate(req(dta_1_incid()))
         req(decby_inp())
         dta_1_incid() |> f_filter_var_generic(decby_inp(), "decile_var")
       })
 
-      
+
       dta_2_b <- reactive({
-        req(dta_2_a())
+        isolate(req(dta_2_a()))
         req(incid_inp())
         dta_2_a() |> f_filter_var_generic(incid_inp(), "measure")
       })
-      
-      dta_out <- reactive({
-        req(dta_2_b())
+
+      dta_2_c <- reactive({
+        isolate(req(dta_2_b()))
         req(grpby_inp())
+        isolate(upd_grpfltr(FALSE))
         dta_2_b() |> f_filter_grouped_stats(grpby_inp())
       })
-      
+
+      dta_out <- reactive({
+        isolate(req(dta_2_c()))
+        req(grpfltr_inp())
+        req(isTRUE(upd_grpfltr()))
+        # browser()
+        dta_2_c() |> f_filter_var_generic(grpfltr_inp(), "group_val")
+      })
+
       dta_out_formatted <- reactive({
         dta_2_b() |> f_format_decile_tbl()
       })
@@ -173,7 +202,7 @@ m_incid_srv <-
         dta_1_incid() |> f_format_decile_tbl()
       })
 
-  
+
       dta_fig <- reactive({
         req(dta_out())
         req(grpby_inp())
@@ -183,16 +212,23 @@ m_incid_srv <-
           (\(x) set_names(x, x))() |>
           imap(
             ~ {
-              if (grpby_inp() == "all") {
+              title_local <- .y
+              if (
+                grpby_inp() == "all" ||
+                  all(grpfltr_inp() == "All observations") ||
+                  length(grpfltr_inp()) == 1
+              ) {
                 dta_out() |>
-                  f_filter_var_generic(.x, "var") |> # count(Variable)
+                  f_filter_var_generic(.x, "var") |>
                   f_plot_gg(
                     x_var = "decile",
                     y_var = "value",
                     x_lab = f_get_app_text("decile"),
                     color_var = "sim",
                     facet_var = NULL,
-                    type = "bar"
+                    type = "bar",
+                    title = title_local,
+                    subtitle = str_c(grpfltr_inp(), collapse = ", ")
                   )
               } else {
                 dta_out() |>
@@ -203,14 +239,15 @@ m_incid_srv <-
                     x_lab = f_get_app_text("decile"),
                     color_var = "group_val",
                     facet_var = "sim",
-                    type = "bar"
+                    type = "bar",
+                    title = title_local
                   )
               }
-              
+
             }
           )
       })
-      
+
       # Generating plots based on filtered data
       observeEvent(
         dta_fig(),
@@ -238,7 +275,7 @@ m_incid_srv <-
         selected = pltby_inp,
         force_ly = T
       )
-      
+
       m_figure_server(
         "tbl1",
         figures = reactive({
@@ -299,26 +336,17 @@ m_incid_srv <-
 f_incid_ui_linear <- function(id, add_pl = TRUE) {
   ns <- NS(id)
 
-  # plt-specific controls 
-  input_elements <- list(
-    m_input_ui(ns("ndec")),
-    m_input_ui(ns("decby")),
-    m_input_ui(ns("incid")),
-    m_input_ui(ns("grpby"))#,
-    # m_input_ui(ns("pltby"))
-  )
-  col_widths <- c(3,3,3,3)
+  # plt-specific controls
+  row_1 <- list(m_input_ui(ns("ndec")), m_input_ui(ns("decby")), m_input_ui(ns("incid")))
+  row_2 <- list(m_input_ui(ns("grpby")), m_input_ui(ns("grpfltr")))
+  row_3 <- list(m_input_ui(ns("pltby")))
 
   # Drop NULL from list
   tagList(
-    bslib::layout_columns(
-      !!!input_elements #,
-      # col_widths = col_widths
-    ),
-    bslib::layout_columns(
-      m_input_ui(ns("pltby")),
-      col_widths = c(12)
-    ),
+    bslib::layout_columns(!!!row_1, col_widths = c(4, 4, 4)),
+    bslib::layout_columns(!!!row_2, col_widths = c(4, 8)),
+    bslib::layout_columns(!!!row_3, col_widths = c(12)),
+
     navset_card_underline(
       full_screen = TRUE,
       title = m_input_ui(ns("title")),
@@ -428,7 +456,7 @@ f_incid_ui_card <- function(id, ...) {
 
 #' @describeIn m_incid Test app for m_incid module
 #' @export
-#' 
+#'
 test_m_incid <- function(
   page_ui = f_incid_ui_linear,
   sim_res = reactive(dta_sim),
@@ -452,7 +480,7 @@ test_m_incid <- function(
 
 #' @describeIn m_incid Test app for m_incid module within a results switching layout
 #' @export
-#' 
+#'
 test_m_incid_switches <- function() {
   library(shiny)
   library(shinyWidgets)
@@ -510,7 +538,7 @@ test_m_incid_switches <- function() {
 
 
       all_figs <-
-        figures |> 
+        figures |>
         imap(~{
           m_incid_srv(
             .y,

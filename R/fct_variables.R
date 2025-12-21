@@ -1,22 +1,22 @@
 #' Variable defiitions and dictionaries helpers.
-#' 
+#'
 #' Key approach is the following:
-#' 1. Package contains default dictionaries for each variable. 
+#' 1. Package contains default dictionaries for each variable.
 #'    These are defined in functions with \code{f_var_<type>_default} names.
-#'    These functions are: \code{f_var_dic_default}, \code{f_var_wt_default}, 
+#'    These functions are: \code{f_var_dic_default}, \code{f_var_wt_default},
 #'   \code{f_var_inc_default}, \code{f_var_group_default}, \code{f_measure_dic_default}.
 #'   \code{f_colnames_dic_default}.
 #' 2. User can define custom dictionaries by defining functions with names
 #'   \code{f_var_<type>} and \code{f_measure_dic} in the global environment.
 #' 3. Main functions use either default or custom dictionaries depending on
 #'   whether custom functions exist.
-#' 
-#' 
+#'
+#'
 #' @name f_var_helpers
 NULL
 
 #' @describeIn f_var_helpers Variable IDs and labels returned in a data frame
-#' 
+#'
 #' @param vars Character vector of variable IDs to filter (default: NULL, all variables)
 #' @param suffix Optional suffix to append to variable IDs (default: NULL)
 #' @param reorder Logical, whether to reorder output based on \code{vars} order (default: TRUE)
@@ -39,7 +39,7 @@ get_var_nm <- function(
   ...
 ) {
   var_dic_local <- f_get_upd_dic(dic_custom_name, dic_default)
-  
+
   rename_measure <- FALSE
   if ("measure" %in% colnames(var_dic_local)) {
     rename_measure <- TRUE
@@ -80,18 +80,18 @@ get_var_nm <- function(
       }
       dta <- bind_rows(dta, dta_missing)
     }
-    
+
     dta <- dta %>%
       mutate(var_title = factor(var_title, levels = var_title, labels = var_title))
   }
 
   if (reorder) {
-    dta <- dta |> 
+    dta <- dta |>
       mutate(var = as_factor(var) |> fct_relevel(vars)) |>
       arrange(var) |>
       mutate(var = as.character(var), var_title = as_factor(var_title))
   }
-  
+
   if (!missing(suffix) && !is.null(suffix)) {
     dta <- dta %>% mutate(var = str_c(var, suffix))
   }
@@ -102,14 +102,14 @@ get_var_nm <- function(
 
   if (rename_measure_title) {
     dta <- dta %>% rename(measure_title = var_title)
-  }  
+  }
 
   return(dta)
 }
 
 #' @describeIn f_var_helpers  Converts variables nems and IDs from a data frame to a named vector
 #' @returns a named character vector with labels in names and codes in values
-#' 
+#'
 #' @export
 f_var_names_vector <- function(var_nms = get_inc_nm()) {
   if (all(c("var", "var_title") %in% colnames(var_nms))) {
@@ -128,7 +128,7 @@ f_var_names_vector <- function(var_nms = get_inc_nm()) {
 
 
 #' @describeIn f_var_helpers Helper to label duplicated variable names as different factors levels.
-#' 
+#'
 #' @export
 fct_keep_dup_string <- function(val) {
   zero_width_space <- "\u200b"
@@ -162,7 +162,7 @@ get_inc_nm <- function(suffix = NULL, reorder = TRUE) {
   inc_vars <- f_var_inc_default()
   if (exists("f_var_inc", mode = "function")) {
     inc_vars <- f_var_inc()
-  } 
+  }
   inc_vars |> get_var_nm(suffix = suffix, reorder = reorder)
 }
 
@@ -175,7 +175,7 @@ get_wt_nm <- function(suffix = NULL) {
   wt_var <- f_var_wt_default()
   if (exists("f_var_wt", mode = "function")) {
     wt_var <- f_var_wt()
-  } 
+  }
 
   wt_var |> get_var_nm(suffix = suffix, reorder = TRUE) |> pull(var)
 }
@@ -188,7 +188,7 @@ get_group_nm <- function(suffix = NULL, reorder = TRUE) {
   group_vars_fn <- f_var_group_default()
   if (exists("f_var_group", mode = "function")) {
     group_vars_fn <- f_var_group()
-  } 
+  }
   group_vars_fn |> get_var_nm(suffix = suffix, reorder = TRUE)
 }
 
@@ -199,7 +199,7 @@ get_pl_nm <- function(suffix = NULL, reorder = TRUE) {
   group_vars_fn <- f_var_pl_default()
   if (exists("f_var_pl", mode = "function")) {
     group_vars_fn <- f_var_pl()
-  } 
+  }
   group_vars_fn |> get_var_nm(suffix = suffix, reorder = TRUE)
 }
 
@@ -225,7 +225,7 @@ f_var_dic_default <- function() {
       1, "sub_energy"      , "Energy subsidy",
       1, "sub_food"      , "Food subsidy",
       1, "sub_total"      , "Subsidies total",
-  
+
       # Direct taxes
       -1, "dtx_prog1"      , "Direct taxes program 1",
       -1, "dtx_prog2"      , "Direct taxes program 2",
@@ -242,7 +242,7 @@ f_var_dic_default <- function() {
       # -1, "dtp_health", "Health contribution paid by employees",
       # -1, "dtp_total", "Total contributions ",
 
-      
+
       # In kind
       1, "ink_helth"    , "Health",
       1, "ink_education", "Education",
@@ -276,7 +276,7 @@ f_var_dic_default <- function() {
     )
 }
 
-#' @describeIn f_var_helpers Weight variables names 
+#' @describeIn f_var_helpers Weight variables names
 #'
 f_var_wt_default <- function() {
   "hhwt"
@@ -324,7 +324,7 @@ f_measure_dic_default <- function() {
 
 
 #' @describeIn f_var_helpers Default column names dictionary
-#' 
+#'
 f_colnames_dic_default <- function() {
   tribble(
     ~var,          ~var_title,
@@ -352,6 +352,7 @@ f_app_text_dic_default <- function() {
     "m_pov"        , "Poverty",
     "title_pl"     , "Poverty lines",
     "title_compare", "Compare by",
+    "title_filter" , "Select",
     "save_btn"     , "Save results",
     "title_plot_inccon"  , "Income",
     "m_ineq"       , "Inequality",

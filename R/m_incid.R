@@ -57,6 +57,7 @@ m_incid_srv <-
     grpfltr_title = f_get_app_text("title_filter"),
     grpfltr_choices = NULL,
 
+    pltby_skip = TRUE,
     pltby_type = "radioGroupButtons",
     pltby_title = NULL,
 
@@ -120,10 +121,8 @@ m_incid_srv <-
       )
 
       # fltr 5: Group filter ------------------------------------------------------
-      upd_grpfltr <- reactiveVal(FALSE)
       grpfltr_choice_react <- reactive({
         req(dta_2_c())
-        isolate(upd_grpfltr(TRUE))
         f_get_var_uniq_vals(dta_2_c(), "group_val")
       })
       grpfltr_inp <- m_input_srv(
@@ -132,12 +131,13 @@ m_incid_srv <-
         grpfltr_title,
         grpfltr_choice_react
       )
-      # observe({
-      #   req(grpfltr_inp())
-      #   browser()
-      # })
 
-      pltby_inp <- m_input_srv("pltby", pltby_type, pltby_title, reactive(fig$id))
+      # fltr 6: Plot to show ------------------------------------------------
+      pltby_inp <- if (!pltby_skip) {
+        m_input_srv("pltby", pltby_type, pltby_title, reactive(fig$id))
+      } else {
+        reactive(NULL)
+      }
 
       # Step 3.A Data/Plots preparation -------------------------------------------
       sim_ready <- reactive(req(sim_res()))
@@ -172,7 +172,6 @@ m_incid_srv <-
         dta_1_incid() |> f_filter_var_generic(decby_inp(), "decile_var")
       })
 
-
       dta_2_b <- reactive({
         isolate(req(dta_2_a()))
         req(incid_inp())
@@ -182,15 +181,12 @@ m_incid_srv <-
       dta_2_c <- reactive({
         isolate(req(dta_2_b()))
         req(grpby_inp())
-        isolate(upd_grpfltr(FALSE))
         dta_2_b() |> f_filter_grouped_stats(grpby_inp())
       })
 
       dta_out <- reactive({
         isolate(req(dta_2_c()))
         req(grpfltr_inp())
-        req(isTRUE(upd_grpfltr()))
-        # browser()
         dta_2_c() |> f_filter_var_generic(grpfltr_inp(), "group_val")
       })
 
@@ -269,19 +265,19 @@ m_incid_srv <-
       )
 
       # Step 10. Card with plot and data table --------------------------------
-      m_figure_server(
+      m_output_srv(
         "fig1",
         figures = reactive(fig$ggs),
-        selected = pltby_inp,
+        selected = if (pltby_skip) reactive(NULL) else pltby_inp,
         force_ly = T
       )
 
-      m_figure_server(
+      m_output_srv(
         "tbl1",
         figures = reactive({
           dta_out_formatted() |> f_format_rt(col_min_groups = 1)
         }),
-        selected = pltby_inp
+        selected = if (pltby_skip) reactive(NULL) else pltby_inp
       )
 
       # Step 20. Results export modal ----------------------------------------
@@ -354,10 +350,10 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
       nav_panel(
         "Plot",
         card_body(
-          m_figure_ui(ns("fig1")),
+          m_output_ui(ns("fig1")),
           fillable = TRUE,
-          min_height = "450px",
-          max_height = "600px"
+          min_height = "450px"#,
+          # max_height = "600px"
         ) #,
         # card_footer("Footer placeholder")
       ),
@@ -365,7 +361,7 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
       nav_panel(
         "Data",
         card_body(
-          m_figure_ui(ns("tbl1")),
+          m_output_ui(ns("tbl1")),
           fillable = TRUE,
           min_height = "450px" #,
           # max_height = "800px"

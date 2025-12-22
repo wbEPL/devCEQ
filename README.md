@@ -1,10 +1,34 @@
 # **devCEQ**: Development platform for Shiny fiscal microsimulations
 
-This R package contains standardized infrastructure for developing and deploying country-specific fiscal microsimulations as Shiny apps for the Poverty and Equity Policy Lab. The main goal of these apps is to provide users with the visual interface for executing complex microsimulations, and summarizing their results. 
+This R package provides standardized infrastructure for developing and deploying country-specific fiscal microsimulations as Shiny apps for the Poverty and Equity Policy Lab. The package enables users to execute complex microsimulations through a visual interface and summarize results interactively.
 
-There are several apps deployed using the **devCEQ** infrastructure: [Senegal CEQ 2018](https://datanalytics.worldbank.org/senceqapp2018/), [Côte d'Ivoire CEQ](https://datanalytics.worldbank.org/civCEQapp/), [Benin CEQ](https://datanalytics.worldbank.org/benCEQapp/), [Indonesia CEQ](https://datanalytics.worldbank.org/idnCEQ2019/). The **devCEQ** package evolved as a result of developing independent apps for [Armenia v1](https://datanalytics.worldbank.org/armCEQapp/) and [Armenia v2](https://datanalytics.worldbank.org/armenia-ceq/), [El Salvador](https://datanalytics.worldbank.org/el-salvador-fiscal-and-equity-tool/), [Turkey](https://datanalytics.worldbank.org/turkey-tax-simulation-tool/), and [Romania CEQ](https://datanalytics.worldbank.org/romania-sim-tool/), where various aspects and requirements to the application were tested at first.
+## Deployed Applications
 
-Essentially, **devCEQ** R Package standardizes the data flow within the microsimulation and wraps it in a user interface. With this package, developers can customize the inputs page. Develop and embed any data and simulation methodology into the core of the microsimulation. Finally built a custom visualization either recycling existing modules or developing new ones for better results communication. 
+Several apps have been deployed using the **devCEQ** infrastructure:
+
+- [Cameroon CEQ 2021](https://datanalytics.worldbank.org/cmrCEQapp/) ([code](https://github.com/wbEPL/cmrCEQapp))
+- [Senegal CEQ 2018](https://datanalytics.worldbank.org/senceqapp2018/)
+- [Côte d'Ivoire CEQ](https://datanalytics.worldbank.org/civCEQapp/)
+- [Benin CEQ](https://datanalytics.worldbank.org/benCEQapp/)
+- [Indonesia CEQ](https://datanalytics.worldbank.org/idnCEQ2019/)
+
+The **devCEQ** package evolved from independent apps developed for:
+
+- [Armenia v1](https://datanalytics.worldbank.org/armCEQapp/)
+- [Armenia v2](https://datanalytics.worldbank.org/armenia-ceq/)
+- [El Salvador](https://datanalytics.worldbank.org/el-salvador-fiscal-and-equity-tool/)
+- [Turkey](https://datanalytics.worldbank.org/turkey-tax-simulation-tool/)
+- [Romania CEQ](https://datanalytics.worldbank.org/romania-sim-tool/)
+
+These applications tested various aspects and requirements, informing the development of this standardized package.
+
+## Key Features
+
+The **devCEQ** package standardizes the data flow within microsimulations and wraps it in a user interface. Developers can:
+
+- Customize the inputs page
+- Embed any data and simulation methodology
+- Build custom visualizations using existing modules or develop new ones
 
 An example of such an app is below.
 
@@ -125,7 +149,3 @@ The second stage is the focus of this guide. In the second stage, the translatio
 4.  Integrating the input page, output page, and simulation logic in a single dashboard
 
 <!-- 5.  Troubleshooting and improving the analysis. -->
-
-
-
-

@@ -1,17 +1,17 @@
-#' Module to let user select input type and render corresponding input UI basd 
-#' on the set of paramters that include input type and choices. 
+#' Module to let user select input type and render corresponding input UI basd
+#' on the set of paramters that include input type and choices.
 #' Choices could be passed a preset value or a reactive expression.
-#' The module returns the default value of the input even when the input is not 
+#' The module returns the default value of the input even when the input is not
 #' renderred or not initialized yet.
-#' 
-#' 
+#'
+#'
 #' @name m_inputs
 NULL
 
 #' @describeIn m_inputs Income deciles by selection UI wrapper
 #' @param id Module id
 #' @export
-#' 
+#'
 m_input_ui <- function(id) {
   ns <- NS(id)
   uiOutput(ns("ui"))
@@ -29,7 +29,8 @@ m_input_srv <- function(
   type = "numericInput",
   title = reactive(NULL),
   choices = reactive(NULL),
-  select_index = NULL,
+  selected_index = reactive(NULL),
+  multiple = FALSE,
   ...
 ) {
   moduleServer(id, function(input, output, session) {
@@ -44,15 +45,31 @@ m_input_srv <- function(
         "selectInput" = f_selectInput_ui,
         "selectizeInput" = f_selectizeInput_ui,
         "radioGroupButtons" = f_radioGroupButtons_ui,
+        "checkboxGroupButtons" = f_checkboxGroupButtons_ui,
         stop("Unknown module type")
       )
 
     choices <- f_make_reactive(choices)
     title <- f_make_reactive(title)
+    selected_index <- f_make_reactive(selected_index)
+    selected <- reactive(
+      if (!is.null(selected_index())) {
+        choices()[selected_index()]
+      } else {
+        NULL
+      }
+    )
     ui <- reactive({
       args <- c(
-        list(id = ns(NULL), title = title(), choices = choices()),
-        if (!is.null(select_index)) list(selected = choices()[select_index]),
+        list(
+          id = ns(NULL),
+          title = title(),
+          choices = choices(),
+          multiple = multiple
+        ),
+        if (!is.null(selected_index())) {
+          list(selected = choices()[selected_index])
+        },
         list(...)
       )
       do.call(f_ui, args)
@@ -62,7 +79,12 @@ m_input_srv <- function(
 
     # Update module function (Not used for now)
 
-    f_collect_input(NULL, choices = choices)
+    f_collect_input(
+      NULL,
+      choices = choices,
+      selected = selected,
+      multiple = multiple
+    )
   })
 }
 
@@ -98,8 +120,14 @@ f_safe_numeric <- function(x) {
 #' @param id Module id
 #' @param choices Reactive expression with the named list of default choices
 #' @param ... Additional namd parameters to add to  to m_input_srv
-#' @export 
-f_collect_input <- function(id, choices = reactive(NULL), ...) {
+#' @export
+f_collect_input <- function(
+  id,
+  choices = reactive(NULL),
+  selected = reactive(NULL),
+  multiple = FALSE,
+  ...
+) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     choices <- f_make_reactive(choices)
@@ -108,9 +136,13 @@ f_collect_input <- function(id, choices = reactive(NULL), ...) {
     # Default value before input is initialized
     observe({
       req(choices())
-      isolate(out(choices()[1]))
+      if (multiple) {
+        isolate(out(choices()))
+      } else {
+        isolate(out(choices()[1]))
+      }
     })
-    
+
     # Update the value when input changes
     observeEvent(
       input[["inputId"]],
@@ -119,7 +151,7 @@ f_collect_input <- function(id, choices = reactive(NULL), ...) {
         new_out <- input[["inputId"]]
         if (all(is.numeric(choices()))) {
           new_out <- as.numeric(new_out)
-        }        
+        }
         if (all(is.integer(choices()))) {
           new_out <- as.numeric(new_out)
         }
@@ -127,18 +159,18 @@ f_collect_input <- function(id, choices = reactive(NULL), ...) {
       },
       ignoreNULL = TRUE
     )
-    
+
     out
   })
 }
 
 #' @describeIn m_inputs Test app for m_input module
-#' 
+#'
 test_m_input <- function() {
   library(shiny)
   library(shinyWidgets)
   library(bslib)
-  
+
   ui <- page_fixed(
     h2("Test m_input module"),
     h3("Genric input value that is passed as reactive choices"),
@@ -189,7 +221,7 @@ test_m_input <- function() {
     verbatimTextOutput("rad")
 
   )
-  
+
   server <- function(input, output, session) {
 
     choice_react <- reactive({
@@ -205,17 +237,17 @@ test_m_input <- function() {
     num1 <- m_input_srv("num1", "numericInput", title = reactive("Choices (react):"), choices = 1:10)
     num2 <- m_input_srv("num2", "numericInput", title = reactive("Choices (value):"), choices = reactive(c("A" = 99, "B" = 2, "C" = 3)))
     num3 <- m_input_srv("num3", "numericInput", title = reactive("Choices (NA):"), choices = reactive("NULL REACTIVE"))
-    
+
     output$num <- renderPrint({
       list(num1 = num1(), num2 = num2(), num3 = num3())
     })
 
-    
+
     sel0 <- m_input_srv("sel0", "selectInput", reactive("One choice:"), 1:10)
     sel1 <- m_input_srv("sel1", "selectInput", reactive("Reactive:"), reactive(c(str_c(choice_react(), "1"), choice_react())))
     sel2 <- m_input_srv("sel2", "selectInput", reactive("Constant (numeric):"), reactive(c("A" = 1, "B" = 2, "C" = 3)))
     sel3 <- m_input_srv("sel3", "selectInput", reactive("Constant (character):"), reactive(c("A" = "1", "B" = "2", "C" = "3")), multiple = TRUE)
-    
+
     output$sel <- renderPrint({
       list(sel0 = sel0(), sel1 = sel1(), sel2 = sel2(), sel3 = sel3())
     })
@@ -237,6 +269,6 @@ test_m_input <- function() {
     })
 
   }
-  
+
   shinyApp(ui, server)
 }

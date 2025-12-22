@@ -1,10 +1,10 @@
 #' Helper modules for common UI components generation
-#' 
+#'
 #' @name m_helpers
 NULL
 
 #' @describeIn m_helpers Title generation UI function
-#' 
+#'
 #' @param id Module id
 #' @param title Title/Label for the input
 #' @param ... not used
@@ -19,18 +19,18 @@ f_title_ui <- function(id, title = NULL, ...) {
 }
 
 #' @describeIn m_helpers Number of deciles selection UI + server
-#' 
+#'
 #' @param id Module id
 #' @param title Title/Label for the input
 #' @param choices A name vector of choices for input. If all values are numeric, the first one is used as default value.
 #' @param ... Additional arguments passed to `numericInput()`
 #' @inheritParams shiny::numericInput
-#' 
+#'
 #' @importFrom shiny NS numericInput
 #' @export
-#' 
+#'
 f_numericInput_ui <- function(id, title = NULL, choices = NULL, width = "100%", ...) {
-  ns <- NS(id)  
+  ns <- NS(id)
 
   # Skip if choices and value is not provided, or all choises are not numeric
   if (
@@ -63,7 +63,7 @@ f_numericInput_ui <- function(id, title = NULL, choices = NULL, width = "100%", 
 #' @param fn Function to use for input generation. Either `shiny::selectInput` or `shiny::selectizeInput`
 #' @return A function generating the desired input UI
 #' @export
-#' 
+#'
 f_selegenInput_ui <- function(fn = shiny::selectizeInput) {
   function(
     id,
@@ -71,6 +71,7 @@ f_selegenInput_ui <- function(fn = shiny::selectizeInput) {
     choices = NULL,
     selected = choices[1],
     width = "100%",
+    multiple = FALSE,
     ...
   ) {
     ns <- NS(id)
@@ -83,7 +84,11 @@ f_selegenInput_ui <- function(fn = shiny::selectizeInput) {
       return(NULL)
     }
 
-    valid_args <- c("multiple", "width", "size", "options")
+    if (multiple) {
+      selected <- choices
+    }
+
+    valid_args <- c("width", "size", "options")
     args <- list(...)
     args <- args[names(args) %in% valid_args]
     args <- c(
@@ -92,7 +97,8 @@ f_selegenInput_ui <- function(fn = shiny::selectizeInput) {
         label = title,
         choices = choices,
         selected = selected,
-        width = width
+        width = width,
+        multiple = multiple
       ),
       args
     )
@@ -108,6 +114,7 @@ f_selectInput_ui <- f_selegenInput_ui(shiny::selectInput)
 f_selectizeInput_ui <- f_selegenInput_ui(shiny::selectizeInput)
 
 #' @describeIn m_helpers generate radiogroup buttons UI
+#' @importFrom shinyWidgets radioGroupButtons
 #'
 #'
 f_radioGroupButtons_ui <- function(
@@ -119,6 +126,10 @@ f_radioGroupButtons_ui <- function(
   size = "sm",
   individual = TRUE,
   direction = "horizontal",
+  checkIcon = list(
+    yes = icon("square-check"),
+    no = icon("square")
+  ),
   ...
 ) {
   ns <- NS(id)
@@ -129,17 +140,84 @@ f_radioGroupButtons_ui <- function(
   }
 
   if (!is.null(choices) && length(choices) > 1) {
-    shinyWidgets::radioGroupButtons(
-      inputId = ns("inputId"),
-      label = title,
-      choices = choices,
-      selected = selected,
-      status = status,
-      size = size,
-      individual = individual,
-      direction = direction,
-      ...
+    valid_args <- c(
+      "justified",
+      "width",
+      "choiceNames",
+      "choiceValues",
+      "disabled"
     )
+    args <- list(...)
+    args <- args[names(args) %in% valid_args]
+    args <- c(
+      list(
+        inputId = ns("inputId"),
+        label = title,
+        choices = choices,
+        selected = selected,
+        status = status,
+        size = size,
+        individual = individual,
+        direction = direction,
+        checkIcon = checkIcon
+      ),
+      args
+    )
+    do.call(shinyWidgets::radioGroupButtons, args)
   }
 }
-          
+
+#' @describeIn m_helpers generate radiogroup buttons UI
+#' @importFrom shinyWidgets checkboxGroupButtons
+#'
+#'
+f_checkboxGroupButtons_ui <- function(
+  id,
+  title = NULL,
+  choices = NULL, #c("Bar" = "bar", "Line" = "line", "Scatter" = "scatter"),
+  selected = choices,
+  status = "primary",
+  size = "sm",
+  individual = TRUE,
+  direction = "horizontal",
+  checkIcon = list(
+      yes = icon("square-check"),
+      no = icon("square")
+    ),
+  ...
+) {
+  ns <- NS(id)
+
+  # Skip is choices are missing or length less than 2
+  if (is.null(choices) || length(choices) <= 1) {
+    return(NULL)
+  }
+
+  if (!is.null(choices) && length(choices) > 1) {
+    valid_args <- c(
+      "justified",
+      "individual",
+      "width",
+      "choiceNames",
+      "choiceValues",
+      "disabled"
+    )
+    args <- list(...)
+    args <- args[names(args) %in% valid_args]
+    args <- c(
+      list(
+        inputId = ns("inputId"),
+        label = title,
+        choices = choices,
+        selected = selected,
+        status = status,
+        size = size,
+        individual = individual,
+        direction = direction,
+        checkIcon = checkIcon
+      ),
+      args
+    )
+    do.call(shinyWidgets::checkboxGroupButtons, args)
+  }
+}

@@ -8,7 +8,7 @@ NULL
 #' @importFrom shiny NS
 #' @importFrom shinyWidgets radioGroupButtons
 #' 
-#' 
+#' @export
 m_res_switches_ui <- function(
   id = NULL,
   panels_choices = f_res_switches_val(),
@@ -32,6 +32,7 @@ m_res_switches_ui <- function(
 #' @importFrom shiny moduleServer observe req updateTabsetPanel
 #' @importFrom shinyWidgets updateRadioGroupButtons
 #' 
+#' @export
 m_res_switches_srv <- function(id, active_tab = reactive(NULL), ...) {
     moduleServer(id, function(input, output, session) {
       ns <- session$ns
@@ -69,6 +70,7 @@ m_res_switches_srv <- function(id, active_tab = reactive(NULL), ...) {
 #' @importFrom shiny NS
 #' @importFrom bslib navset_hidden
 #' 
+#' @export
 m_res_content_ui <- function(id, panle_ui, ...) {
   ns <- NS(id)
   bslib::navset_hidden(
@@ -81,6 +83,7 @@ m_res_content_ui <- function(id, panle_ui, ...) {
 
 #' @describeIn m_res Helper function returning the sidebar choices
 #' 
+#' @export
 f_res_switches_val <- function() {
   c(
     "DEV/TEST" = "dev_test",
@@ -93,6 +96,7 @@ f_res_switches_val <- function() {
 
 #' @describeIn m_res Helper function returning the content panels
 #' 
+#' @export
 f_res_switches_cont <- function() {
   f_res_switches_val () |>
   purrr::imap(
@@ -104,6 +108,7 @@ f_res_switches_cont <- function() {
 #' @describeIn m_res Test function for the results module with switches
 #' @importFrom bslib bs_theme page_fluid
 #' 
+#' @export
 test_m_res_switches <- function(
   panels_choices = f_res_switches_val(),
   panle_ui = f_res_switches_cont()

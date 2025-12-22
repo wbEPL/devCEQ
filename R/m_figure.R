@@ -1,11 +1,11 @@
 #' module for automatically updating the figure placeholders and figure up on selection
-#' 
+#'
 #' @name m_figure
 NULL
 
 
 #' Module UI for figure updating
-#' 
+#'
 m_figure_ui <- function(id){
   ns <- NS(id)
   tagList(
@@ -13,11 +13,26 @@ m_figure_ui <- function(id){
   )
 }
 
+#' Helper function to generate sample figures for testing
+#' @return A named list of sample figures including ggplot, plotly, DT, flextable, reactable, and data frame
+#' @export
+f_get_sample_figures <- function() {
+    list(
+      `Figure 1 (gg)` = fig_gg_random(),
+      `Figure 3 (ly)` = fig_gg_random() |> plotly::ggplotly(),
+      `DT` = DT::datatable(head(mtcars)),
+      `Flextable` = flextable::flextable(head(mtcars)),
+      `Reactable` = reactable::reactable(head(mtcars)),
+      `DF` = head(mtcars)
+    )
+
+}
+
 #' Module Server for figure updating
 #' @param id Module id
 #' @param figures A reactive expression returning a named list of figures (ggplot or plotly objects)
 #' @param selected A reactive expression returning the name of the selected figure to display
-#' 
+#'
 #' @importFrom shiny moduleServer NS uiOutput renderUI plotOutput renderPlot tableOutput renderTable
 #' @importFrom shinycssloaders withSpinner
 #' @importFrom plotly plotlyOutput renderPlotly
@@ -27,19 +42,8 @@ m_figure_ui <- function(id){
 #'
 m_figure_server <- function(
   id,
-  figures = reactive(
-    list(
-      `Figure 1` = fig_gg_random(),
-      `Figure 2` = fig_gg_random(),
-      `Figure 3` = fig_gg_random() |> plotly::ggplotly(),
-      `DT` = DT::datatable(head(mtcars)),
-      `Flextable` = flextable::flextable(head(mtcars)),
-      `DF` = head(mtcars)
-    )
-  ),
-  selected = reactive(
-    "Figure 1"
-  ),
+  figures = reactive(f_get_sample_figures()),
+  selected = reactive(names(f_get_sample_figures())[1]),
   force_ly = TRUE,
   ...
 ) {
@@ -47,17 +51,15 @@ m_figure_server <- function(
     ns <- session$ns
 
     fig_show <- reactive({
-      req( figures() )
-      req( selected() )
+      req(figures())
+      req(selected())
       figs <- figures()
       sel <- selected()
 
       # Check if figs is a data frame
       if (
-        is.data.frame(figs) |
-          inherits(figs, "datatables") |
-          inherits(figs, "flextable") |
-          inherits(figs, "reactable")
+        check_object_type(figs) %in%
+          c("data.frame", "flextable", "datatables", "reactable")
       ) {
         return(figs)
       }
@@ -70,7 +72,8 @@ m_figure_server <- function(
         out <- figures()[[1]]
       }
       if (force_ly) {
-        out <- plotly::ggplotly(out, tooltip = "text", height = 425) |> format_plotly()
+        out <- plotly::ggplotly(out, tooltip = "text", height = 425) |>
+          format_plotly()
       }
       out
     })
@@ -123,7 +126,7 @@ m_figure_server <- function(
       req(last_fig_class())
       switch(
         last_fig_class(),
-        "ggplot" = plotOutput(ns("fig_gg")) ,
+        "ggplot" = plotOutput(ns("fig_gg")),
         "plotly" = plotly::plotlyOutput(ns("fig_ly")),
         "flextable" = uiOutput(ns("fig_ft")),
         "datatables" = DT::DTOutput(ns("fig_dt")),
@@ -173,10 +176,9 @@ m_figure_server <- function(
   })
 }
 
-
 #' @describeIn m_figure Test app for m_figure module
 #' @export
-#' 
+#'
 test_m_figure <- function() {
   library(shiny)
   library(plotly)
@@ -187,7 +189,16 @@ test_m_figure <- function() {
     selectInput(
       inputId = "fig_select",
       label = "Select figure:",
-      choices = c("Figure 1", "Figure 2", "Figure 3", "DT", "Flextable", "DF"),
+      choices = c(
+        "Figure 1 (gg)",
+        "Figure 2 (gg list)",
+        "Figure 3 (ly)",
+        "Figure 4 (ly list)",
+        "DT",
+        "Flextable",
+        "Reactable",
+        "DF"
+      )
     ),
     m_figure_ui("fig_mod")
   )
@@ -195,16 +206,16 @@ test_m_figure <- function() {
   server <- function(input, output, session) {
     m_figure_server(
       "fig_mod",
-      figures = reactive(
-        list(
-          `Figure 1` = fig_gg_random(),
-          `Figure 2` = fig_gg_random(),
-          `Figure 3` = fig_gg_random() |> plotly::ggplotly(),
-          `DT` = DT::datatable(head(mtcars)),
-          `Flextable` = flextable::flextable(head(mtcars)),
-          `DF` = head(mtcars)
-        )
-      ),
+      # figures = reactive(
+      #   list(
+      #     `Figure 1` = fig_gg_random(),
+      #     `Figure 2` = fig_gg_random(),
+      #     `Figure 3` = fig_gg_random() |> plotly::ggplotly(),
+      #     `DT` = DT::datatable(head(mtcars)),
+      #     `Flextable` = flextable::flextable(head(mtcars)),
+      #     `DF` = head(mtcars)
+      #   )
+      # ),
       selected = reactive(input$fig_select)
     )
   }
@@ -217,13 +228,13 @@ test_m_figure <- function() {
 
 #' @describeIn m_figure Helper function to generate random gg plot
 #' @export
-#' 
+#'
 fig_gg_random <- function() {
-  
+
   type <- sample(c("bar", "line", "scatter"), 1)
   n <- sample(5:15, 1)
   dta <- data.frame(x = 1:n, y = sample(1:100, n))
-  dta |> 
+  dta |>
     ggplot(aes(x = x, y = y)) +
     {
       if (type == "bar") {
@@ -236,5 +247,3 @@ fig_gg_random <- function() {
     } +
     theme_minimal()
 }
-
-

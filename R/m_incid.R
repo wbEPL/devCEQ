@@ -75,7 +75,7 @@ m_incid_srv <-
           isTruthy(sim_res()),
           "Press 'Run' to execute simulaitons."
         ))
-        page_ui(ns(NULL))
+        page_ui(ns(NULL), pltby_skip = pltby_skip)
       })
 
       # Step 2.a Title
@@ -329,19 +329,19 @@ m_incid_srv <-
 #' @import bslib
 #' @export
 #'
-f_incid_ui_linear <- function(id, add_pl = TRUE) {
+f_incid_ui_linear <- function(id, add_pl = TRUE, pltby_skip = TRUE) {
   ns <- NS(id)
 
   # plt-specific controls
   row_1 <- list(m_input_ui(ns("ndec")), m_input_ui(ns("decby")), m_input_ui(ns("incid")))
   row_2 <- list(m_input_ui(ns("grpby")), m_input_ui(ns("grpfltr")))
-  row_3 <- list(m_input_ui(ns("pltby")))
+  row_3 <- if (!pltby_skip) list(m_input_ui(ns("pltby"))) else NULL
 
   # Drop NULL from list
   tagList(
     bslib::layout_columns(!!!row_1, col_widths = c(4, 4, 4)),
     bslib::layout_columns(!!!row_2, col_widths = c(4, 8)),
-    bslib::layout_columns(!!!row_3, col_widths = c(12)),
+    if (!is.null(row_3)) bslib::layout_columns(!!!row_3, col_widths = c(12)),
 
     navset_card_underline(
       full_screen = TRUE,
@@ -352,10 +352,8 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
         card_body(
           m_output_ui(ns("fig1")),
           fillable = TRUE,
-          min_height = "450px"#,
-          # max_height = "600px"
-        ) #,
-        # card_footer("Footer placeholder")
+          min_height = "500px"
+        )
       ),
 
       nav_panel(
@@ -363,8 +361,7 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
         card_body(
           m_output_ui(ns("tbl1")),
           fillable = TRUE,
-          min_height = "450px" #,
-          # max_height = "800px"
+          min_height = "450px"
         )
       ),
 
@@ -396,7 +393,7 @@ f_incid_ui_linear <- function(id, add_pl = TRUE) {
 f_incid_ui_card <- function(id, ...) {
   ns <- NS(id)
   navset_card_tab(
-    full_screen = TRUE,
+    full_screen = FALSE,
     title = m_input_ui(ns("title")),
 
     sidebar = sidebar(
@@ -433,18 +430,7 @@ f_incid_ui_card <- function(id, ...) {
       )
     },
 
-    nav_spacer(),
-
-    # nav_item(
-    #   actionButton(ns("download_excel"), "Download Excel")
-    #   # m_download_ui(
-    #   #   id,
-    #   #   "Save Excel",
-    #   #   ui_fn = downloadButton,
-    #   #   icon = icon("file-excel"),
-    #   #   class = "btn btn-light btn-sm"
-    #   # )
-    # )
+    nav_spacer()
   )
 }
 

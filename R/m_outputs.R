@@ -437,33 +437,68 @@ m_one_output_srv <- function(
 #'
 #' @param id Module id
 #' @param figures A reactive expression returning a single output or list of outputs
+#' @param selected A reactive expression returning a character vector of names to filter outputs.
+#'   If NULL or empty, all outputs are displayed. If names are provided but none match,
+#'   all outputs are displayed. Only matching outputs are rendered.
+#' @param output_type Character string specifying how to display multiple outputs:
+#'   \itemize{
+#'     \item \code{"sequential"} (default) - Displays outputs one after another
+#'     \item \code{"tabs"} - Displays outputs in a card with tabs
+#'   }
 #' @return NULL (renders to UI directly)
 #' @export
-m_output_srv <- function(id, figures = reactive(NULL), ...) {
+m_output_srv <- function(
+  id,
+  figures = reactive(NULL),
+  selected = reactive(NULL),
+  output_type = c("tabs", "sequential"),
+  ...
+) {
+  output_type <- match.arg(output_type)
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-
-    # Flatten the outputs to a named list of single outputs
     flattened_outputs <- reactive({
       req(figures())
       flatten_outputs(figures())
     })
 
-    # Render the UI
-    output$figure_ui <- renderUI({
-      req(flattened_outputs())
+    # Filter outputs based on selected names
+    filtered_outputs <- reactive({
+      all_outputs <- flattened_outputs()
+      sel <- selected()
 
-      # Create a module for each output
-      purrr::imap(flattened_outputs(), function(fig, name) {
-        # Create unique module id based on name
-        mod_id <- paste0("fig_", make.names(name))
+      # If selected is NULL or empty, return all outputs
+      if (is.null(sel) || length(sel) == 0 || all(sel == "")) {
+        return(all_outputs)
+      }
 
-        # Generate the output UI
-        m_one_output_srv(id = mod_id, figure = reactive(fig))()
-      }) |>
-        tagList()
+      # Filter outputs by selected names
+      matching_outputs <- all_outputs[names(all_outputs) %in% sel]
+
+      # If no matches found, return all outputs
+      if (length(matching_outputs) == 0) {
+        return(all_outputs)
+      }
+
+      return(matching_outputs)
     })
 
+    output$figure_ui <- renderUI({
+      req(filtered_outputs())
+      output_uis <- purrr::imap(filtered_outputs(), function(fig, name) {
+        mod_id <- paste0("fig_", make.names(name))
+        m_one_output_srv(id = mod_id, figure = reactive(fig))()
+      })
+      if (output_type == "tabs" && length(output_uis) > 1) {
+        tab_panels <- purrr::imap(output_uis, function(ui, name) {
+          nav_panel(title = name, ui)
+        }) |>
+          unname()
+        do.call(navset_tab, tab_panels)
+      } else {
+        tagList(output_uis)
+      }
+    })
     return(invisible(NULL))
   })
 }
@@ -480,47 +515,90 @@ test_m_one_output <- function() {
   ui <- page_fixed(
     h3("Output Module Demo"),
     layout_columns(
-      col_widths = c(6, 6),
+      col_widths = c(4, 4, 4),
       card(
-        card_header("First Output"),
+        card_header("Sequential Display"),
         selectInput(
           inputId = "fig_select_1",
-          label = "Select first figure:",
+          label = "Select figure:",
           choices = names(f_get_sample_outputs()),
-          selected = "Figure 1 (gg)"
+          selected = "Figure 2 (gg list)"
         ),
         m_output_ui("output_module_1")
       ),
       card(
-        card_header("Second Output"),
+        card_header("Tabbed Display"),
         selectInput(
           inputId = "fig_select_2",
-          label = "Select second figure:",
+          label = "Select figure:",
           choices = names(f_get_sample_outputs()),
-          selected = "Figure 3 (ly)"
+          selected = "mix"
         ),
         m_output_ui("output_module_2")
+      ),
+      card(
+        card_header("Filtered Display (Tabs)"),
+        selectInput(
+          inputId = "fig_select_3",
+          label = "Select figure:",
+          choices = names(f_get_sample_outputs()),
+          selected = "mix"
+        ),
+        selectInput(
+          inputId = "name_filter",
+          label = "Filter by name:",
+          choices = NULL,
+          selected = NULL,
+          multiple = TRUE
+        ),
+        m_output_ui("output_module_3")
       )
     )
   )
 
   server <- function(input, output, session) {
-    # First output module
+    # Update filter choices based on selected figure
+    observe({
+      req(input$fig_select_3)
+      fig <- f_get_sample_outputs()[[input$fig_select_3]]
+      flattened <- flatten_outputs(fig)
+      updateSelectInput(
+        session,
+        "name_filter",
+        choices = names(flattened),
+        selected = NULL
+      )
+    })
+
+    # First output module - sequential display
     m_output_srv(
       id = "output_module_1",
       figures = reactive({
         req(input$fig_select_1)
         f_get_sample_outputs()[[input$fig_select_1]]
-      })
+      }),
+      output_type = "sequential"
     )
 
-    # Second output module
+    # Second output module - tabbed display
     m_output_srv(
       id = "output_module_2",
       figures = reactive({
         req(input$fig_select_2)
         f_get_sample_outputs()[[input$fig_select_2]]
-      })
+      }),
+      output_type = "tabs"
+    )
+
+    # Third output module - filtered tabbed display
+    m_output_srv(
+      id = "output_module_3",
+      figures = reactive({
+        req(input$fig_select_3)
+        f_get_sample_outputs()[[input$fig_select_3]]
+      }),
+      selected = reactive(input$name_filter),
+      output_type = "tabs"
     )
   }
 

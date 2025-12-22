@@ -28,6 +28,74 @@ f_get_sample_figures <- function() {
 
 }
 
+#' Check the type of an object
+#'
+#' Determines if an object is a data frame, flextable, datatables, reactable,
+#' a list of ggplot objects, a list of plotly objects, or other types.
+#'
+#' @param a An object to check
+#'
+#' @return A character string indicating the object type:
+#'   \itemize{
+#'     \item \code{"data.frame"} - A data frame
+#'     \item \code{"flextable"} - A flextable object
+#'     \item \code{"datatables"} - A DT datatables object
+#'     \item \code{"reactable"} - A reactable object
+#'     \item \code{"ggplot"} - A single ggplot object
+#'     \item \code{"plotly"} - A single plotly object
+#'     \item \code{"list_of_ggplot"} - A list where all elements are ggplot objects
+#'     \item \code{"list_of_plotly"} - A list where all elements are plotly objects
+#'     \item \code{"empty_list"} - An empty list
+#'     \item \code{"mixed_list"} - A list with mixed object types
+#'     \item \code{"unknown"} - None of the above types
+#'   }
+#'
+#' @export
+check_object_type <- function(a) {
+  # Check for data frame first
+  if (inherits(a, "flextable")) {
+    return("flextable")
+  }
+  if (inherits(a, "datatables")) {
+    return("datatables")
+  }
+  if (inherits(a, "reactable")) {
+    return("reactable")
+  }
+  if (is.data.frame(a) && !inherits(a, c("flextable", "datatables", "reactable"))) {
+    return("data.frame")
+  }
+
+  # Check for single ggplot or plotly objects
+  if (inherits(a, "ggplot") && !is.list(a)) {
+    return("ggplot")
+  }
+  if (inherits(a, "plotly")) {
+    return("plotly")
+  }
+
+  # Check if it's a list
+  if (is.list(a)) {
+    if (length(a) == 0) {
+      return("empty_list")
+    }
+
+    # Check if all elements are ggplot objects
+    if (all(sapply(a, function(x) inherits(x, "ggplot")))) {
+      return("list_of_ggplot")
+    }
+
+    # Check if all elements are plotly objects
+    if (all(sapply(a, function(x) inherits(x, "plotly")))) {
+      return("list_of_plotly")
+    }
+
+    return("mixed_list")
+  }
+
+  return("unknown")
+}
+
 #' Module Server for figure updating
 #' @param id Module id
 #' @param figures A reactive expression returning a named list of figures (ggplot or plotly objects)

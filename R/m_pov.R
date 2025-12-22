@@ -28,6 +28,7 @@ m_pov_srv <-
     grpby_title = f_get_app_text("title_compare"),
     grpby_choices = f_var_names_vector(get_var_nm(var_group)),
 
+    pltby_skip = TRUE,
     pltby_type = "radioGroupButtons",
     pltby_title = NULL,
 
@@ -44,7 +45,7 @@ m_pov_srv <-
       output$incidences_ui <- renderUI({
         req(isolate(!ever_rendered()))
         validate(need(isTruthy(sim_res()), "Press 'Run' to execute simulaitons."))
-        page_ui(ns(NULL))
+        page_ui(ns(NULL), pltby_skip = pltby_skip)
       })
 
       # Step 2.a Title
@@ -56,7 +57,11 @@ m_pov_srv <-
 
       # Step 2.c Plot selection
       # plt_options_name <- get_measure_nm(plt_options)$measure_title
-      pltby <- m_input_srv("pltby", pltby_type, pltby_title, reactive(fig$id))
+      pltby <- if (!pltby_skip) {
+        m_input_srv("pltby", pltby_type, pltby_title, reactive(fig$id))
+      } else {
+        reactive(NULL)
+      }
 
       # Step 3.A Data/Plots preparation -------------------------------------------
       sim_ready <- reactive({
@@ -190,19 +195,19 @@ m_pov_srv <-
       )
 
       # Step 10. Card with plot and data table --------------------------------
-      m_figure_server(
+      m_output_srv(
         "fig1",
         figures = reactive(fig$ggs),
-        selected = pltby,
+        selected = if (pltby_skip) reactive(NULL) else pltby,
         force_ly = T
       )
 
-      m_figure_server(
+      m_output_srv(
         "tbl1",
         figures = reactive({
           dta_calc_formatted() |> f_format_rt(col_min_groups = 1)
         }),
-        selected = pltby
+        selected = if (pltby_skip) reactive(NULL) else pltby
       )
 
       # Step 20. Results export modal ----------------------------------------
@@ -253,20 +258,22 @@ m_pov_srv <-
 #' @import bslib
 #' @export
 #'
-f_pov_ui_linear <- function(id, add_pl = TRUE) {
+f_pov_ui_linear <- function(id, add_pl = TRUE, pltby_skip = TRUE) {
   ns <- NS(id)
 
   # plt-specific controls
   input_elements <- list(
     if (add_pl) m_input_ui(ns("pl_choice")) else NULL,
     m_input_ui(ns("grpby")),
-    m_input_ui(ns("pltby"))
+    if (!pltby_skip) m_input_ui(ns("pltby")) else NULL
   )
   input_elements <- input_elements[!sapply(input_elements, is.null)]
   if (length(input_elements) == 2) {
     col_widths  <- c(5, 7)
   } else if (length(input_elements) == 3) {
     col_widths  <- c(3, 4, 5)
+  } else if (length(input_elements) == 1) {
+    col_widths  <- c(12)
   } else {
     col_widths  <- NULL
   }
@@ -284,7 +291,7 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
       nav_panel(
         "Plot",
         card_body(
-          m_figure_ui(ns("fig1")),
+          m_output_ui(ns("fig1")),
           fillable = TRUE,
           min_height = "450px",
           max_height = "600px"
@@ -295,7 +302,7 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
       nav_panel(
         "Data",
         card_body(
-          m_figure_ui(ns("tbl1")),
+          m_output_ui(ns("tbl1")),
           fillable = TRUE,
           min_height = "450px",
           max_height = "800px"
@@ -327,8 +334,8 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
 #' @describeIn m_pov Incidence page template for Gini output in a results layout
 #' @export
 #'
-f_gini_ui_linear <- function(id) {
-  f_pov_ui_linear(id, add_pl = FALSE)
+f_gini_ui_linear <- function(id, pltby_skip = TRUE) {
+  f_pov_ui_linear(id, add_pl = FALSE, pltby_skip = pltby_skip)
 }
 
 #' @describeIn m_pov Module combining poverty and inequality analysis

@@ -370,8 +370,8 @@ m_one_output_srv <- function(
     fig_ui <- reactive({
       switch(
         fig_type(),
-        "ggplot" = plotOutput(ns("fig_gg")),
-        "plotly" = plotly::plotlyOutput(ns("fig_ly")),
+        "ggplot" = plotOutput(ns("fig_gg"), height = "550px"),
+        "plotly" = plotly::plotlyOutput(ns("fig_ly"), height = "550px"),
         "flextable" = uiOutput(ns("fig_ft")),
         "datatables" = DT::DTOutput(ns("fig_dt")),
         "data.frame" = tableOutput(ns("fig_tbl")),
@@ -445,6 +445,7 @@ m_one_output_srv <- function(
 #'     \item \code{"sequential"} (default) - Displays outputs one after another
 #'     \item \code{"tabs"} - Displays outputs in a card with tabs
 #'   }
+#' @param force_ly Logical. If TRUE, converts ggplot objects to plotly. Default is FALSE.
 #' @return NULL (renders to UI directly)
 #' @export
 m_output_srv <- function(
@@ -452,6 +453,7 @@ m_output_srv <- function(
   figures = reactive(NULL),
   selected = reactive(NULL),
   output_type = c("tabs", "sequential"),
+  force_ly = TRUE,
   ...
 ) {
   output_type <- match.arg(output_type)
@@ -486,6 +488,10 @@ m_output_srv <- function(
     output$figure_ui <- renderUI({
       req(filtered_outputs())
       output_uis <- purrr::imap(filtered_outputs(), function(fig, name) {
+        # Convert ggplot to plotly if force_ly is TRUE
+        if (force_ly && inherits(fig, "ggplot")) {
+          fig <- plotly::ggplotly(fig)
+        }
         mod_id <- paste0("fig_", make.names(name))
         m_one_output_srv(id = mod_id, figure = reactive(fig))()
       })
@@ -494,7 +500,8 @@ m_output_srv <- function(
           nav_panel(title = name, ui)
         }) |>
           unname()
-        do.call(navset_tab, tab_panels)
+        navset_card_pill(!!!tab_panels, placement = "above") |>
+          tagAppendAttributes(class = "border-0")
       } else {
         tagList(output_uis)
       }

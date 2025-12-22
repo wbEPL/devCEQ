@@ -7,13 +7,13 @@ NULL
 #' @param ndec_type Type of input for number of deciles: "numericInput" or "selectInput"
 #'
 #' @export
-#' 
+#'
 m_pov_srv <-
   function(
     id,
     sim_res,
     page_ui = f_incid_ui_linear,
-    
+
     var_inc = get_inc_nm()$var,
     var_wt = get_wt_nm(),
     var_group = get_group_nm()$var,
@@ -73,7 +73,7 @@ m_pov_srv <-
           need(
             any(map_lgl(sim_res(), ~ !is.null(.x$policy_sim_raw))),
             "Some simulations do not have simulation data."
-          ),          
+          ),
         )
         req(sim_res())
         sim_res() |> keep(~ !is.null(.x$policy_sim_raw) && nrow(.x$policy_sim_raw) > 0)
@@ -113,7 +113,7 @@ m_pov_srv <-
           filter(
             if_any(f_get_colname("measure")) %in%
               get_measure_nm(plt_options)$measure_title
-          )        
+          )
       })
 
       dta_fig <- reactive({
@@ -121,7 +121,7 @@ m_pov_srv <-
         if (length((var_group)) == 0) {
           return(NULL)
         }
-        out <- 
+        out <-
           var_group |>
           map(
             ~ {
@@ -148,7 +148,7 @@ m_pov_srv <-
           set_names(var_group)
         out
       })
-      
+
       # Generating plots based on filtered data
       # fig_out <- reactive()
       observeEvent(
@@ -167,7 +167,7 @@ m_pov_srv <-
           }
           fig$id <- names(fig$ggs)
           fig$title <- names(fig$ggs)
-        }, 
+        },
         ignoreInit = TRUE
       )
 
@@ -196,7 +196,7 @@ m_pov_srv <-
         selected = pltby,
         force_ly = T
       )
-      
+
       m_figure_server(
         "tbl1",
         figures = reactive({
@@ -256,7 +256,7 @@ m_pov_srv <-
 f_pov_ui_linear <- function(id, add_pl = TRUE) {
   ns <- NS(id)
 
-  # plt-specific controls 
+  # plt-specific controls
   input_elements <- list(
     if (add_pl) m_input_ui(ns("pl_choice")) else NULL,
     m_input_ui(ns("grpby")),
@@ -280,12 +280,12 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
     navset_card_underline(
       full_screen = FALSE,
       title = m_input_ui(ns("title")),
-      
+
       nav_panel(
         "Plot",
         card_body(
           m_figure_ui(ns("fig1")),
-          fillable = TRUE, 
+          fillable = TRUE,
           min_height = "450px",
           max_height = "600px"
         ) #,
@@ -326,7 +326,7 @@ f_pov_ui_linear <- function(id, add_pl = TRUE) {
 
 #' @describeIn m_pov Incidence page template for Gini output in a results layout
 #' @export
-#' 
+#'
 f_gini_ui_linear <- function(id) {
   f_pov_ui_linear(id, add_pl = FALSE)
 }
